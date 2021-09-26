@@ -1,0 +1,836 @@
+AV-AES-SERVER-NOTIFICATION-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY,
+    OBJECT-TYPE,
+    NOTIFICATION-TYPE,
+    IpAddress,
+    Integer32
+        FROM SNMPv2-SMI
+        
+    TEXTUAL-CONVENTION
+        FROM SNMPv2-TC
+
+    sysObjectID,
+    sysName
+        FROM SNMPv2-MIB
+
+    MODULE-COMPLIANCE, 
+    OBJECT-GROUP, 
+    NOTIFICATION-GROUP
+        FROM SNMPv2-CONF
+
+    entPhysicalAssetID
+        FROM ENTITY-MIB
+
+    InetAddress,   
+    InetAddressType  -- {unknown(0), ipv4(1), or ipv6(2)}
+        FROM INET-ADDRESS-MIB
+
+    csAlarmSeverity
+        FROM AV-CORE-SERVICES-MIB
+        
+    ItuPerceivedSeverity
+        FROM ITU-ALARM-TC-MIB
+
+    avAESMibs,
+    avAesNotifications, 
+    avAesNotificationCompliances, 
+    avAesNotificationGroups
+        FROM AV-APPLICATION-ENABLEMENT-SERVICES-MIB;
+
+avAesNotificationMIB MODULE-IDENTITY
+    LAST-UPDATED "201305290000Z"  -- May 29, 2013
+    ORGANIZATION "Avaya Inc."
+    CONTACT-INFO
+        "        Avaya Customer Services
+         Postal: Avaya Inc.
+                 211 Mt Airy Rd.
+                 Basking Ridge, NJ 07920
+                 U.S.A.
+         Phone:  +1 908 953 6000
+         WWW:    http://www.avaya.com"
+    DESCRIPTION
+        "This is the MIB Module for Avaya Application Enablement Services (AES) 
+         Server Traps. The MIB objects and traps are defined
+         to support the requirements of system maintenance and alarms.
+
+         Copyright (c) 2009-2013 by Avaya Inc.  All rights reserved.
+         Redistribution and use in source and binary forms of the software
+         (Software), without modification, are permitted provided that
+         the following conditions are met:
+         (a) Redistributions of source code must retain the above copyright notice
+         and the entire license.
+         (b) Redistributions in binary form must reproduce the above copyright
+         notice and this entire license in the documentation and/or other
+         materials provided with the distribution.
+         (c) Redistribution of the Software is solely for the purpose of managing
+         and servicing Avaya products and solutions.
+         (d) BY USING AND REDISTRIBUTING THE SOFTWARE, YOU, ON BEHALF OF YOURSELF
+         AND THE ENTITY FOR WHOM YOU USE THE SOFTWARE AGREE TO ALL THE TERMS
+         AND CONDITIONS OF THIS LICENSE AND CREATE A BINDING CONTRACT BETWEEN
+         YOU AND AVAYA INC. THIS SOFTWARE IS PROVIDED BY AVAYA INC. 'AS IS'
+         AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+         THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+         PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL AVAYA INC.
+         BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+         OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+         SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+         BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+         WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+         OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+         EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+        "
+    
+    REVISION     "201305290000Z"  -- May 29, 2013
+    DESCRIPTION
+        "Revision 4.1.0 
+        Add support for the AE Services High Availability Service"
+
+    REVISION     "201303050000Z"  -- March 05, 2013
+    DESCRIPTION
+        "Revision 4.0.1 
+        Update the Copyright"
+
+    REVISION     "201302130000Z"  -- February 13, 2013
+    DESCRIPTION
+        "Revision 4.0.0 - Fourth Version
+         Add additional notification for audit service failures"
+
+    REVISION     "201201030000Z"  -- January 03, 2012
+    DESCRIPTION
+        "Revision 3.0.0 - Third Version
+         Add additional notification for Hearbeat failures"
+
+    REVISION     "200907270000Z"  -- July 27, 2009
+    DESCRIPTION
+        "Revision 2.0.0 - Second Version
+         Add additional notification for Certificate expiration,
+         License expiration, server based login failures, the initial
+         cold start and stopping of an AE Service."
+
+    REVISION     "200901290000Z"  -- January 29, 2009
+    DESCRIPTION
+        "Revision 1.0.0 - Original Version
+         The initial SNMP MIBs for SNMP NOTIFICATIONs
+         for the Avaya AES Server software components."
+    ::= { avAESMibs 3 }
+
+--
+--  The following are defined in SNMPv2-SMI
+--  iso             OBJECT IDENTIFIER ::= { 1 }
+--  org             OBJECT IDENTIFIER ::= { iso 3 }
+--  dod             OBJECT IDENTIFIER ::= { org 6 }
+--  internet        OBJECT IDENTIFIER ::= { dod 1 }
+--  private         OBJECT IDENTIFIER ::= { internet 4 }
+--  enterprises     OBJECT IDENTIFIER ::= { private 1 }
+--
+--avaya             OBJECT IDENTIFIER ::= { enterprises 6889 }
+--products          OBJECT IDENTIFIER ::= { avaya 1 }
+--mibs              OBJECT IDENTIFIER ::= { avaya 2 }
+--avAESProducts     OBJECT IDENTIFIER ::= { products 27 }
+--avAESMibs         OBJECT IDENTIFIER ::= { mibs 27 }
+
+--
+-- Top-level Components of this MIB
+--
+-- Note: the Notification group is not at { avAesNotifications 0 } since it
+-- is further divided into sub-groups below...
+--
+avAesServerTrapMibObjects         OBJECT IDENTIFIER ::= { avAesNotifications 1 }
+avAesServerTrapMibNotifications   OBJECT IDENTIFIER ::= { avAesNotifications 2 }
+
+--
+-- Textual Conventions
+--
+AvAesHeartbeatUsage ::= TEXTUAL-CONVENTION
+    STATUS      current
+    DESCRIPTION
+        "A value that represents the possible type or usage for a heartbeat"
+    SYNTAX      INTEGER {
+                            unknown(1),
+                            virtualApplianceSanityHB(2)
+                        }
+
+--
+-- Common Object groups for ApplicationEnablementServices MIB
+--
+
+avAesAlarmType    OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "OCTET STRING Object specifying the alarm type.
+         Alarm types are: critical, major, minor, warning, clear"
+    ::= { avAesServerTrapMibObjects 1 }
+
+avAesProductID    OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Product ID of the server"
+    ::= { avAesServerTrapMibObjects 2 }
+
+avAesEvtSrvReason OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES Server alarm report - Event server error description"
+    ::= { avAesServerTrapMibObjects 3 }
+
+avAesSwitchName   OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Switch name"
+    ::= { avAesServerTrapMibObjects 4 }
+
+avAesSwConnIPAddress    OBJECT-TYPE
+    SYNTAX        IpAddress
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Switch Connection IP address"
+    ::= { avAesServerTrapMibObjects 5 }
+
+avAesServiceName  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES Service name"
+    ::= { avAesServerTrapMibObjects 6 }
+
+avAesCtiLinkNum   OBJECT-TYPE
+    SYNTAX        Integer32
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES CTI Link number"
+    ::= { avAesServerTrapMibObjects 7 }
+
+avAesCtiLinkStatus    OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES CTI Link Status"
+    ::= { avAesServerTrapMibObjects 8 }
+
+avAesClientLogin  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES client login name"
+    ::= { avAesServerTrapMibObjects 9 }
+
+avAesClientIPAddressType  OBJECT-TYPE
+    SYNTAX        InetAddressType		
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "The type of the internet address for the 
+         AES client IP address"
+    ::= { avAesServerTrapMibObjects 10 }
+
+avAesClientIPAddress  OBJECT-TYPE
+    SYNTAX        InetAddress (SIZE(1..255))		
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES client IP address"
+    ::= { avAesServerTrapMibObjects 11 }
+
+avAesApiName      OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES API name"
+    ::= { avAesServerTrapMibObjects 12 }
+
+avAesApiLinkName  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES API Link name"
+    ::= { avAesServerTrapMibObjects 13 }
+
+avAesSessionId  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Session ID"
+    ::= { avAesServerTrapMibObjects 14 } 
+
+avAesAepConnIpAddressType  OBJECT-TYPE
+    SYNTAX        InetAddressType
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "The type of internet address 
+         (unknown(0), ipv4(1), ipv6(2), etc...) 
+         for the AEP Connection IP address"
+    ::= { avAesServerTrapMibObjects 15 }
+
+avAesAepConnIpAddress  OBJECT-TYPE
+    SYNTAX        InetAddress (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AEP Connection IP address"
+    ::= { avAesServerTrapMibObjects 16 }
+
+avAesLinkStatus  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Status of a link"
+    ::= { avAesServerTrapMibObjects 17 }
+
+avAesServerIpAddressType  OBJECT-TYPE
+    SYNTAX        InetAddressType
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "The type of internet address (ipv4, ipv6, etc...) 
+         for the AES Server IP address"
+    ::= { avAesServerTrapMibObjects 18 }
+
+avAesServerIpAddress  OBJECT-TYPE
+    SYNTAX        InetAddress (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES Server IP address"
+    ::= { avAesServerTrapMibObjects 19 }
+
+avAesCertificateUsageID  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Alias associated with certificate used to indicate its purpose."
+    ::= { avAesServerTrapMibObjects 20 }
+
+avAesDaysRemaining  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Number of valid days remaining"
+    ::= { avAesServerTrapMibObjects 21 }
+
+avAesLoginAccessPoint  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Login point of entry ie. local console or ssh"
+    ::= { avAesServerTrapMibObjects 22 }
+
+avAesLoginId  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Login ID of the user attempting to login"
+    ::= { avAesServerTrapMibObjects 23 }
+
+avAesLoginAttempts  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Max failed login attempts"
+    ::= { avAesServerTrapMibObjects 24 }
+
+avAesLoginLimit  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "MAx login attempts allowed be the account is locked"
+    ::= { avAesServerTrapMibObjects 25 }
+
+avAesWeblmUrl  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "URL associated with the WebLM server"
+    ::= { avAesServerTrapMibObjects 26 }
+
+avAesLicenseErrorMode  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES License error mode"
+    ::= { avAesServerTrapMibObjects 27 }
+
+avAesLicenseErrorCode  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES License error code"
+    ::= { avAesServerTrapMibObjects 28 }
+
+avAesRemoteAddrType  OBJECT-TYPE
+    SYNTAX        InetAddressType
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "The type of internet address (ipv4, ipv6, etc...) 
+         for the remote host"
+    ::= { avAesServerTrapMibObjects 29 }
+
+avAesRemoteAddr  OBJECT-TYPE
+    SYNTAX        InetAddress (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Remote host IP address"
+    ::= { avAesServerTrapMibObjects 30 }
+
+avAesAlarmSeverity  OBJECT-TYPE
+    SYNTAX        ItuPerceivedSeverity
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Alarm severities are based on ITUPerceivedSeverity (RFC 3877)"
+    ::= { avAesServerTrapMibObjects 31 }
+
+avAesMissedHeartbeats  OBJECT-TYPE
+    SYNTAX        Integer32
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "Number of missed heartbeats"
+    ::= { avAesServerTrapMibObjects 32 }
+
+avAesHeartbeatType OBJECT-TYPE
+    SYNTAX        AvAesHeartbeatUsage
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "The service usage related to the heartbeat"
+    ::= { avAesServerTrapMibObjects 33 }
+    
+avAesErrorCode  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES HA associated error code"
+    ::= { avAesServerTrapMibObjects 34 }
+
+avAesResourceName  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES HA associated resource name"
+    ::= { avAesServerTrapMibObjects 35 }
+
+avAesHealthObject  OBJECT-TYPE
+    SYNTAX        OCTET STRING (SIZE(1..255))
+    MAX-ACCESS    read-only
+    STATUS        current
+    DESCRIPTION
+        "AES HA associated health object"
+    ::= { avAesServerTrapMibObjects 36 }
+
+--
+-- Avaya AES Server Notifications as Traps
+--
+-- Application Enablement Services notifications (avAesServerTrapMibObjects)
+-- According to RFC 2578 section 8.5, the next to last sub-identifier
+-- in the name of any newly defined notification must have the value
+-- zero. This is to achieve compatibility with SNMPv1 traps.
+--
+avAesProcessNotifications    OBJECT IDENTIFIER ::= { avAesServerTrapMibNotifications 1 }
+avAesProcessNotificationsV1  OBJECT IDENTIFIER ::= { avAesProcessNotifications 0 }
+avAesLinkNotifications       OBJECT IDENTIFIER ::= { avAesServerTrapMibNotifications 2 }
+avAesLinkNotificationsV1     OBJECT IDENTIFIER ::= { avAesLinkNotifications 0 }
+avAesSecurityNotifications   OBJECT IDENTIFIER ::= { avAesServerTrapMibNotifications 3 }
+avAesSecurityNotificationsV1 OBJECT IDENTIFIER ::= { avAesSecurityNotifications 0 }
+avAesLicenseNotifications    OBJECT IDENTIFIER ::= { avAesServerTrapMibNotifications 4 }
+avAesLicenseNotificationsV1  OBJECT IDENTIFIER ::= { avAesLicenseNotifications 0 } 
+avAesHeartbeatFailureNotifications    OBJECT IDENTIFIER ::= { avAesServerTrapMibNotifications 5 }
+avAesHeartbeatFailureNotificationsV1  OBJECT IDENTIFIER ::= { avAesHeartbeatFailureNotifications 0 }
+
+--
+-- Process/Service related Notifications
+--
+avAesServiceDown    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        csAlarmSeverity,
+        sysObjectID,
+        avAesAlarmType,
+        avAesServiceName,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "AES Service died unexpectedly"
+    ::= { avAesProcessNotificationsV1 1 }
+    
+avAesServiceColdStart    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesServiceName,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "AES Service start request received"
+    ::= { avAesProcessNotificationsV1 2 }
+    
+avAesServiceStopped    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesServiceName,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "AES Service stop request received"
+    ::= { avAesProcessNotificationsV1 3 }
+    
+avAesAuditServiceError    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesServiceName,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "The audit service experienced an error"
+    ::= { avAesProcessNotificationsV1 4 }
+    
+avAesAuditServiceLoggingIssue    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesServiceName,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "The audit service experienced a logging issue."
+    ::= { avAesProcessNotificationsV1 5 }
+    
+avAesHaServiceIssue    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesServiceName,
+        avAesErrorCode,
+        avAesResourceName,
+        avAesHealthObject,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "The AE Services HA service experienced an issue."
+    ::= { avAesProcessNotificationsV1 6 }
+
+--
+-- CTI Link Notifications
+--
+avAesCtiLinkDown    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        csAlarmSeverity,
+        sysObjectID,
+        avAesAlarmType,
+        avAesApiName,
+        avAesSwitchName,
+        avAesCtiLinkNum,
+        avAesCtiLinkStatus,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "The CTI Link is down"
+    ::= { avAesLinkNotificationsV1 1 }
+
+--
+-- AEP Connection Link Notifications
+--
+avAesAepConnLinkDown    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        csAlarmSeverity,
+        sysObjectID,
+        avAesAlarmType,
+        avAesSessionId,
+        avAesSwitchName,
+        avAesAepConnIpAddressType,
+        avAesAepConnIpAddress,
+        avAesLinkStatus,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "An AEP Connection link is down"
+    ::= { avAesLinkNotificationsV1 2 }
+
+--
+-- WebLM Connection Link Notifications
+--
+avAesWebLMConnLinkDown    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesLinkStatus,
+        avAesWeblmUrl,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "The WebLM Connection link is down"
+    ::= { avAesLinkNotificationsV1 3 }
+
+--
+-- Security related Notifications
+--
+avAesClientLoginFailure    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        csAlarmSeverity,
+        sysObjectID,
+        avAesAlarmType,
+        avAesClientLogin,
+        avAesClientIPAddressType,
+        avAesClientIPAddress,
+        avAesApiName,
+        avAesApiLinkName,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "An AES Client tried to login but was not authenticated."
+    ::= { avAesSecurityNotificationsV1 1 }
+    
+avAesCertificateFailure    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesCertificateUsageID,
+        avAesDaysRemaining,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "Specifies if a certificate is about to expire or has expired."
+    ::= { avAesSecurityNotificationsV1 2 }
+    
+avAesLoginFailure    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesLoginAccessPoint,
+        avAesLoginId,
+        avAesRemoteAddrType,
+        avAesRemoteAddr,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "Indicator of login failures."
+    ::= { avAesSecurityNotificationsV1 3 }
+
+avAesLoginAttemptsExceeded    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesLoginAccessPoint,
+        avAesLoginId,
+        avAesLoginAttempts,
+        avAesLoginLimit,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "Indicator of login failure attempts exceeded."
+    ::= { avAesSecurityNotificationsV1 4 }
+
+--
+-- WebLM License notifications
+--
+
+avAesLicenseFailure    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesDaysRemaining,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "Specifies if a license is about to expire or has expired."
+    ::= { avAesLicenseNotificationsV1 1 }
+
+avAesGracePeriodFailure    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesServiceName,
+        avAesLicenseErrorMode,
+        avAesLicenseErrorCode,
+        avAesDaysRemaining,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "Specifies if a license grace period is about to expire or has expired."
+    ::= { avAesLicenseNotificationsV1 2 }
+
+avAesHeartbeatFailureThresholdExceeded    NOTIFICATION-TYPE
+    OBJECTS          {
+        sysName,
+        avAesServerIpAddressType,
+        avAesServerIpAddress,
+        entPhysicalAssetID,
+        sysObjectID,
+        avAesAlarmSeverity,
+        avAesHeartbeatType,
+        avAesMissedHeartbeats,
+        avAesEvtSrvReason
+    }
+    STATUS    current
+    DESCRIPTION
+        "Indicates if a heartbeat failure threshold was exceeded. "
+    ::= { avAesHeartbeatFailureNotificationsV1 1 }
+
+--
+-- Conformance Information Begin
+--
+
+avAesNotificationCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "The compliance statement for SNMP entities which
+            implement this Notification MIB module."
+    MODULE  
+          -- Mandatory groups for SNMP entities which implement this
+          -- MIB.
+        MANDATORY-GROUPS {  
+                            avAesNotificationObjGroup,
+                            avAesNotificationGroup  
+                         }
+    ::= { avAesNotificationCompliances 1 }
+
+avAesNotificationObjGroup OBJECT-GROUP
+    OBJECTS { 
+              avAesAlarmType, avAesProductID, avAesEvtSrvReason,
+              avAesSwitchName, avAesSwConnIPAddress, avAesServiceName,
+              avAesCtiLinkNum, avAesCtiLinkStatus, avAesClientLogin,
+              avAesClientIPAddress, avAesApiName,avAesApiLinkName,
+              avAesSessionId, avAesAepConnIpAddress, 
+              avAesAepConnIpAddressType, avAesLinkStatus, 
+              avAesClientIPAddressType, avAesServerIpAddressType,
+              avAesServerIpAddress, avAesCertificateUsageID,
+              avAesDaysRemaining, avAesLoginAccessPoint,
+              avAesLoginId, avAesLoginAttempts,
+              avAesLoginLimit, avAesWeblmUrl,
+              avAesLicenseErrorMode, avAesLicenseErrorCode,
+              avAesRemoteAddrType, avAesRemoteAddr,
+              avAesAlarmSeverity, avAesMissedHeartbeats,
+              avAesHeartbeatType, avAesErrorCode, avAesResourceName,
+              avAesHealthObject
+            }
+    STATUS  current
+    DESCRIPTION
+            "This group defines notification objects"
+    ::= { avAesNotificationGroups 1 }
+
+avAesNotificationGroup NOTIFICATION-GROUP
+    NOTIFICATIONS { 
+                    avAesServiceDown, avAesCtiLinkDown ,
+                    avAesClientLoginFailure, avAesAepConnLinkDown,
+                    avAesWebLMConnLinkDown, avAesCertificateFailure,
+                    avAesLoginFailure, avAesLicenseFailure,
+                    avAesGracePeriodFailure, avAesServiceColdStart,
+                    avAesServiceStopped, avAesLoginAttemptsExceeded,
+                    avAesHeartbeatFailureThresholdExceeded, avAesAuditServiceError,
+                    avAesAuditServiceLoggingIssue, avAesHaServiceIssue
+                  }
+    STATUS  current
+    DESCRIPTION
+            "This group defines AES notification objects"
+    ::= { avAesNotificationGroups 2 }
+
+
+END

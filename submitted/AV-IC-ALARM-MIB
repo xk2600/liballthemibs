@@ -1,0 +1,266 @@
+-- *****************************************************************
+-- AV-IC-ALARM-MIB:
+--
+-- Copyright (c) 2005 - 2012 by Avaya, Inc.
+-- All rights reserved.
+-- This MIB is supported for IC 7.3. 
+-- Summary of change - New objects has been added to generate different
+-- OID depending on priority(Critical, Major and Minor). 
+-- *****************************************************************
+
+--
+-- MIB objects for avaya IC Alarm
+--
+
+AV-IC-ALARM-MIB DEFINITIONS ::= BEGIN
+    IMPORTS
+	MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
+	    TimeTicks, IpAddress, Unsigned32
+		FROM SNMPv2-SMI
+	MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+		FROM SNMPv2-CONF
+	DisplayString, TimeStamp
+		FROM SNMPv2-TC
+	products, mibs
+		FROM AVAYAGEN-MIB
+        ItuPerceivedSeverity,
+        ItuTrendIndication                  FROM ITU-ALARM-TC-MIB;
+        -- ituAlarmObjects, ituAlarmModel, ituAlarmTable, 
+
+    -- Product OIDs
+    crm2 OBJECT IDENTIFIER ::= { products 4 }
+    ic2 OBJECT IDENTIFIER ::= { crm2 1 }
+	crm OBJECT IDENTIFIER ::= { mibs 4 }
+	ic OBJECT IDENTIFIER ::= { crm 1 }
+                
+avICAlarmMIB MODULE-IDENTITY 
+    LAST-UPDATED "200911090000Z"
+    ORGANIZATION "Avaya, Inc."
+    CONTACT-INFO "Avaya Customer Services 
+                  Postal: Avaya, Inc.
+                          211 Mount Airy Rd
+                          Basking Ridge. NJ 07920
+                          USA
+                          Tel: +1 908 953 6000
+                          WWW: http://www.avaya.com"
+    DESCRIPTION
+	"MIB objects for AIC alarm"
+	
+    REVISION  "200911090000Z"
+    DESCRIPTION
+	"Added new objects for priority Critical(7), Major(8), Minor(9)"
+    
+    
+    REVISION  "200704240000Z"
+    DESCRIPTION
+	"Added product IDs"
+
+    REVISION  "200602230000Z"
+    DESCRIPTION
+	"Import Unsigned32 from SNMPv2-SMI"
+    
+    REVISION  "200411100000Z"
+    DESCRIPTION
+	"Defined the initial SNMP avICAlarmMIB module"
+	
+	::= { mibs crm(4) ic(1) 1 }
+	
+    -- ...enterprise.avaya.mibs.crm(4).ic(1).alarm(1) - need CRM/IC specific OID
+
+    -- The following are support objects for the IC Alarm traps.
+    avICAlarmObjects       OBJECT IDENTIFIER ::= { avICAlarmMIB 1 }
+    avICAlarmNotifications OBJECT IDENTIFIER ::= { avICAlarmMIB 2 }
+    avICAlarmConformance   OBJECT IDENTIFIER ::= { avICAlarmMIB 3 }
+
+
+    -- define all the trap data (variable instances) sent as
+    -- VAR-BIND-LIST in the trap under the avICAlarmTrapObjects node.
+    -- avICAlarmTrapObjects a logical group for all the event variabels
+    avICAlarmTrapObjects  OBJECT IDENTIFIER ::= { avICAlarmObjects 1 }
+
+    avICAlarmIndex OBJECT-TYPE
+	SYNTAX Unsigned32 (1 .. 4294967295)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+	    " An integer that acts as an Alarm Id to uniquely identify 
+	      each IC alarm. The alarm id starts at zero 
+	      when the sysUpTime starts at zero. "
+	::= { avICAlarmTrapObjects 1 }
+    
+    avICAlarmTime OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+	    "The local Time at which Alarm was generated at the alarm source
+	    identified by avICAlarmName/avICAlarmLocation.
+	    This is a time-stamp based on alarm-generation
+	    time at the source (IC server) - 
+	    not the sysUptime of the associated SNMP agent.
+	    The time value is encoded by the source as an integer."
+	::= { avICAlarmTrapObjects 2 }
+    
+    avICAlarmName OBJECT-TYPE
+	SYNTAX OCTET STRING
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+	    "Interface name of the alarm source entity - 
+	    in form of interface name i.e. ServerName.Interface
+	    (e.g.  alarm.Alarm)."
+	::= { avICAlarmTrapObjects 3 }
+    
+    avICAlarmLocation OBJECT-TYPE
+ 	SYNTAX OCTET STRING
+ 	MAX-ACCESS read-only
+ 	STATUS current
+ 	DESCRIPTION
+ 	    "The location (IP address and port) of the server/client
+ 	    from where the alarm was generated. 
+	    The location is in the form of ip-address:port-number,
+	    e.g. 192.168.6.185:7001."
+ 	::= { avICAlarmTrapObjects 4 }
+     
+    avICAlarmLocationIpAddress OBJECT-TYPE
+	SYNTAX IpAddress
+	MAX-ACCESS read-only
+	STATUS deprecated
+	DESCRIPTION
+	    "Ip-Address of the location of the server/client
+	   from where the alarm was generated "
+	::= { avICAlarmTrapObjects 5 }
+    
+    avICAlarmLocationPort  OBJECT-TYPE
+	SYNTAX INTEGER
+	MAX-ACCESS read-only
+	STATUS deprecated
+	DESCRIPTION
+	    "IP port-number of the server/client at avICAlarmLocationIpAddress
+	   from where the alarm was generated "
+	::= { avICAlarmTrapObjects 6 }
+    
+    avICAlarmPriorityCritical OBJECT-TYPE
+	SYNTAX ItuPerceivedSeverity
+        MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION 
+	    "Importance of the alarm.
+	    Pre-defined levels are emergency, high, info, low. Alarms with info priority are discarded
+            and alarms with other priority levels are mapped as shown following -
+                emergency   --> critical(3)"
+	::= { avICAlarmTrapObjects 7 }
+	
+   avICAlarmPriorityMajor OBJECT-TYPE
+	SYNTAX ItuPerceivedSeverity
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION 
+		"Importance of the alarm.
+		    Pre-defined levels are emergency, high, info, low. Alarms with info priority are discarded
+	            and alarms with other priority levels are mapped as shown following -	                
+	                high        --> major(4)"
+	::= { avICAlarmTrapObjects 8 }
+	
+	avICAlarmPriorityMinor OBJECT-TYPE
+		SYNTAX ItuPerceivedSeverity
+	        MAX-ACCESS read-only
+		STATUS current
+		DESCRIPTION 
+		    "Importance of the alarm.
+		    Pre-defined levels are emergency, high, info, low. Alarms with info priority are discarded
+	            and alarms with other priority levels are mapped as shown following -
+	              low         --> minor(5)"
+	::= { avICAlarmTrapObjects 9 }
+    
+    avICAlarmDescription OBJECT-TYPE
+	SYNTAX OCTET STRING
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+	    "Textual description of this alarm.
+	    Actual cause of raising this alarm"
+	::= { avICAlarmTrapObjects 10 }
+    
+    -- define all the NOTIFICATION-TYPE macros under 
+    -- the avICAlarmTraps node.
+
+    -- The SNMP notification generated in response to IC Alarm received from 
+    -- the IC Alarm server. 
+    avICAlarmEvent NOTIFICATION-TYPE
+	OBJECTS {
+		-- sysUpTime, snmpTrapOID  are always present by default
+		-- as per SNMPv2 SNMPv2-TRAP-PDU and INFORM_REQUEST-PDU 
+		-- spec. 
+		avICAlarmTime,
+		avICAlarmName,
+		avICAlarmLocation,
+		-- avICAlarmLocationIpAddress,
+		-- avICAlarmLocationPort,
+		avICAlarmPriorityCritical,
+		avICAlarmPriorityMajor,
+		avICAlarmPriorityMinor,
+		avICAlarmDescription
+	}
+	STATUS current
+	DESCRIPTION
+	    "IC Alarm event that encapsulates IC Alarm into SNMP Notification.
+	    Make sure that the object (control variable) instances are
+	    encoded as 
+	    sysUpTime.0 = <55556>,
+	    snmpTrapOID.0 = avICAlarmNotifications.1 ,
+	    avICAlarmTime.0=<value>, avICAlarmName.0=<xxx.yyy>,
+	    avICAlarmLocation.0=<a.b.c.d:1234>,
+	    (avICAlarmLocationIpAddress.0=<a.b.c.d>,
+	    avICAlarmLocationPort.0=<1234>,)
+	    avICAlarmPriorityCritical.0=<3>
+	    avICAlarmPriorityMajor.0=<4>
+	    avICAlarmPriorityMinor.0=<5>
+	    avICAlarmDescription.0=<00 00 00 00 00 ... >
+	    in the varbind-list of the Notification PDU. 
+	    "
+	::= { avICAlarmNotifications 1 }
+
+    -- conformance information
+    
+    avICAlarmCompliances OBJECT IDENTIFIER ::= { avICAlarmConformance 1 }
+    avICAlarmGroups OBJECT IDENTIFIER ::= { avICAlarmConformance 2 }
+    
+    -- compliance statements
+
+    avICAlarmCompliance MODULE-COMPLIANCE
+	STATUS current
+	DESCRIPTION
+	   "The compliance statement "
+	 MODULE  -- this module
+	 MANDATORY-GROUPS { avICAlarmTrapObjectGroup }
+	GROUP avICAlarmTrapObjectGroup
+	DESCRIPTION
+	   "This group is optional but recommended for all
+	   avICAlarm systems"
+	::= { avICAlarmCompliances 1 }
+
+
+-- units of conformance
+
+    avICAlarmTrapObjectGroup  OBJECT-GROUP
+	OBJECTS {
+		avICAlarmIndex,
+		avICAlarmTime,
+		avICAlarmName,
+		avICAlarmLocation,
+		--avICAlarmLocationIpAddress,
+		--avICAlarmLocationPort,
+		avICAlarmPriorityCritical,
+		avICAlarmPriorityMajor,
+		avICAlarmPriorityMinor,
+		avICAlarmDescription
+	}
+	STATUS current
+	DESCRIPTION
+	   "These objects are required to  control  traps
+	   from IC Alarm Manager systems."
+	::= { avICAlarmGroups 1 }
+
+END
+
