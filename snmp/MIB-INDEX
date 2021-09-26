@@ -132,7 +132,7 @@
 539      aii                      AIX1-MIB                                 
 539      aii                      AIXIRB-MIB                               
 390      alantec                  ALANTEC-MIB                              
-1978 Northrop Grumman-Canada, Ltd. ngcan                    ALC-MIB                                  
+1978     ngcan                    ALC-MIB                                  
 449      codex                    ALC-OPT-MIB                              
 6527     timetra                  ALCATEL-IND1-TIMETRA-GLOBAL-MIB          
 637      alcatel                  ALCATEL-NMC-PROXY-AGENT-MIB              
@@ -456,13 +456,13 @@
 379      lexcel                   CMU-MIB                                  
 6889     avaya                    CNA-TESTPLUG-MIB                         
 333      cnt                      CNT2-MIB                                 
-cnt 333  -                        CNT21-MIB                                
-cnt 333  -                        CNT23-MIB                                
-cnt 333  -                        CNT241-MIB                               
-cnt 333  -                        CNT243-MIB                               
+333      cnt                      CNT21-MIB                                
+333      cnt                      CNT23-MIB                                
+333      cnt                      CNT241-MIB                               
+333      cnt                      CNT243-MIB                               
 333      cnt                      CNT245-MIB                               
-cnt 333  -                        CNT25-MIB                                
-cnt 333  -                        CNT251-MIB                               
+333      cnt                      CNT25-MIB                                
+333      cnt                      CNT251-MIB                               
 333      cnt                      CNTAU-MIB                                
 5040     wut                      Com-Server-Intern-MIB                    
 1141     com21                    COM21-HCX-MIB                            
@@ -862,7 +862,7 @@ cnt 333  -                        CNT251-MIB
 259      accton                   ES4612-MIB                               
 683      esi                      ESI-MIB                                  
 22       fibronics                ESM-snmp                                 
-2159 1 1 1 1 ecGlobalRegMod           ESSENTIAL-COMMUNICATIONS-GLOBAL-REG      
+2159     ecGlobalRegMod           ESSENTIAL-COMMUNICATIONS-GLOBAL-REG      
 2159     essentialCommunications  ESSENTIAL-ODS-ESS2000-HIPPI-SWITCH-MIB   
 36       dec                      ESWITCH-MIB-V3-0                         
 449      codex                    ETH-OPT-MIB                              
@@ -1366,17 +1366,17 @@ cnt 333  -                        CNT251-MIB
 1        company                  MOBILE-MIB                               
 42       sun                      MODULES-SUNMANAGEMENTCENTER-MIB          
 17713    motorola                 MOTOROLA-PTP-MIB                         
-8691 1.3.6.1.4.1.8691 moxa                     MOXA-CN2600-MIB                          
-8691 1.3.6.1.4.1.8691 moxa                     MOXA-EDS408A-MIB                         
-8691 1.3.6.1.4.1.8691 moxa                     MOXA-EDSG508E-MIB                        
-8691 1.3.6.1.4.1.8691 moxa                     MOXA-EDSG512E8POE-MIB                    
-8691 1.3.6.1.4.1.8691 moxa                     MOXA-EDSP510A8POE-MIB                    
-8691 1.3.6.1.4.1.8691 moxa                     MOXA-IAW5x50A_IO-MIB                     
-8691 1.3.6.1.4.1.8691 moxa                     MOXA-IKS6726A-MIB                        
+8691     moxa                     MOXA-CN2600-MIB                          
+8691     moxa                     MOXA-EDS408A-MIB                         
+8691     moxa                     MOXA-EDSG508E-MIB                        
+8691     moxa                     MOXA-EDSG512E8POE-MIB                    
+8691     moxa                     MOXA-EDSP510A8POE-MIB                    
+8691     moxa                     MOXA-IAW5x50A_IO-MIB                     
+8691     moxa                     MOXA-IKS6726A-MIB                        
 8691     moxa                     MOXA-IO-E1242-MIB                        
 8691     moxa                     MOXA-IO-E2210-MIB                        
-8691 1.3.6.1.4.1.8691 moxa                     MOXA-NP6000-MIB                          
-8691 1.3.6.1.4.1.8691 moxa                     MOXA-W2x50A-MIB                          
+8691     moxa                     MOXA-NP6000-MIB                          
+8691     moxa                     MOXA-W2x50A-MIB                          
 119      nec                      MP-ATM-MIB                               
 119      nec                      MP-ATM-MIB                               
 119      nec                      MP-DETOUR-MIB                            
@@ -1659,7 +1659,6 @@ cnt 333  -                        CNT251-MIB
 72       retix                    RETIX-LOCAL-BRIDGE-MIB                   
 72       retix                    RETIX-LOCAL-ROUTER-MIB                   
 72       retix                    RETIX-METROLAN-MIB                       
-72 20    metroLanSS               RETIX-METROLAN-MIB                       
 72       retix                    RETIX-MIB                                
 72       retix                    RETIX-RX7000-MIB                         
 353      atmForum                 RETIX-RX7000-MIB                         
@@ -1709,7 +1708,7 @@ cnt 333  -                        CNT251-MIB
 7571     saf                      SAF-IPADDONS                             
 7571     saf                      SAF-IPRADIO                              
 7571     saf                      SAF-MPMUX-MIB                            
-saf_ft 4858 old                      SAF-MPMUX-MIB                            
+4858     old                      SAF-MPMUX-MIB                            
 18568    saforum                  SAF-TC-MIB                               
 674      dell                     SanAppliance-MIB                         
 2935     pathlight                SANMgrV1-MIB                             
@@ -1944,7 +1943,7 @@ saf_ft 4858 old                      SAF-MPMUX-MIB
 18248    papouchProjekt           Th2e-v01-MIB                             
 18248    papouchProjekt           The-v01-MIB                              
 186      toshiba                  TIC-RMTI4-G9000-G2020-MIB                
-1978 Northrop Grumman-Canada, Ltd. ngcan                    TIGER                                    
+1978     ngcan                    TIGER                                    
 5549     timesten                 TimesTen                                 
 6527     timetra                  TIMETRA-GLOBAL-MIB                       
 5746     lanex                    TM63-MIB                                 
@@ -2078,7 +2077,7 @@ saf_ft 4858 old                      SAF-MPMUX-MIB
 2634     westernTelematic         WTI-RSM-TSM-MIB                          
 714      wyse                     WYSE-MIB                                 
 562      northernTelecom          X-DDI-MIB                                
-1978 Northrop Grumman-Canada, Ltd. ngcan                    X25-MIB                                  
+1978     ngcan                    X25-MIB                                  
 449      codex                    X25-OPT-MIB                              
 429      usr                      X25G-MIB                                 
 429      usr                      X25W-MIB                                 
