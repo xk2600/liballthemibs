@@ -1,0 +1,135 @@
+#!/bin/sh
+
+FIFO=./.master.fifo
+LOG=./.ripmibs.log
+MIBINDEX=snmp/MIB-INDEX
+MIBLIBRARY=snmp/mibs
+MIBLIBRARY=submitted
+
+# fix linuxism
+if [ "`uname -s`" == "Linux" ] ; then
+  fetch () {
+    wget "$@"
+  }
+fi
+
+readmibs () {
+  LAST=`pwd`
+  cd $MIBLIBRARY
+  grep 'enterprise[s ]*[0-9][0-9]*' * \
+    | tr "\t" ' ' | grep 'OBJECT IDENTIFIER' \
+    | sed -e 's/  */ /g' \
+          -e 's/ OBJECT IDENTIFIER[:={ ]*enterprise[s ]*/ /g' \
+          -e 's/[ ]*}//g'\
+    | tr ':' ' ' \
+    | tr "\r" ' ' \
+    | sed -e 's/--//g' \
+          -e 's/  */ /g' 
+  cd $LAST
+}
+
+# generate TNM Enterprise index MIB files based on enterprise-numbers index
+#    -- .iso(1).org(3).dod(6).internet(1).private(4).enterprises(1)
+#
+generateIndex () {
+  ENTRIES=${READMIBS}
+  cat <<-TNM_ENTERPRISES_END
+	#!/bin/printf %s is not directly executable
+
+	# This file contains an index of enterprise label, MIB filename, and
+	# MIB Url associations for an IANA assigned enterprise child node
+	# located at .iso(1).org(3).dod(6).internet(1).private(4).enterprises(1)
+
+	# index  nodename                 mibFile                                  URL
+	TNM_ENTERPRISES_END
+
+  # insert an entry for each line from index
+  readmibs | while read MIBFILE ENTERPRISENAME ENTERPRISEINDEX; 
+    do
+      printf "%-8s %-24s %-40s %s\n" "$ENTERPRISEINDEX" "$ENTERPRISENAME" "$MIBFILE" "$URL"
+  done
+  echo EOF
+}
+
+writeIndex () {
+  generateIndex > $MIBINDEX
+}
+
+# retrieves a line under lock
+gets () {
+  while read "$@" ; do
+    printf "CHILD[${CHILD_ID}]: processing \"${OUTPUTFILE}\" from \"${URL}\"\n  '-> fetch --no-verify-peer -o \"$OUTPUTFILE\" \"$URL\"\n\n"
+    FETCH=`fetch -o "$OUTPUTFILE" "$URL"`
+    flock -x $LOG printf "%s\n" "$FETCH" 2>&1 | sed -E -e 's/^/CHILD\['${CHILD}'\]/g' >>$LOG
+  done
+}
+
+# when script is called as child process
+process () {
+  CHILD_ID="$1"
+  echo "CHILD[${CHILD_ID}]: started as PID: $$"
+  IFS=" "
+  while : ; do 
+    if [ ! -p "$FIFO" ] ; then
+      "CHILD[${CHILD_ID}]: fifo $FIFO does not exist."
+    fi
+    flock $FIFO.lock head -n 1 $FIFO | gets OUTPUTFILE URL
+  done
+  echo "CHILD[${CHILD_ID}]: Complete. PID: $$ exiting."
+}
+
+# parent processor
+dispatch () {
+  if [ -f $FIFO ]; then
+    echo "MASTER: Cleaning up old $FIFO"
+    rm -f $FIFO
+  fi
+  echo "MASTER: Creating $FIFO"
+  mkfifo $FIFO
+
+  for process in 1 2 3 4 5 6 7 8; do
+    echo "MASTER: Spawning CHILD[${process}]"
+    echo "   $0 process $process &"
+    $0 process $process &
+    CHLDFORK="$?"
+    PID="$!"
+    if [ $CHLDFORK != 0 ]; then 
+      echo "MASTER: failed to spawn CHILD[${process}]. Terminating."
+      exit 2
+    fi
+    if [ -z "$PIDS" ] ; then
+      PIDS="$PID"
+    else
+      PIDS="$PIDS $PID"
+    fi
+    setvar PIDIDX "PID${process}"
+    setvar "$PIDIDX" "$PID"
+    echo "MASTER: CHILD[${process}] spawned as ${PIDIDX}[${PID}]"
+  done
+
+  IFS="
+"
+  echo "MASTER: Beginning read loop."
+  while read WORK; do
+    flock -x $LOG echo "MASTER: dispatching $WORK => $FIFO" >>$LOG
+    echo $WORK >>$FIFO
+  done
+}
+
+# child execution
+if [ "$1" == "process" ]; then
+  CHILD="$2"
+  process "$2"
+  exit 0
+fi
+
+# parent execution
+if [ "$1" == "fetch" ]; then
+  fetch -o "https://raw.githubusercontent.com/xk2600/liballthemibs/main/$MIBINDEX" | dispatch.mib
+fi
+
+# index
+if [ "$1" == "index" ]; then
+  writeIndex
+fi
+
