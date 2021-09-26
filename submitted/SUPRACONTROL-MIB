@@ -1,0 +1,253 @@
+    --SME_msg: This MIB has been generated using a demo version of SimpleMibEditor.
+--
+--sc-MIB       module definition
+--
+
+SUPRACONTROL-MIB DEFINITIONS ::= BEGIN
+    IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
+    enterprises, Integer32, IpAddress
+        FROM SNMPv2-SMI
+    TEXTUAL-CONVENTION, DisplayString, DateAndTime,
+    MacAddress
+        FROM SNMPv2-TC
+    OBJECT-GROUP, NOTIFICATION-GROUP
+        FROM SNMPv2-CONF;
+
+    supracontrol-mib MODULE-IDENTITY
+        LAST-UPDATED        "201208110720Z"
+        ORGANIZATION        "Supranet"
+        CONTACT-INFO        "Supranet d.o.o.     
+                            Majstorska 5
+                            10000 Zagreb
+                            Croatia, EU
+                            www.supranet.hr"
+        DESCRIPTION         "Supracontrol management information base file."
+
+        REVISION            "200805010000Z"
+        --01 May 2008"
+        DESCRIPTION         "Supracontrol MIB beta version."
+        REVISION            "201208110726Z"
+        DESCRIPTION         "Working draf version."
+        REVISION            "201208160910Z"
+        DESCRIPTION         "Uklonjeni bespotrebni alarmi"
+        ::= { supracontrol 1 }
+
+    --MODULE-COMPLIANCE, OBJECT-GROUP,
+    --NOTIFICATION-GROUP                     FROM SNMPv2-CONF;
+    OperStatus ::= TEXTUAL-CONVENTION
+        STATUS              current
+        DESCRIPTION         "The operational status of the device entity."
+        SYNTAX              INTEGER {
+                                disconnected( 0 ),
+                                error( 1 ),
+                                normal( 2 )
+                            }
+
+    ErrorStatus ::= TEXTUAL-CONVENTION
+        STATUS              current
+        DESCRIPTION         "The error status of the device entity. If there
+                            are no error conditions reported for the entity,
+                            the status is normal. Otherwise, the status is
+                            reported as the severity value of the highest
+                            severity error condition that is not resolved
+                            for the entity."
+        SYNTAX              INTEGER {
+                                normal( 0 ),
+                                info( 1 ),
+                                warning( 2 ),
+                                error( 3 ),
+                                critical( 4 ),
+                                failure( 5 )
+                            }
+
+    BoolValue ::= TEXTUAL-CONVENTION
+        STATUS              current
+        DESCRIPTION         "A boolean value."
+        SYNTAX              INTEGER {
+                                no( 0 ),
+                                yes( 1 ),
+                                null( 2 )
+                            }
+
+
+
+    supranet OBJECT IDENTIFIER ::= { enterprises 1 }
+
+    supracontrol OBJECT IDENTIFIER ::= { supranet 100 }
+
+    supracontrolMibConformance OBJECT IDENTIFIER ::= { supracontrol-mib 1 }
+
+    supracontrolMibGroups OBJECT IDENTIFIER ::= { supracontrolMibConformance 1 }
+
+    supracontrolMibAllObjects OBJECT-GROUP
+        OBJECTS {           
+                        scTrapID,
+                        scTrapLabel,
+                        scTrapDeviceMac,
+                        scTrapDeviceIp,
+                        scTrapDeviceLocation,
+                        scTrapDeviceObject,
+                        scTrapDeviceFloor,
+                        scTrapDeviceRoom,
+                        scTrapRack,
+                        scTrapValue,
+                        scTrapNotifyTime,
+                        scTrapNote
+                }
+        STATUS              current
+        DESCRIPTION         "This automatically created object group contains
+                            all those objects that do not belong to any other
+                            OBJECT-GROUP"
+        ::= { supracontrolMibGroups 1 }
+
+    supracontrolMibAllNotifications NOTIFICATION-GROUP
+        NOTIFICATIONS       {
+                                scAlarm
+                            }
+        STATUS              current
+        DESCRIPTION         "This automatically created notification group
+                            contains all notifications that do not belong
+                            to any other NOTIFICATION-GROUP"
+        ::= { supracontrolMibGroups 2 }
+
+    scTraps OBJECT IDENTIFIER ::= { supracontrol 2 }
+
+    scAlarm NOTIFICATION-TYPE
+        OBJECTS {           
+                        scTrapLabel,
+                        scTrapDeviceMac,
+                        scTrapDeviceIp,
+                        scTrapDeviceLocation,
+                        scTrapDeviceObject,
+                        scTrapDeviceFloor,
+                        scTrapDeviceRoom,
+                        scTrapRack,
+                        scTrapValue,
+                        scTrapNotifyTime,
+                        scTrapNote
+                }
+        STATUS              current
+        DESCRIPTION         "Supracontrol enviorement and access alarms."
+        ::= { scTraps 1 }
+
+    scSystemAlarm NOTIFICATION-TYPE
+        OBJECTS {           
+                        scTrapLabel,
+                        scTrapDeviceMac,
+                        scTrapDeviceIp,
+                        scTrapDeviceLocation,
+                        scTrapDeviceObject,
+                        scTrapDeviceFloor,
+                        scTrapDeviceRoom,
+                        scTrapRack,
+                        scTrapNotifyTime,
+                        scTrapNote
+                }
+        STATUS              current
+        DESCRIPTION         "Supracontrol system alarms."
+        ::= { scTraps 2 }
+
+    scTrapParms OBJECT IDENTIFIER ::= { supracontrol 3 }
+
+    --Alert specific definitions
+    --
+    scTrapID OBJECT-TYPE
+        SYNTAX              Integer32
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "Unique ID of error condition that produced the
+                            trap"
+        ::= { scTrapParms 1 }
+
+    scTrapLabel OBJECT-TYPE
+        SYNTAX              DisplayString
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "Notification label."
+        ::= { scTrapParms 2 }
+
+    scTrapDeviceMac OBJECT-TYPE
+        SYNTAX              MacAddress
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "Device MAC"
+        ::= { scTrapParms 3 }
+
+    scTrapDeviceIp OBJECT-TYPE
+        SYNTAX              IpAddress
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "Device IP"
+        ::= { scTrapParms 4 }
+
+    scTrapDeviceLocation OBJECT-TYPE
+        SYNTAX              DisplayString (SIZE(0..127))
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "Device location"
+        ::= { scTrapParms 5 }
+
+    scTrapDeviceObject OBJECT-TYPE
+        SYNTAX              DisplayString (SIZE(0..127))
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "Device object"
+        ::= { scTrapParms 6 }
+
+    scTrapDeviceFloor OBJECT-TYPE
+        SYNTAX              DisplayString (SIZE(0..127))
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "Device floor."
+        ::= { scTrapParms 7 }
+
+    scTrapDeviceRoom OBJECT-TYPE
+        SYNTAX              DisplayString (SIZE(0..127))
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "Device room."
+        ::= { scTrapParms 8 }
+
+    scTrapRack OBJECT-TYPE
+        SYNTAX              DisplayString (SIZE(0..127))
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "Alarmed rack."
+        ::= { scTrapParms 9 }
+
+    scTrapValue OBJECT-TYPE
+        SYNTAX              DisplayString
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "String presentation of value of sensor"
+        ::= { scTrapParms 10 }
+
+    scTrapNotifyTime OBJECT-TYPE
+        SYNTAX              DateAndTime
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "Notification time (in UTC seconds) for error that
+                            produced the trap"
+        ::= { scTrapParms 11 }
+
+    scTrapNote OBJECT-TYPE
+        SYNTAX              DisplayString
+        MAX-ACCESS          read-only
+        STATUS              current
+        DESCRIPTION         "Sensor note."
+        ::= { scTrapParms 12 }
+
+    scAlarms NOTIFICATION-GROUP
+        NOTIFICATIONS       {
+                                scAlarm,
+                                scSystemAlarm
+                            }
+        STATUS              current
+        DESCRIPTION         "Supracontrol alarms."
+        ::= { supracontrol 4 }
+
+
+END
+
+--SME_msg: Possibly incomplete MIB, generated using demo version of SimpleMibEditor.

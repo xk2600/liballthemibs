@@ -1,0 +1,1996 @@
+DOCS-EQAM-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY,
+    OBJECT-TYPE,
+    NOTIFICATION-TYPE,
+    Unsigned32,
+    Counter32,
+    Counter64
+                       FROM SNMPv2-SMI
+    OBJECT-GROUP,
+    MODULE-COMPLIANCE
+                       FROM SNMPv2-CONF
+    SnmpAdminString
+                       FROM SNMP-FRAMEWORK-MIB
+    TruthValue,
+    DateAndTime,
+    RowStatus
+                       FROM SNMPv2-TC
+    InetAddressType,
+    InetAddress,
+    InetPortNumber
+                       FROM INET-ADDRESS-MIB
+    InterfaceIndex
+                       FROM IF-MIB
+    TenthdBmV
+                       FROM DOCS-IF-MIB
+    docsDevEvLevel,
+    docsDevEvId,
+    docsDevEvText      FROM DOCS-CABLE-DEVICE-MIB
+
+    sysName            FROM SNMPv2-MIB
+
+    HePIDValue, 
+    QAMChannelInterleaveMode,
+    QAMChannelModulationFormat
+                       FROM SCTE-HMS-HEADENDIDENT-TC-MIB
+    clabProjDocsis
+                       FROM CLAB-DEF-MIB;
+
+
+docsEqamMib MODULE-IDENTITY
+LAST-UPDATED "200812090000Z" -- December 09, 2008
+    ORGANIZATION "Cable Television Laboratories, Inc."
+    CONTACT-INFO
+            "Broadband Network Services
+             Cable Television Laboratories, Inc.
+             858 Coal Creek Circle,
+             Louisville, CO 80027, USA
+             Phone: +1 303-661-9100
+             Email: mibs@cablelabs.com"
+     DESCRIPTION
+            "This MIB module contains the EQAM
+             management requirements."
+     REVISION "200812090000Z" -- Dec 09, 2008
+     DESCRIPTION
+             "Initial version, published as part of the CableLabs
+             Edge QAM Provisioning and Management Interface
+             Specification CM-SP-EQAM-PMI-I01-081209
+             Copyright 1999-2008 Cable Television Laboratories, Inc.
+             All rights reserved."
+    ::= { clabProjDocsis 24 }
+	
+-- Textual Conventions
+
+-- Object Definitions
+docsEqamNotifications OBJECT IDENTIFIER ::= { docsEqamMib 0 }
+
+
+docsEqamNotificationObjects OBJECT IDENTIFIER ::= { docsEqamNotifications 1 }
+
+docsEqamNotifyMgmtInetAddressType    OBJECT-TYPE
+    SYNTAX      InetAddressType
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the address type of the EQAM management IP address."
+    ::= {docsEqamNotificationObjects 1 }
+
+docsEqamNotifyMgmtInetAddress    OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the EQAM management IP address, or the FQDN if DNS is supported ."
+    ::= {docsEqamNotificationObjects 2 }
+
+docsEqamNotify    NOTIFICATION-TYPE
+    OBJECTS {
+        docsDevEvLevel,
+        docsDevEvId,
+        docsDevEvText,
+        sysName,
+        docsEqamNotifyMgmtInetAddressType,
+        docsEqamNotifyMgmtInetAddress
+    }
+    STATUS current
+    DESCRIPTION
+        "This object corresponds to a generic notification used by the EQAM to
+        send events.
+
+         This notification sends additional information about
+         the as follows.
+         - docsDevEvLevel
+           This attribute represents the event level of the event.
+           Reference: docsDevEvLevel from DOCS-CABLE-DEVICE-MIB.
+
+         - docsDevEvId
+           This attribute represents the event id of the event.
+           Reference: docsDevEvId from DOCS-CABLE-DEVICE-MIB.
+
+         - docsDevEvText
+           This attribute represents the event text of the event.
+           Reference: docsDevEvText from DOCS-CABLE-DEVICE-MIB.
+
+         - docsEqamNotifyMgmtInetAddressType.
+           See definition within this MIB Module
+
+         - docsEqamNotifyMgmtInetAddress
+           See definition within this MIB Module"
+    ::= { docsEqamNotifications 2 }
+
+docsEqamObjects OBJECT IDENTIFIER ::= { docsEqamMib 1 }
+
+docsEqamControl    OBJECT IDENTIFIER ::= { docsEqamObjects 1 }
+
+docsEqamControlReset    OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute controls the administrative reset of the EQAM device. 
+        If set to 'true' the EQAM is reinitialized. This attribute always report the value 'reset'.
+When the EQAM is instructed to reset itself, it MUST execute the following sequence of events:
+- Gracefully tear down all sessions if any, i.e., send a session status update to the ERM that will trigger a teardown for each active session to the SRM/ERM.
+- Shut down all processes/tasks.
+- Restart."
+    DEFVAL { false }
+    ::= {docsEqamControl 1 }
+
+docsEqamControlInitCause    OBJECT-TYPE
+    SYNTAX      INTEGER 
+                { nms(1),
+                  none(2),
+                  unknown(3)
+                }
+    MAX-ACCESS  read-only
+					
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the reason for the last reinitialization."
+    DEFVAL { none }
+    ::= {docsEqamControl 2 }
+
+docsEqamControlSaveCfg    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute provides a mechanism to save the current EQAM configuration in the EQAM file system. A set to a non-zero length string representing a valid local file name, the current running configuration us saved into the file name specified.
+File names including directory paths are optional."
+    DEFVAL { "" }
+    ::= {docsEqamControl 3 }
+
+docsEqamControlUploadCfg    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute provides a mechanism to upload the EQAM config file to the configuration server. When set to a URI, the EQAM performs an upload of the current config file being used. TFTP URL is a required URI type. Other URI types maybe supported by the EQAM."
+    DEFVAL { "" }
+    ::= {docsEqamControl 4 }
+
+docsEqamTime    OBJECT IDENTIFIER ::= { docsEqamObjects 2 }
+
+docsEqamTimeNtpMaster    OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the Master NTP server. This element is not required in case ToD is acquired via DHCP.
+If DHCP options for ToD are provided and this element is present, the EQAM selects this element."
+    DEFVAL {''H }
+    ::= {docsEqamTime 1 }
+
+docsEqamTimeNtpBackup    OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the backup NTP Server in case the master NTP fails."
+    DEFVAL {''H }
+    ::= {docsEqamTime 2 }
+
+docsEqamTimeTimeZone    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the offset value to the local time to arrive at UTC Time. The value has the following format: hh[:mm]
+The hour (0 <= hh <= 24) is required,
+minutes (0 < mm <= 59)
+The mm (minutes) is optional.
+The hour can be preceded by a minus sign (-)."
+    DEFVAL { '00'H }
+    ::= {docsEqamTime 3 }
+
+docsEqamTimeDaylightSaving    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates when to change to and from daylight saving (or summer) time.
+The value has the form:
+date1/time1,date2/time2,offset
+
+The first date describes when the change from standard to daylight saving time occurs, and the second date describes when the change back happens. Each time field describes when, in current local time, the change to the other time is made.
+
+The format of date is the following:
+m.w.d
+The dth day (0 &lt;= d &lt;= 6) of week w of month m of the year (1 &lt;= w &lt;= 5, 1 &lt;= m &lt;= 12, where week 5 means 'the last d day in month m', which may occur in the fourth or fifth week). Week 1 is the first week in which the dth day occurs. Day zero is Sunday.
+The time format is the following: hh:mm
+The offset value is the value you must add to the local time to arrive at UTC Time during the daylight saving time. The offset value has the following format: hh[:mm]."
+    DEFVAL { "" } 
+    ::= {docsEqamTime 4 }
+
+docsEqamSyslogServerTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamSyslogServerEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represents the syslog server's configuration."
+    ::= { docsEqamObjects 3 }
+
+docsEqamSyslogServerEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamSyslogServerEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamSyslogServerTable"
+    INDEX {
+            docsEqamSyslogServerIndex
+          }
+    ::= { docsEqamSyslogServerTable 1 }
+
+DocsEqamSyslogServerEntry ::= SEQUENCE {
+    docsEqamSyslogServerIndex
+                 Unsigned32,
+    docsEqamSyslogServerInetAddressType
+                 InetAddressType,
+    docsEqamSyslogServerInetAddress
+                 InetAddress,
+    docsEqamSyslogServerEnabled
+                 TruthValue,
+    docsEqamSyslogRowStatus
+                 RowStatus             
+      }
+
+docsEqamSyslogServerIndex    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This key represents the unique identifier of an instance in this object."
+    ::= {docsEqamSyslogServerEntry 1 }
+
+docsEqamSyslogServerInetAddressType    OBJECT-TYPE
+    SYNTAX      InetAddressType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the address type of the syslog server IP address. 'dns' support is optional."
+    DEFVAL { unknown }
+    ::= {docsEqamSyslogServerEntry 2 }
+
+docsEqamSyslogServerInetAddress    OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the IP address of the syslog server. If DNS is supported, this attribute can contain the FQDN of  the syslog server."
+    DEFVAL {''H }
+    ::= {docsEqamSyslogServerEntry 3 }
+
+docsEqamSyslogServerEnabled    OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "Indicates if the syslog server is user for sending syslog messages or is disabled."
+    DEFVAL { false }
+    ::= {docsEqamSyslogServerEntry 4 }
+
+docsEqamSyslogRowStatus OBJECT-TYPE
+     SYNTAX      RowStatus
+     MAX-ACCESS  read-create
+     STATUS      current
+     DESCRIPTION
+        "The status of this instance."
+     ::= { docsEqamSyslogServerEntry 5 }
+     
+docsEqamRegistrationTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamRegistrationEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represents the configuration of the ERRP protocol."
+    ::= { docsEqamObjects 4 }
+
+docsEqamRegistrationEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamRegistrationEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamRegistrationTable"
+    INDEX {
+            docsEqamRegistrationErmName
+          }
+    ::= {docsEqamRegistrationTable 1 }
+
+DocsEqamRegistrationEntry ::= SEQUENCE {
+    docsEqamRegistrationErmName
+                 SnmpAdminString,
+    docsEqamRegistrationErmAddressType
+                 InetAddressType,
+    docsEqamRegistrationErmAddress
+                 InetAddress,
+    docsEqamRegistrationErmPort
+                 InetPortNumber,
+    docsEqamRegistrationErmConnectionType
+                 INTEGER,
+    docsEqamRegistrationHoldTimer
+                 Unsigned32,
+    docsEqamRegistrationConnRetryTimer
+                 Unsigned32,
+    docsEqamRegistrationNexthopAddressDomain
+                 Unsigned32,
+    docsEqamRegistrationCompAddress
+                 SnmpAdminString,
+    docsEqamRegistrationStreamingZone
+                 SnmpAdminString,
+    docsEqamRegistrationId
+                 Unsigned32,
+    docsEqamRegistrationCost
+                 Unsigned32,
+    docsEqamRegistrationCompName
+                 SnmpAdminString,
+    docsEqamRegistrationRowStatus
+                 RowStatus                 
+      }
+
+docsEqamRegistrationErmName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This key represents the name of the ERM related to this registration instance. This is an internal reference for associating e.g. QAM channels and input interfaces to an ERM."
+    ::= {docsEqamRegistrationEntry 1 }
+
+docsEqamRegistrationErmAddressType    OBJECT-TYPE
+    SYNTAX      InetAddressType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the InetAddress of the ERM."
+    DEFVAL  { unknown }
+    ::= {docsEqamRegistrationEntry 2 }
+
+docsEqamRegistrationErmAddress    OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the IP Address of the ERM"
+    DEFVAL { ''H }
+    ::= {docsEqamRegistrationEntry 3 }
+
+docsEqamRegistrationErmPort    OBJECT-TYPE
+    SYNTAX      InetPortNumber
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the TCP port number used to reach the ERM."
+    DEFVAL { 0 }
+    ::= {docsEqamRegistrationEntry 4 }
+
+docsEqamRegistrationErmConnectionType    OBJECT-TYPE
+    SYNTAX      INTEGER
+                { 
+                 client(1),
+                 server(2),
+                 clientAndServer(3)
+                }
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the type of TCP connection that must be supported by the EQAM. The value can be one of the following:
+
+'client' indicates that the EQAM has to initiate the TCP connection with the ERM.
+
+'server' indicates that the EQAM has to wait the TCP connection from the ERM.
+
+'clientAndServer' indicates that both EQAM or either EQAM or ERM can initiate the TCP connection.
+"
+    DEFVAL { client }
+    ::= {docsEqamRegistrationEntry 5 }
+
+docsEqamRegistrationHoldTimer    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "seconds"
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the number of seconds that the sender proposes for the value of the hold timer.
+
+Upon receipt of an OPEN message, the EQAM MUST calculate the value of the Hold Timer by using the smaller of its configured Hold Time and the Hold Time received in the OPEN message.
+
+The Hold Time MUST be either zero or at least three seconds. An implementation MAY reject connections on the basis of the Hold Time. The calculated value indicates the maximum number of seconds that may elapse between the receipt of successive KEEPALIVE and/or UPDATE messages by the sender."
+    DEFVAL { 3 }
+    ::= {docsEqamRegistrationEntry 6 }
+
+docsEqamRegistrationConnRetryTimer    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "seconds"
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the time in seconds for the connect retry timer. The exact value of the connect retry timer is a local matter, but should be sufficiently large to allow TCP initialization."
+    DEFVAL { 20 }
+    ::= {docsEqamRegistrationEntry 7 }
+
+docsEqamRegistrationNexthopAddressDomain    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the address domain number of the next-hop server. The NextHopServer specifies the address to which a manager should use to connect to the component in order to control the resource specified in the reachable route. This parameter is used in the ERRP NextHopServer attribute."
+    DEFVAL { 0 }
+    ::= {docsEqamRegistrationEntry 8 }
+
+docsEqamRegistrationCompAddress    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the ERRP NextHopServer attribute.  This field contains a string that conforms to the following syntax:
+
+CompAddress = host[:port]
+
+host  = An FQDN, or an IPv4 address using the textual representation defined in Section 2.1 of [RFC1123], or an IPv6 address using the textual representation defined in Section 2.2 of [RFC4291] and enclosed in '[' and ']' characters.
+port = numerical value (1-65535). If the port is empty or not given, the default port 6069 is assumed.
+"
+    DEFVAL { "" }
+    ::= {docsEqamRegistrationEntry 9 }
+
+docsEqamRegistrationStreamingZone    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the Streaming Zone within which the component operates.
+This parameter is used in the ERRP OPEN message. StreamingZone Name is a mandatory parameter when supporting video applications.  The capability is optional when signaling DOCSIS only resources. The value is to be set to the string that represents the StreamingZone Name i.e. &lt;region&gt;.
+
+The characters comprising the string are in the set within TEXT defined in section 15.1 of [RFC2326].  Implementations must support minimum string lengths of 64; however the composition of the string used is defined by implementation agreements specified by the service provider."
+    DEFVAL {"" }
+    ::= {docsEqamRegistrationEntry 10 }
+
+docsEqamRegistrationId    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the unique identifier for the EQAM device within its Streaming Zone. This value may be set to  the 4-octet value of an IPv4 address assigned to that device. This ID value is determined on startup and must be the same for all peer connections. This parameter is used in the ERRP OPEN message header."
+    DEFVAL { 0 }
+    ::= {docsEqamRegistrationEntry 11 }
+
+docsEqamRegistrationCost    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the static cost for use of this resource."
+    DEFVAL { 0 }
+    ::= {docsEqamRegistrationEntry 12 }
+
+docsEqamRegistrationCompName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "The name of the component for which the data in the update message applies. This parameter is used in the ERRP OPEN message.
+
+Component Name is a mandatory parameter when supporting video applications. The capability is optional when signaling DOCSIS only resources.  The value is to be set to the string that represents the Component Name i.e. &lt;region&gt;.&lt;localname&gt;
+The characters comprising the string are in the set within TEXT defined in section 15.1 of [RFC2326].  Implementations must support minimum string lengths of 64; however the composition of the string used is defined by implementation agreements specified by the service provider.
+"
+    DEFVAL { "" }
+    ::= {docsEqamRegistrationEntry 13 }
+
+docsEqamRegistrationRowStatus OBJECT-TYPE
+     SYNTAX      RowStatus
+     MAX-ACCESS  read-create
+     STATUS      current
+     DESCRIPTION
+        "The status of this instance."
+     ::= { docsEqamRegistrationEntry 14 }
+
+docsEqamTSInputCfg    OBJECT IDENTIFIER ::= { docsEqamObjects 5 }
+
+docsEqamTSInputCfgUnicastSessionLossTimeout    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the loss of signal timeout  in milliseconds for unicast input streams. See SCTE-154-4 mpegLossOfSignalTimeout."
+    DEFVAL { 40 }
+    ::= {docsEqamTSInputCfg 1 }
+
+docsEqamTSInputCfgMulticastSessionLossTimeout    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the loss of signal timeout in milliseconds for the multicast input streams."
+    DEFVAL { 40 }
+    ::= {docsEqamTSInputCfg 2 }
+
+docsEqamTSInputCfgJitterTolerance    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "milliseconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the acceptable delay variation in millisecond for incoming streams. The jitter option sets the size of a dejittering buffer that absorbs the input jitter of a session."
+    DEFVAL { 40 }
+    ::= {docsEqamTSInputCfg 3 }
+
+docsEqamTSOutputCfg    OBJECT IDENTIFIER ::= { docsEqamObjects 6 }
+docsEqamTSOutputCfgCatInsertRate    OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..32)
+    UNITS       "tables/second"
+    MAX-ACCESS  read-write
+					
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the CAT insertion rate expressed in tables/second (See SCTE-154-4  mpegOutputTSCatInsertRate)."
+    DEFVAL { 10 }
+    ::= {docsEqamTSOutputCfg 1 }
+
+docsEqamTSOutputCfgPatInsertRate    OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..32)
+    UNITS       "tables/second"
+    MAX-ACCESS  read-write
+					
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the PAT table interval expressed in tables/second (See SCTe-154-4  mpegOutputTSPatInsertRate)."
+    DEFVAL { 10 }
+    ::= {docsEqamTSOutputCfg 2 }
+
+docsEqamTSOutputCfgPmtInsertRate    OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..32)
+    UNITS       "tables/second"
+    MAX-ACCESS  read-write
+					
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the PMT table interval expressed in tables/second (See SCTE-154-4 mpegOutputTSPatInsertRate)."
+    DEFVAL { 10 }
+    ::= {docsEqamTSOutputCfg 3 }
+
+docsEqamReservedUdpMapTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamReservedUdpMapEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represents reserved ports to be used for non-video applications. "
+    ::= { docsEqamObjects 7 }
+
+docsEqamReservedUdpMapEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamReservedUdpMapEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamReservedUdpMapTable"
+    INDEX {
+            docsEqamReservedUdpMapIndex
+          }
+    ::= {docsEqamReservedUdpMapTable 1 }
+
+DocsEqamReservedUdpMapEntry ::= SEQUENCE {
+    docsEqamReservedUdpMapIndex
+                 Unsigned32,
+    docsEqamReservedUdpMapStartingPort
+                 Unsigned32,
+    docsEqamReservedUdpMapCount
+                 Unsigned32,
+    docsEqamReservedUdpMapRowStatus
+                 RowStatus
+      }
+
+docsEqamReservedUdpMapIndex    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This key represents the unique identifier of an instance in this object."
+    ::= {docsEqamReservedUdpMapEntry 1 }
+
+docsEqamReservedUdpMapStartingPort    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the port range start value for non-video applications reserved UDP ports. "
+    DEFVAL { 0 }
+    ::= {docsEqamReservedUdpMapEntry 2 }
+
+docsEqamReservedUdpMapCount    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the number of reserved UDP ports starting from 'StartingPort' attribute value."
+    DEFVAL { 0 }
+    ::= {docsEqamReservedUdpMapEntry 3 }
+
+docsEqamReservedUdpMapRowStatus OBJECT-TYPE
+     SYNTAX      RowStatus
+     MAX-ACCESS  read-create
+     STATUS      current
+     DESCRIPTION
+        "The status of this instance."
+     ::= { docsEqamReservedUdpMapEntry 4 }
+     
+docsEqamReservedPidRangeTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamReservedPidRangeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represents reserved PID range to not be used on ERM assignments. "
+    ::= { docsEqamObjects 8 }
+
+docsEqamReservedPidRangeEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamReservedPidRangeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamReservedPidRangeTable"
+    INDEX {
+            docsEqamReservedPidRangeIndex
+          }
+    ::= {docsEqamReservedPidRangeTable 1 }
+
+DocsEqamReservedPidRangeEntry ::= SEQUENCE {
+    docsEqamReservedPidRangeIndex
+                 Unsigned32,
+    docsEqamReservedPidRangeStartingPid
+                 HePIDValue,
+    docsEqamReservedPidRangeCount
+                 Unsigned32,
+    docsEqamReservedPidRangeDescription
+                 SnmpAdminString,
+    docsEqamReservedPidRangeRowStatus
+                 RowStatus
+      }
+
+docsEqamReservedPidRangeIndex    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This key represents the unique identifier of an instance in this object."
+    ::= {docsEqamReservedPidRangeEntry 1 }
+
+docsEqamReservedPidRangeStartingPid    OBJECT-TYPE
+    SYNTAX      HePIDValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the PID range starts  for other applications reserved PIDs."
+    DEFVAL { 0 }
+    ::= {docsEqamReservedPidRangeEntry 2 }
+
+docsEqamReservedPidRangeCount    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the number of reserved PIDs starting from 'StartingPid' attribute value."
+    DEFVAL { 0 }
+    ::= {docsEqamReservedPidRangeEntry 3 }
+
+docsEqamReservedPidRangeDescription    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the description associated with a PID range configured instance."
+    DEFVAL { "" }
+    ::= {docsEqamReservedPidRangeEntry 4 }
+    
+docsEqamReservedPidRangeRowStatus OBJECT-TYPE
+     SYNTAX      RowStatus
+     MAX-ACCESS  read-create
+     STATUS      current
+     DESCRIPTION
+        "The status of this instance."
+     ::= { docsEqamReservedPidRangeEntry 5 }    
+
+docsEqamDEPICfg    OBJECT IDENTIFIER ::= { docsEqamObjects 9 }
+docsEqamDEPICfgDepiSessionLossTO    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "seconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the Timeout in seconds the EQAM waits after  a QAM channel session is terminated to advertize the QAM channel as idle to the ERM.
+This attribute is only meaningful for dynamic DEPI session allocation, not for static sessions. "
+    DEFVAL { 0 }
+    ::= {docsEqamDEPICfg 1 }
+
+docsEqamEdgeInputTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamEdgeInputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represents the configuration of Input Edge parameters."
+    ::= { docsEqamObjects 10 }
+
+docsEqamEdgeInputEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamEdgeInputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamEdgeInputTable"
+    INDEX {
+            docsEqamEdgeInputName
+          }
+    ::= {docsEqamEdgeInputTable 1 }
+
+DocsEqamEdgeInputEntry ::= SEQUENCE {
+    docsEqamEdgeInputName
+                 SnmpAdminString,
+    docsEqamEdgeInputInetAddressType
+                 InetAddressType,
+    docsEqamEdgeInputInetAddress
+                 InetAddress,
+    docsEqamEdgeInputRowStatus
+                 RowStatus                 
+      }
+
+docsEqamEdgeInputName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This key represents the Input interface name. This name corresponds to the RFC4133, ENTITY-MIB entPhysicalName."
+    ::= {docsEqamEdgeInputEntry 1 }
+
+docsEqamEdgeInputInetAddressType    OBJECT-TYPE
+    SYNTAX      InetAddressType
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the IP address type of the 'IpAddress' attribute."
+    DEFVAL { unknown }
+    ::= {docsEqamEdgeInputEntry 2 }
+
+docsEqamEdgeInputInetAddress    OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the IP address of the Edge interface. If not included, the EQAM should use DHCP to acquire the IP address of the Edge input interface."
+    DEFVAL { ''H }
+    ::= { docsEqamEdgeInputEntry 3 }
+
+docsEqamEdgeInputRowStatus OBJECT-TYPE
+     SYNTAX      RowStatus
+     MAX-ACCESS  read-create
+     STATUS      current
+     DESCRIPTION
+        "The status of this instance."
+     ::= { docsEqamEdgeInputEntry 4 }    
+
+docsEqamInputRegistrationTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamInputRegistrationEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represents the configuration of Edge ERRP parameters."
+    ::= { docsEqamObjects 11 }
+
+docsEqamInputRegistrationEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamInputRegistrationEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamInputRegistrationTable"
+    INDEX {
+            docsEqamEdgeInputName
+          }
+    ::= {docsEqamInputRegistrationTable 1 }
+
+DocsEqamInputRegistrationEntry ::= SEQUENCE {
+    docsEqamInputRegistrationGroupName
+                 SnmpAdminString,
+    docsEqamInputRegistrationBandwidth
+                 Unsigned32,
+    docsEqamInputRegistrationErmName
+                 SnmpAdminString,
+    docsEqamInputRegistrationRowStatus
+                 RowStatus
+      }
+
+docsEqamInputRegistrationGroupName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the name of the Edge Input Group associated with this input.  This parameter is used in the ERRP Edge Input attribute."
+    DEFVAL { "" }
+    ::= {docsEqamInputRegistrationEntry 1 }
+
+docsEqamInputRegistrationBandwidth    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the bandwidth of the edge input to be advertized. If zero or not present, the EQAM advertize the full bandwidth  of the edge input."
+    DEFVAL { 0 }
+    ::= {docsEqamInputRegistrationEntry 2 }
+
+docsEqamInputRegistrationErmName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the ERM where the QAM channel is advertised. If empty, the QAM channel is not advertized. "
+    DEFVAL { "" }
+    ::= {docsEqamInputRegistrationEntry 3 }
+
+docsEqamInputRegistrationRowStatus OBJECT-TYPE
+     SYNTAX      RowStatus
+     MAX-ACCESS  read-create
+     STATUS      current
+     DESCRIPTION
+        "The status of this instance."
+     ::= { docsEqamInputRegistrationEntry 4 }
+     
+docsEqamRFPortTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamRFPortEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represents the configuration of RF ports.
+The parameters configured in a RF port applies to all the QAM channels within the RF Port, unless explicit EQAM configuration is defined"
+    ::= { docsEqamObjects 12 }
+
+docsEqamRFPortEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamRFPortEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamRFPortTable"
+    INDEX {
+            docsEqamRFPortName
+          }
+    ::= {docsEqamRFPortTable 1 }
+
+DocsEqamRFPortEntry ::= SEQUENCE {
+    docsEqamRFPortName
+                 SnmpAdminString,
+    docsEqamRFPortAdminStatus
+                 INTEGER,
+    docsEqamRFPortPower
+                 TenthdBmV,
+    docsEqamRFPortFrequency
+                 Unsigned32,
+    docsEqamRFPortModulation
+                 QAMChannelModulationFormat,
+    docsEqamRFPortInterleaverMode
+                 QAMChannelInterleaveMode,
+    docsEqamRFPortInterleaveLevel
+                 INTEGER,
+    docsEqamRFPortAnnex
+                 INTEGER,
+    docsEqamRFPortSpectrumInversion
+                 TruthValue,
+    docsEqamRFPortLockParameters
+                 BITS,
+    docsEqamRFPortcfgNumberChannels
+                 Unsigned32,
+    docsEqamRFPortNumberChannels
+                 Unsigned32,
+    docsEqamRFPortRowStatus
+                 RowStatus
+      }
+
+docsEqamRFPortName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This key represents the RF port identifier. It corresponds to RFC4133, ENTITY-MIB entPhysicalName."
+    ::= {docsEqamRFPortEntry 1 }
+
+docsEqamRFPortAdminStatus    OBJECT-TYPE
+    SYNTAX      INTEGER
+                {
+                 enabled(1),
+                 disabled(2)
+                }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the administrative state of the RF Port. Setting this element to 'disable' results in the RF port being muted. By default this element reports 'disabled'."
+    DEFVAL { enabled }
+    ::= {docsEqamRFPortEntry 2 }
+
+docsEqamRFPortPower    OBJECT-TYPE
+    SYNTAX      TenthdBmV
+    UNITS       "TenthdBmV"
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the power level for the QAM channels in the containment level."
+    DEFVAL { 0 }
+    ::= {docsEqamRFPortEntry 3 }
+
+docsEqamRFPortFrequency    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "Hertz"
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION 
+        "This attribute represents the first carrier of the configured carriers within the RF port."
+    DEFVAL { 0 }
+    ::= {docsEqamRFPortEntry 4 }
+
+docsEqamRFPortModulation    OBJECT-TYPE
+    SYNTAX      QAMChannelModulationFormat
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the Modulation type for the QAM channels in the containment level."
+    DEFVAL {qam256 }
+    ::= {docsEqamRFPortEntry 5 }
+
+docsEqamRFPortInterleaverMode    OBJECT-TYPE
+    SYNTAX      QAMChannelInterleaveMode
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the Interleave mode for the QAM channels in the containment level."
+    DEFVAL {unknown }
+    ::= {docsEqamRFPortEntry 6 }
+
+docsEqamRFPortInterleaveLevel    OBJECT-TYPE
+    SYNTAX      INTEGER 
+                {
+                 level1(1),
+                 level(2)
+                }
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the interleaver level for FEC coding for the QAM channels in the containment level."
+    DEFVAL { level1 }
+    ::= {docsEqamRFPortEntry 7 }
+
+docsEqamRFPortAnnex    OBJECT-TYPE
+    SYNTAX      INTEGER
+                {
+                 unknown(1),
+                 other(2),
+                 annexA(3),
+                 annexB(4),
+                 annexC(5)
+                }
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the ITU J.83 Annex mode for the QAM channels in the containment level."
+    DEFVAL { annexB }
+    ::= {docsEqamRFPortEntry 8 }
+
+docsEqamRFPortSpectrumInversion    OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the QAM Signal Spectrum inversion. A value 'true' indicates channel spectrum is inverted."
+    DEFVAL { false }
+    ::= {docsEqamRFPortEntry 9 }
+
+docsEqamRFPortLockParameters    OBJECT-TYPE
+    SYNTAX      BITS
+                {
+                 frequency(0),
+                 bandwidth(1),
+                 power(2),
+                 modulation(3),
+                 interleaver(4),
+                 j83Annex(5),
+                 symbolRate(6),
+                 mute(7)
+                }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the PHY parameters Lock state of the QAM channels n the RF Port containment level for DEPI initiated PHY parameters updates. This parameter is only required for M-CMTS QAMs."
+    DEFVAL { ''H }
+    ::= {docsEqamRFPortEntry 10 }
+
+docsEqamRFPortcfgNumberChannels    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the number of QAM channels to configure in the channel block.
+        By default all the channels in the RF port are condigured."
+    ::= {docsEqamRFPortEntry 11 }
+
+docsEqamRFPortNumberChannels    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "channels"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the total number of QAM channels within the RF."
+    ::= {docsEqamRFPortEntry 13 }
+
+docsEqamRFPortRowStatus OBJECT-TYPE
+     SYNTAX      RowStatus
+     MAX-ACCESS  read-create
+     STATUS      current
+     DESCRIPTION
+        "The status of this instance."
+     ::= { docsEqamRFPortEntry 14 } 
+     
+docsEqamFiberNodeTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamFiberNodeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represents the list of Fiber Nodes the RF port reaches."
+    ::= { docsEqamObjects 13 }
+
+docsEqamFiberNodeEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamFiberNodeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamFiberNodeTable"
+    INDEX {
+            docsEqamRFPortName
+          }
+    ::= {docsEqamFiberNodeTable 1 }
+
+DocsEqamFiberNodeEntry ::= SEQUENCE {
+    docsEqamFiberNodeName
+                 SnmpAdminString,
+    docsEqamFiberNodeRowStatus
+                 RowStatus
+      }
+
+docsEqamFiberNodeName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the Fiber Node Name associated with the RF Port"
+    DEFVAL { "" }
+    ::= {docsEqamFiberNodeEntry 1 }
+
+docsEqamFiberNodeRowStatus OBJECT-TYPE
+     SYNTAX      RowStatus
+     MAX-ACCESS  read-create
+     STATUS      current
+     DESCRIPTION
+        "The status of this instance."
+     ::= { docsEqamFiberNodeEntry 2 }
+     
+docsEqamChannelTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamChannelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represents the configuration of QAM channels."
+    ::= { docsEqamObjects 14 }
+
+docsEqamChannelEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamChannelEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamChannelTable"
+    INDEX {
+            docsEqamChannelPhysName
+          }
+    ::= {docsEqamChannelTable 1 }
+
+DocsEqamChannelEntry ::= SEQUENCE {
+    docsEqamChannelPhysName
+                 SnmpAdminString,
+    docsEqamChannelRFPortPhysName
+                 SnmpAdminString,
+    docsEqamChannelAdminStatus
+                 INTEGER,
+    docsEqamChannelPower
+                 Unsigned32,
+    docsEqamChannelFrequency
+                 Unsigned32,
+    docsEqamChannelModulation
+                 QAMChannelModulationFormat,
+    docsEqamChannelInterleaverMode
+                 QAMChannelInterleaveMode,
+    docsEqamChannelInterleaverLevel
+                 INTEGER,
+    docsEqamChannelAnnex
+                 INTEGER,
+    docsEqamChannelSpectrumInversion
+                 TruthValue,
+    docsEqamChannelName
+                 SnmpAdminString,
+    docsEqamChannelGroupName
+                 SnmpAdminString,
+    docsEqamChannelErmName
+                 SnmpAdminString,
+    docsEqamChannelLockParameters
+                 BITS,
+    docsEqamChannelAllocationType
+                 INTEGER,
+    docsEqamChannelERRPAdvertizing
+                 TruthValue,
+    docsEqamChannelDepiUdpPortMapping
+                 InetPortNumber,
+    docsEqamChannelRowStatus
+                 RowStatus
+      }
+
+docsEqamChannelPhysName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This key represents the QAM channel identifier. It corresponds to RFC4133, ENTITY-MIB entPhysicalName."
+    ::= {docsEqamChannelEntry 1 }
+
+docsEqamChannelRFPortPhysName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the RF port identifier of the QAM channel. It corresponds to RFC4133, ENTITY-MIB entPhysicalName."
+    DEFVAL { "" }
+    ::= {docsEqamChannelEntry 2 }
+
+docsEqamChannelAdminStatus    OBJECT-TYPE
+    SYNTAX      INTEGER
+                {
+                 enabled(1),
+                 disabled(2)
+                }
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the administrative state of the QAM channel. Setting this element to 'disable' results in the RF port being muted. By default this element reports 'disabled'."
+    DEFVAL { enabled }
+    ::= {docsEqamChannelEntry 3 }
+
+docsEqamChannelPower    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "TenthdBmV"
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the power level for the QAM channel"
+    DEFVAL { 0 }
+    ::= {docsEqamChannelEntry 4 }
+
+docsEqamChannelFrequency    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "Hertz"
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the carrier frequency of the QAM channel."
+    DEFVAL { 0 }
+    ::= {docsEqamChannelEntry 5 }
+
+docsEqamChannelModulation    OBJECT-TYPE
+    SYNTAX      QAMChannelModulationFormat
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the Modulation type for the QAM channel."
+    DEFVAL { qam256 }
+    ::= {docsEqamChannelEntry 6 }
+
+docsEqamChannelInterleaverMode    OBJECT-TYPE
+    SYNTAX      QAMChannelInterleaveMode
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the Interleave mode of the QAM channel."
+    DEFVAL { unknown }
+    ::= {docsEqamChannelEntry 7 }
+
+docsEqamChannelInterleaverLevel    OBJECT-TYPE
+    SYNTAX      INTEGER 
+                {
+                 level1(1),
+                 level(2)
+                }
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the interleaver level for FEC coding of the QAM channel."
+    DEFVAL { level1 }
+    ::= {docsEqamChannelEntry 8 }
+
+docsEqamChannelAnnex    OBJECT-TYPE
+    SYNTAX      INTEGER
+                {
+                 unknown(1),
+                 other(2),
+                 annexA(3),
+                 annexB(4),
+                 annexC(5)
+                }
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the ITU J.83 Annex mode of the QAM channel."
+    DEFVAL { annexB }
+    ::= {docsEqamChannelEntry 9 }
+
+docsEqamChannelSpectrumInversion    OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the QAM Signal Spectrum inversion. A value 'true' indicates channel spectrum is inverted."
+    DEFVAL { false }
+    ::= {docsEqamChannelEntry 10 }
+
+docsEqamChannelName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the name of the QAM channel. This parameter is used in the ERRP QAM Name attribute."
+    DEFVAL { "" }
+    ::= {docsEqamChannelEntry 11 }
+
+docsEqamChannelGroupName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the address field in the WithdrawnRoute and ReachableRoutes ERRP attributes. "
+    DEFVAL { "" }
+    ::= {docsEqamChannelEntry 12 }
+
+docsEqamChannelErmName    OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the ERM where the QAM channel is advertised. If empty, the QAM channel is not advertized."
+    DEFVAL { "" }
+    ::= {docsEqamChannelEntry 13 }
+
+docsEqamChannelLockParameters    OBJECT-TYPE
+    SYNTAX      BITS
+                {
+                 frequency(0),
+                 bandwidth(1),
+                 power(2),
+                 modulation(3),
+                 interleaver(4),
+                 j83Annex(5),
+                 symbolRate(6),
+                 mute(7)
+                }
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the PHY parameters Lock state of the QAM channels for DEPI initiated PHY parameters updates. This parameter is only required for M-CMTS QAMs."
+    DEFVAL { ''H }
+    ::= {docsEqamChannelEntry 14 }
+
+docsEqamChannelAllocationType    OBJECT-TYPE
+    SYNTAX      INTEGER
+                { 
+                 docsisOnly(1),
+                 videoOnly(2),
+                 any(3)
+                }
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the mechanisms authorized to reserve and control the QAM channels. The possible values are:
+
+ 'docsisOnly': the QAM channel can be allocated statically or dynamically to DOCSIS.
+
+ 'videoOnly'  the QAM channel can be allocated statically or dynamically to video.
+
+ 'any' indicates the he QAM channel can be allocated statically or dynamically to video and/or DOCSIS."
+    DEFVAL { any }
+    ::= {docsEqamChannelEntry 15 }
+
+docsEqamChannelERRPAdvertizing    OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "CM This attribute represents the ERRP advertisement state of the QAM channe.
+If set to 'true' the QAM channel is advertised, otherwise is not advertised. This is primarily useful when configuring QAM channels statically and not desire to make the channel part of the ERM channel list. "
+    DEFVAL { true }
+    ::= {docsEqamChannelEntry 16 }
+
+docsEqamChannelDepiUdpPortMapping    OBJECT-TYPE
+    SYNTAX      InetPortNumber
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the static UDP port assignment for a DEPI UDP tunnel. The value zero indicates there is not static mapping or not applicable. "
+    DEFVAL { 0 }
+    ::= {docsEqamChannelEntry 17 }
+
+docsEqamChannelRowStatus OBJECT-TYPE
+     SYNTAX      RowStatus
+     MAX-ACCESS  read-create
+     STATUS      current
+     DESCRIPTION
+        "The status of this instance."
+     ::= { docsEqamChannelEntry 18 }
+     
+docsEqamTSOutputTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamTSOutputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represent transport stream configuration parameters for QAM channels."
+    ::= { docsEqamObjects 15 }
+
+docsEqamTSOutputEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamTSOutputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamTSOutputTable"
+    INDEX {
+            docsEqamChannelPhysName
+          }
+    ::= {docsEqamTSOutputTable 1 }
+
+DocsEqamTSOutputEntry ::= SEQUENCE {
+    docsEqamTSOutputTSID
+                 Unsigned32,
+    docsEqamTSOutputNitPid
+                 Unsigned32,
+    docsEqamTSOutputCaPid
+                 Unsigned32,
+    docsEqamTSOutputRowStatus
+                 RowStatus
+      }
+
+docsEqamTSOutputTSID    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the TSID of the output transport stream. See SCTE-154-4 mpegOutputTSTSID.
+"
+    DEFVAL { 0 }
+    ::= {docsEqamTSOutputEntry 1 }
+
+docsEqamTSOutputNitPid    OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..255)
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the NIT PID of the outgoing transport stream. See SCTE-154-4 mpegOutputTSNitPid."
+    DEFVAL { 0 }
+    ::= {docsEqamTSOutputEntry 2 }
+
+docsEqamTSOutputCaPid    OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..255)
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the CA PID of the outgoing transport stream. See SCTE-154-4 mpegOutputTSCaPid."
+    DEFVAL { 0 }
+    ::= {docsEqamTSOutputEntry 3 }
+
+docsEqamTSOutputRowStatus OBJECT-TYPE
+     SYNTAX      RowStatus
+     MAX-ACCESS  read-create
+     STATUS      current
+     DESCRIPTION
+        "The status of this instance."
+     ::= { docsEqamTSOutputEntry 4 }
+     
+docsEqamStaticUdpMapTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamStaticUdpMapEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represent the UDP port ranges used for static video sessions."
+    ::= { docsEqamObjects 16 }
+
+docsEqamStaticUdpMapEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamStaticUdpMapEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamStaticUdpMapTable"
+    INDEX {
+            docsEqamChannelPhysName
+          }
+    ::= {docsEqamStaticUdpMapTable 1 }
+
+DocsEqamStaticUdpMapEntry ::= SEQUENCE {
+    docsEqamStaticUdpMapStartingPort
+                 Unsigned32,
+    docsEqamStaticUdpMapCount
+                 Unsigned32,
+    docsEqamStaticUdpMapRowStatus
+                 RowStatus                 
+      }
+
+docsEqamStaticUdpMapStartingPort    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the UDP port range start value for  static session."
+    DEFVAL { 0 }
+    ::= {docsEqamStaticUdpMapEntry 1 }
+
+docsEqamStaticUdpMapCount    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the number of reserved UDP ports starting from 'StartingPort' attribute value."
+    DEFVAL { 0 }
+    ::= {docsEqamStaticUdpMapEntry 2 }
+
+docsEqamStaticUdpMapRowStatus OBJECT-TYPE
+     SYNTAX      RowStatus
+     MAX-ACCESS  read-create
+     STATUS      current
+     DESCRIPTION
+        "The status of this instance."
+     ::= { docsEqamStaticUdpMapEntry 3 }
+     
+docsEqamSessionLogCtrl    OBJECT IDENTIFIER ::= { docsEqamObjects 17 }
+docsEqamSessionLogCtrlMaxSize    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "entries"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the maximum number of mpeg session entries that the 'SessionLog' can report.
+
+Upon a set operation, the lower value between the set value and the supported number of log entries is used."
+    DEFVAL { 0 }
+    ::= {docsEqamSessionLogCtrl 1 }
+
+docsEqamSessionLogCtrlCurrentSize    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "entries"
+    MAX-ACCESS  read-only
+					
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the current number of mpeg session entries in the 'SessionLog'."
+    ::= {docsEqamSessionLogCtrl 2 }
+
+docsEqamSessionLogCtrlAging    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS       "seconds"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute represents the Aging threshold for the 'SessionLog'.
+Periodically, a process scans through 'SessionLog' and removes those sessions that have a  'SessionLog::StopTime' greater than this threshold in minutes. A value of 0 means no aging out log entries."
+    DEFVAL { 10080 }
+    ::= {docsEqamSessionLogCtrl 3 }
+
+docsEqamSessionLogCtrlClearAll    OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute provides a control to clear the 'Session log'.
+If set to 'true', all entries from the  'SessionLog' object are removed. Reading this attribute always returns 'false'."
+    DEFVAL { false }
+    ::= {docsEqamSessionLogCtrl 4 }
+
+docsEqamSessionLogCtrlType    OBJECT-TYPE
+    SYNTAX      INTEGER
+                {
+                 allSessions(1),
+                 sessionsWithExceptions(2)
+                }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates which type of videos sessions are reported in the 'SessionLog' object.
+
+The value 'allSessions' indicates all video sessions are reported in the 'SessionLog'
+
+The value 'sessionsWithExceptions' indicates that video sessions are reported when either of the conditions below occur:
+  - The Continuity Errors or Synch Loss Packets of the associated session is greater than zero.
+  - The Dropped packets, FIFO Overflow or FIFO Underflow is greater than zero."
+    DEFVAL { sessionsWithExceptions }
+    ::= {docsEqamSessionLogCtrl 5 }
+
+docsEqamSessionLogTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF DocsEqamSessionLogEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This object represent the list of terminated MPEG video sessions.
+All parameters values reported for a session are determined at the time of the session deletion."
+    ::= { docsEqamObjects 18 }
+
+docsEqamSessionLogEntry    OBJECT-TYPE
+    SYNTAX      DocsEqamSessionLogEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "The Conceptual row of docsEqamSessionLogTable"
+    INDEX {
+            docsEqamSessionLogIndex
+          }
+    ::= {docsEqamSessionLogTable 1 }
+
+DocsEqamSessionLogEntry ::= SEQUENCE {
+    docsEqamSessionLogIndex
+                 Unsigned32,
+    docsEqamSessionLogId
+                 Unsigned32,
+    docsEqamSessionLogInputIfIndex
+                 InterfaceIndex,
+    docsEqamSessionLogOutputIfIndex
+                 InterfaceIndex,
+    docsEqamSessionLogInputContinuityErrors
+                 Counter32,
+    docsEqamSessionLogInputSyncLossPkts
+                 Counter32,
+    docsEqamSessionLogOutputTotalPkts
+                 Counter64,
+    docsEqamSessionLogOutputDroppedPkts
+                 Counter32,
+    docsEqamSessionLogOutputFifoOverflow
+                 Counter32,
+    docsEqamSessionLogOutputFifoUnderflow
+                 Counter32,
+    docsEqamSessionLogMode
+                 INTEGER,
+    docsEqamSessionLogStartTime
+                 DateAndTime,
+    docsEqamSessionLogStopTime
+                 DateAndTime,
+    docsEqamSessionLogInputAddrType
+                 InetAddressType,
+    docsEqamSessionLogInputSrcInetAddr
+                 InetAddress,
+    docsEqamSessionLogInputSrcPort
+                 InetPortNumber,
+    docsEqamSessionLogInputDstInetAddr
+                 InetAddress,
+    docsEqamSessionLogInputDstPort
+                 InetPortNumber
+      }
+
+docsEqamSessionLogIndex    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "This key represents the unique identifier of an instance in this object.
+This attribute's behavior consist of an incremental value. If the maximum number of instances is reached the log instance with the lower key value is deleted and the new instance is added."
+    ::= {docsEqamSessionLogEntry 1 }
+
+docsEqamSessionLogId    OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute identifies the MPEG Session Id of this entry."
+    ::= {docsEqamSessionLogEntry 2 }
+
+docsEqamSessionLogInputIfIndex    OBJECT-TYPE
+    SYNTAX      InterfaceIndex
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute identifies the interface index of the mpeg source stream."
+    ::= {docsEqamSessionLogEntry 3 }
+
+docsEqamSessionLogOutputIfIndex    OBJECT-TYPE
+    SYNTAX      InterfaceIndex
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute identifies the interface index of the mpeg output stream."
+    ::= {docsEqamSessionLogEntry 4 }
+
+docsEqamSessionLogInputContinuityErrors    OBJECT-TYPE
+    SYNTAX      Counter32
+    UNITS       "errors"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the total number of continuity counter errors for the session. See  SCTE154-4 mpegInputStatsContinuityErrors for details of the count definition."
+    ::= {docsEqamSessionLogEntry 5 }
+
+docsEqamSessionLogInputSyncLossPkts    OBJECT-TYPE
+    SYNTAX      Counter32
+    UNITS       "packets"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the total number of MPEG packets that had missing sync byte for the session. See SCTE 154-4 mpgInputStatsSyncLossPackets for details of the count definition."
+    ::= {docsEqamSessionLogEntry 6 }
+
+docsEqamSessionLogOutputTotalPkts    OBJECT-TYPE
+    SYNTAX      Counter64
+    UNITS       "packets"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This atribute indicates the total number of MPEG output packets for the session."
+    ::= {docsEqamSessionLogEntry 7 }
+
+docsEqamSessionLogOutputDroppedPkts    OBJECT-TYPE
+    SYNTAX      Counter32
+    UNITS       "packets"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the total number of MPEG output packets dropped  for the session."
+    ::= {docsEqamSessionLogEntry 8 }
+
+docsEqamSessionLogOutputFifoOverflow    OBJECT-TYPE
+    SYNTAX      Counter32
+    UNITS       "overflows"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the total number of FIFO overflows of the session."
+    ::= {docsEqamSessionLogEntry 9 }
+
+docsEqamSessionLogOutputFifoUnderflow    OBJECT-TYPE
+    SYNTAX      Counter32
+    UNITS       "underflows"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the total number of FIFO underflows of the session."
+    ::= {docsEqamSessionLogEntry 10 }
+
+docsEqamSessionLogMode    OBJECT-TYPE
+    SYNTAX      INTEGER 
+                {
+                 other(1),
+                 passThrough(2),
+                 multiplexing(3)
+                }  
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the type of session. See SCTE 154-4 docsQamVideoSessionMode for definitions of the type of sessions."
+    ::= {docsEqamSessionLogEntry 11 }
+
+docsEqamSessionLogStartTime    OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the date and time when the session was setup."
+    ::= {docsEqamSessionLogEntry 12 }
+
+docsEqamSessionLogStopTime    OBJECT-TYPE
+    SYNTAX      DateAndTime
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the date and time when the session was deleted."
+    ::= {docsEqamSessionLogEntry 13 }
+
+docsEqamSessionLogInputAddrType    OBJECT-TYPE
+    SYNTAX      InetAddressType
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the address type associated with the input transport stream of the session. The value 'unknown' indicates no IP transport associated to the transport stream. The value 'dns' is not used."
+    ::= {docsEqamSessionLogEntry 14 }
+
+docsEqamSessionLogInputSrcInetAddr    OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the source address of the IP flow contained in the session.
+For Multicast it represents the Source Specific Multicast IP Address of the UDP IP flow.
+For unicast UDP IP flows is either the value 0.0.0.0 if the IP source address is unknown or irrelevant for the origination transport stream."
+    ::= {docsEqamSessionLogEntry 15 }
+
+docsEqamSessionLogInputSrcPort    OBJECT-TYPE
+    SYNTAX      InetPortNumber
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the source port of the UDP IP flow of the input transport stream."
+    ::= {docsEqamSessionLogEntry 16 }
+
+docsEqamSessionLogInputDstInetAddr    OBJECT-TYPE
+    SYNTAX      InetAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the destination address of the IP flow contained in the session.
+For multicast it represents the group address of the SSM  origination input TS. For unicast UDP IP flows is either the value 0.0.0.0 if the IP  destination address is unknown or irrelevant for the origination input stream."
+    ::= {docsEqamSessionLogEntry 17 }
+
+docsEqamSessionLogInputDstPort    OBJECT-TYPE
+    SYNTAX      InetPortNumber
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "This attribute indicates the UDP destination port of the UDP IP flow of the input  transport stream."
+    ::= {docsEqamSessionLogEntry 18 }
+
+
+-- Conformance Definitions
+docsEqamMibConformance OBJECT IDENTIFIER ::= { docsEqamMib 2 }
+docsEqamMibCompliances OBJECT IDENTIFIER ::= { docsEqamMibConformance 1 }
+docsEqamMibGroups      OBJECT IDENTIFIER ::= { docsEqamMibConformance 2 }
+
+docsEqamFullCompliance MODULE-COMPLIANCE
+    STATUS      current
+    DESCRIPTION
+         "The compliance statement for the full implementation of 
+         the MIB Module."
+    MODULE -- this MODULE
+    MANDATORY-GROUPS {
+            docsEqamGroup
+            }
+    ::= { docsEqamMibCompliances 1 }
+
+docsEqamReadOnlyCompliance MODULE-COMPLIANCE
+    STATUS      current
+    DESCRIPTION
+         "The compliance statement for the read-only implementation of 
+         the MIB Module."
+    MODULE -- this MODULE
+    MANDATORY-GROUPS {
+            docsEqamReadGroup
+            }
+    ::= { docsEqamMibCompliances 2 }
+    
+docsEqamGroup OBJECT-GROUP
+    OBJECTS {
+              docsEqamControlReset,
+              docsEqamControlInitCause,
+              docsEqamControlSaveCfg,
+              docsEqamControlUploadCfg,
+              docsEqamSessionLogId,
+              docsEqamSessionLogInputIfIndex,
+              docsEqamSessionLogOutputIfIndex,
+              docsEqamSessionLogInputContinuityErrors,
+              docsEqamSessionLogInputSyncLossPkts,
+              docsEqamSessionLogOutputTotalPkts,
+              docsEqamSessionLogOutputDroppedPkts,
+              docsEqamSessionLogOutputFifoOverflow,
+              docsEqamSessionLogOutputFifoUnderflow,
+              docsEqamSessionLogMode,
+              docsEqamSessionLogStartTime,
+              docsEqamSessionLogStopTime,
+              docsEqamSessionLogInputAddrType,
+              docsEqamSessionLogInputSrcInetAddr,
+              docsEqamSessionLogInputSrcPort,
+              docsEqamSessionLogInputDstInetAddr,
+              docsEqamSessionLogInputDstPort,
+              docsEqamNotifyMgmtInetAddressType,
+              docsEqamNotifyMgmtInetAddress,
+              docsEqamSessionLogCtrlMaxSize,
+              docsEqamSessionLogCtrlCurrentSize,
+              docsEqamSessionLogCtrlAging,
+              docsEqamSessionLogCtrlClearAll,
+              docsEqamSessionLogCtrlType,
+              docsEqamTimeNtpMaster,
+              docsEqamTimeNtpBackup,
+              docsEqamTimeTimeZone,
+              docsEqamTimeDaylightSaving,              
+              docsEqamSyslogServerInetAddressType,
+              docsEqamSyslogServerInetAddress,
+              docsEqamSyslogServerEnabled,
+              docsEqamSyslogRowStatus,
+              docsEqamRegistrationErmAddressType,
+              docsEqamRegistrationErmAddress,
+              docsEqamRegistrationErmPort,
+              docsEqamRegistrationErmConnectionType,
+              docsEqamRegistrationHoldTimer,
+              docsEqamRegistrationConnRetryTimer,
+              docsEqamRegistrationNexthopAddressDomain,
+              docsEqamRegistrationCompAddress,
+              docsEqamRegistrationStreamingZone,
+              docsEqamRegistrationId,
+              docsEqamRegistrationCost,
+              docsEqamRegistrationCompName,
+              docsEqamRegistrationRowStatus,
+              docsEqamTSOutputCfgCatInsertRate,
+              docsEqamTSOutputCfgPatInsertRate,
+              docsEqamTSOutputCfgPmtInsertRate,
+              docsEqamTSInputCfgUnicastSessionLossTimeout,
+              docsEqamTSInputCfgMulticastSessionLossTimeout,
+              docsEqamTSInputCfgJitterTolerance,
+              docsEqamReservedUdpMapStartingPort,
+              docsEqamReservedUdpMapCount,
+              docsEqamReservedUdpMapRowStatus,
+              docsEqamReservedPidRangeStartingPid,
+              docsEqamReservedPidRangeCount,
+              docsEqamReservedPidRangeDescription,
+              docsEqamReservedPidRangeRowStatus,
+              docsEqamEdgeInputInetAddressType,
+              docsEqamEdgeInputInetAddress,
+              docsEqamEdgeInputRowStatus,
+              docsEqamInputRegistrationGroupName,
+              docsEqamInputRegistrationBandwidth,
+              docsEqamInputRegistrationErmName,
+              docsEqamInputRegistrationRowStatus,
+              docsEqamRFPortAdminStatus,
+              docsEqamRFPortPower,
+              docsEqamRFPortFrequency,
+              docsEqamRFPortModulation,
+              docsEqamRFPortInterleaverMode,
+              docsEqamRFPortInterleaveLevel,
+              docsEqamRFPortAnnex,
+              docsEqamRFPortSpectrumInversion,
+              docsEqamRFPortLockParameters,
+              docsEqamRFPortcfgNumberChannels,
+              docsEqamRFPortNumberChannels,
+              docsEqamRFPortRowStatus,
+              docsEqamFiberNodeName,
+              docsEqamFiberNodeRowStatus,
+              docsEqamChannelRFPortPhysName,
+              docsEqamChannelAdminStatus,
+              docsEqamChannelPower,
+              docsEqamChannelFrequency,
+              docsEqamChannelModulation,
+              docsEqamChannelInterleaverMode,
+              docsEqamChannelInterleaverLevel,
+              docsEqamChannelAnnex,
+              docsEqamChannelSpectrumInversion,
+              docsEqamChannelName,
+              docsEqamChannelGroupName,
+              docsEqamChannelErmName,
+              docsEqamChannelLockParameters,
+              docsEqamChannelAllocationType,
+              docsEqamChannelERRPAdvertizing,
+              docsEqamChannelDepiUdpPortMapping,
+              docsEqamChannelRowStatus,
+              docsEqamDEPICfgDepiSessionLossTO,
+              docsEqamTSOutputTSID,
+              docsEqamTSOutputNitPid,
+              docsEqamTSOutputCaPid,
+              docsEqamTSOutputRowStatus,
+              docsEqamStaticUdpMapStartingPort,
+              docsEqamStaticUdpMapCount,
+              docsEqamStaticUdpMapRowStatus
+    }
+    STATUS      current
+    DESCRIPTION
+             "Group of objects for the full implementation 
+             of the MIB module."
+    ::= { docsEqamMibGroups 1 }
+
+docsEqamReadGroup OBJECT-GROUP
+    OBJECTS {
+              docsEqamControlReset,
+              docsEqamControlInitCause,
+              docsEqamControlSaveCfg,
+              docsEqamControlUploadCfg,
+              docsEqamSessionLogId,
+              docsEqamSessionLogInputIfIndex,
+              docsEqamSessionLogOutputIfIndex,
+              docsEqamSessionLogInputContinuityErrors,
+              docsEqamSessionLogInputSyncLossPkts,
+              docsEqamSessionLogOutputTotalPkts,
+              docsEqamSessionLogOutputDroppedPkts,
+              docsEqamSessionLogOutputFifoOverflow,
+              docsEqamSessionLogOutputFifoUnderflow,
+              docsEqamSessionLogMode,
+              docsEqamSessionLogStartTime,
+              docsEqamSessionLogStopTime,
+              docsEqamSessionLogInputAddrType,
+              docsEqamSessionLogInputSrcInetAddr,
+              docsEqamSessionLogInputSrcPort,
+              docsEqamSessionLogInputDstInetAddr,
+              docsEqamSessionLogInputDstPort,
+              docsEqamNotifyMgmtInetAddressType,
+              docsEqamNotifyMgmtInetAddress,
+              docsEqamSessionLogCtrlMaxSize,
+              docsEqamSessionLogCtrlCurrentSize,
+              docsEqamSessionLogCtrlAging,
+              docsEqamSessionLogCtrlClearAll,
+              docsEqamSessionLogCtrlType,
+              docsEqamTimeNtpMaster,
+              docsEqamTimeNtpBackup,
+              docsEqamTimeTimeZone,
+              docsEqamTimeDaylightSaving,              
+              docsEqamSyslogServerInetAddressType,
+              docsEqamSyslogServerInetAddress,
+              docsEqamSyslogServerEnabled,
+              docsEqamRegistrationErmAddressType,
+              docsEqamRegistrationErmAddress,
+              docsEqamRegistrationErmPort,
+              docsEqamRegistrationErmConnectionType,
+              docsEqamRegistrationHoldTimer,
+              docsEqamRegistrationConnRetryTimer,
+              docsEqamRegistrationNexthopAddressDomain,
+              docsEqamRegistrationCompAddress,
+              docsEqamRegistrationStreamingZone,
+              docsEqamRegistrationId,
+              docsEqamRegistrationCost,
+              docsEqamRegistrationCompName,
+              docsEqamTSOutputCfgCatInsertRate,
+              docsEqamTSOutputCfgPatInsertRate,
+              docsEqamTSOutputCfgPmtInsertRate,
+              docsEqamTSInputCfgUnicastSessionLossTimeout,
+              docsEqamTSInputCfgMulticastSessionLossTimeout,
+              docsEqamTSInputCfgJitterTolerance,
+              docsEqamReservedUdpMapStartingPort,
+              docsEqamReservedUdpMapCount,
+              docsEqamReservedPidRangeStartingPid,
+              docsEqamReservedPidRangeCount,
+              docsEqamReservedPidRangeDescription,
+              docsEqamEdgeInputInetAddressType,
+              docsEqamEdgeInputInetAddress,
+              docsEqamInputRegistrationGroupName,
+              docsEqamInputRegistrationBandwidth,
+              docsEqamInputRegistrationErmName,
+              docsEqamRFPortAdminStatus,
+              docsEqamRFPortPower,
+              docsEqamRFPortFrequency,
+              docsEqamRFPortModulation,
+              docsEqamRFPortInterleaverMode,
+              docsEqamRFPortInterleaveLevel,
+              docsEqamRFPortAnnex,
+              docsEqamRFPortSpectrumInversion,
+              docsEqamRFPortLockParameters,
+              docsEqamRFPortcfgNumberChannels,
+              docsEqamRFPortNumberChannels,
+              docsEqamFiberNodeName,
+              docsEqamChannelRFPortPhysName,
+              docsEqamChannelAdminStatus,
+              docsEqamChannelPower,
+              docsEqamChannelFrequency,
+              docsEqamChannelModulation,
+              docsEqamChannelInterleaverMode,
+              docsEqamChannelInterleaverLevel,
+              docsEqamChannelAnnex,
+              docsEqamChannelSpectrumInversion,
+              docsEqamChannelName,
+              docsEqamChannelGroupName,
+              docsEqamChannelErmName,
+              docsEqamChannelLockParameters,
+              docsEqamChannelAllocationType,
+              docsEqamChannelERRPAdvertizing,
+              docsEqamChannelDepiUdpPortMapping,
+              docsEqamDEPICfgDepiSessionLossTO,
+              docsEqamTSOutputTSID,
+              docsEqamTSOutputNitPid,
+              docsEqamTSOutputCaPid,
+              docsEqamStaticUdpMapStartingPort,
+              docsEqamStaticUdpMapCount
+    }
+    STATUS      current
+    DESCRIPTION
+             "Group of objects for the read-only implementation
+             of the MIB module."
+    ::= { docsEqamMibGroups 2 }
+
+END    

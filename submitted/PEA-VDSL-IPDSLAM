@@ -1,0 +1,2886 @@
+PEA-VDSL-IPDSLAM DEFINITIONS ::= BEGIN
+
+IMPORTS
+    peaIpDslam
+       FROM DIESEL-SMI
+       
+    lineIndex
+       FROM PEA-BRIDGE-IPDSLAM
+       
+    PerfIntervalCount,
+    PerfCurrentCount,
+    AdslPerfCurrDayCount,
+    AdslPerfPrevDayCount
+       FROM PEA-ADSL-IPDSLAM
+       
+    messageId, 
+    errorCode
+       FROM PEA-EQUIPMENT-IPDSLAM
+
+    -- standar X.733 header for the traps       
+    managedObjectClass, 
+    managedObjectInstance, 
+    sequenceNumber, 
+    perceivedSeverity, 
+    eventTime, 
+    eventTypePem, 
+    probableCause  
+       FROM PEM-STANDARD 
+
+    MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE,
+    Gauge32,Integer32,Unsigned32, Counter32
+        FROM SNMPv2-SMI
+        
+    TEXTUAL-CONVENTION, TruthValue		
+       FROM SNMPv2-TC
+       
+    OBJECT-GROUP, NOTIFICATION-GROUP   
+             FROM SNMPv2-CONF
+        
+    DisplayString
+        FROM RFC1213-MIB
+        
+    adslAtucIntervalNumber,
+    adslAturIntervalNumber,
+    adslAtucChanIntervalNumber,
+    adslAturChanIntervalNumber,
+    adslLineConfProfileEntry,
+    adslLineAlarmConfProfileEntry,
+    adslAtucThresh15MinESs,
+    adslAturThresh15MinESs,
+    adslAtucChanCurrTxRate,
+    adslAturChanCurrTxRate
+        FROM ADSL-LINE-MIB
+        
+    adslAtucThreshold15MinSesL,
+    adslAtucThreshold15MinUasL,
+    adslAturThreshold15MinSesL,
+    adslAturThreshold15MinUasL
+        FROM ADSL-LINE-EXT-MIB;
+    
+
+peaVdslIpDslam  MODULE-IDENTITY 
+    LAST-UPDATED 
+         "200405031200Z"  
+    ORGANIZATION
+         "Ericsson Diax A/S - Denmark"
+    CONTACT-INFO
+         "
+         Ericsson Diax A/S
+         Faelledvej 17
+         DK-7600 Struer
+         Denmark
+
+         E-mail: support@dxd.ericsson.se
+         "       
+   DESCRIPTION
+         "
+         The IP DSLAM software supports a number of standard 
+         and proprietary MIBs.
+         This MIB module defines objects for the management of a 
+         pair of VDSL modems at each end of the VDSL line. For
+         general DSL purposes the ADSL-LINE-MIB (RFC2662 and RFC3440)
+         is used supplemented with the PEA-ADSL-IPDSLAM. The reason 
+         for this MIB module is that a new ADSL2/VDSL2 specific
+         ADSL LINE MIB is yet not available from IETF.
+         "                                                           
+    ::= { peaIpDslam 80 }
+
+vdslObjects              OBJECT IDENTIFIER ::= { peaVdslIpDslam 1 }
+vdsl2Status        		 OBJECT IDENTIFIER ::= { peaVdslIpDslam 2 }
+vdsl2ProfileChannel      OBJECT IDENTIFIER ::= { peaVdslIpDslam 3 }
+
+--******************************************************************
+-- TEXTUAL-CONVENTIONs are copied instead of imported because of
+-- Idbgen tool.
+--******************************************************************
+
+   Vdsl2Direction ::= TEXTUAL-CONVENTION
+        STATUS current
+        DESCRIPTION
+           "Identifies the direction of a band as being
+            either upstream or downstream.  Specified as an INTEGER,
+            the two values are:
+             upstream(1)
+             downstream(2)"
+        SYNTAX INTEGER {upstream(1),downstream(2)
+       }
+
+SnmpAdminString ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT "255a"
+    STATUS       current
+    DESCRIPTION
+            "An octet string containing administrative
+            information, preferably in human-readable form.
+
+            To facilitate internationalization, this
+            information is represented using the ISO/IEC
+            IS 10646-1 character set, encoded as an octet
+            string using the UTF-8 transformation format
+            described in [RFC2279].
+
+            Since additional code points are added by
+            amendments to the 10646 standard from time
+            to time, implementations must be prepared to
+            encounter any code point from 0x00000000 to
+            0x7fffffff.  Byte sequences that do not
+            correspond to the valid UTF-8 encoding of a
+            code point or are outside this range are
+            prohibited.
+
+            The use of control codes should be avoided.
+
+            When it is necessary to represent a newline,
+            the control code sequence CR LF should be used.
+
+            The use of leading or trailing white space should
+            be avoided.
+
+            For code points not directly supported by user
+            interface hardware or software, an alternative
+            means of entry and display, such as hexadecimal,
+            may be provided.
+
+            For information encoded in 7-bit US-ASCII,
+            the UTF-8 encoding is identical to the
+            US-ASCII encoding.
+
+            UTF-8 may require multiple bytes to represent a
+            single character / code point; thus the length
+            of this object in octets may be different from
+            the number of characters encoded.  Similarly,
+            size constraints refer to the number of encoded
+            octets, not the number of characters represented
+            by an encoding.
+
+            Note that when this TC is used for an object that
+            is used or envisioned to be used as an index, then
+            a SIZE restriction MUST be specified so that the
+            number of sub-identifiers for any object instance
+            does not exceed the limit of 128, as defined by
+            [RFC1905].
+
+            Note that the size of an SnmpAdminString object is
+            measured in octets, not characters.
+            "
+    SYNTAX       OCTET STRING (SIZE (0..255))
+       
+
+--******************************************************************
+-- VDSL Line Config
+--******************************************************************
+
+--******************************************************************
+-- LimitingMaskDn
+--******************************************************************
+vdslLineConfPhysVdslLimitingMaskDnTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineConfPhysVdslLimitingMaskDnEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains information of LimitingMaskDn
+       configuration"
+      ::= { vdslObjects 1 }
+
+vdslLineConfPhysVdslLimitingMaskDnEntry OBJECT-TYPE
+      SYNTAX VdslLineConfPhysVdslLimitingMaskDnEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineConfPhysVdslLimitingMaskDnTable."
+      INDEX { lineIndex }
+      ::= { vdslLineConfPhysVdslLimitingMaskDnTable 1 }
+
+VdslLineConfPhysVdslLimitingMaskDnEntry ::=
+      SEQUENCE {
+        limitingMaskDnNoOfBreakPoints			INTEGER,
+        limitingMaskDnBpToneIndex				OCTET STRING,
+        limitingMaskDnBpPsd			  			OCTET STRING,
+        limitingMaskDnBypassOutbandPsdFilter	TruthValue
+        }
+
+limitingMaskDnNoOfBreakPoints OBJECT-TYPE
+      SYNTAX      INTEGER  (0..32)			
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Number of breakpoints in downstream mask"
+      ::= { vdslLineConfPhysVdslLimitingMaskDnEntry 1 }
+
+limitingMaskDnBpToneIndex OBJECT-TYPE
+      SYNTAX      OCTET STRING  (SIZE (64))
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Toneindexes for 32 breakpoints. The octet string
+       has the format: [Bp0_Hi, Bp0_Low....Bp31_Hi, Bp31_Low]
+       Valid range is [0, 4096]"
+      ::= { vdslLineConfPhysVdslLimitingMaskDnEntry 2 }
+
+limitingMaskDnBpPsd OBJECT-TYPE
+      SYNTAX      OCTET STRING  (SIZE (64))
+      UNITS       "0.1 dBm/Hz"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "PSD level in 0.1 dBm/Hz for 32 breakpoints.
+      Valid range is [0,-96] dBm/Hz. The octet string
+      has the format: [Bp0_Hi, Bp0_Low....Bp31_Hi, Bp31_Low]"
+      ::= { vdslLineConfPhysVdslLimitingMaskDnEntry 3 }
+
+limitingMaskDnBypassOutbandPsdFilter OBJECT-TYPE
+      SYNTAX      TruthValue
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "If set, the extra filter will be bypassed at the
+       expense of more OOB above 17.5MHz."
+      ::= { vdslLineConfPhysVdslLimitingMaskDnEntry 4 }
+
+--******************************************************************
+-- LimitingMaskUp
+--******************************************************************
+vdslLineConfPhysVdslLimitingMaskUpTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineConfPhysVdslLimitingMaskUpEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains information of LimitingMaskUp
+       configuration"
+      ::= { vdslObjects 2 }
+
+vdslLineConfPhysVdslLimitingMaskUpEntry OBJECT-TYPE
+      SYNTAX VdslLineConfPhysVdslLimitingMaskUpEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineConfPhysVdslLimitingMaskUpTable."
+      INDEX { lineIndex }
+      ::= { vdslLineConfPhysVdslLimitingMaskUpTable 1 }
+
+VdslLineConfPhysVdslLimitingMaskUpEntry ::=
+      SEQUENCE {
+        limitingMaskUpNoOfBreakPoints		INTEGER,
+        limitingMaskUpBpToneIndex 			OCTET STRING,
+        limitingMaskUpBpPsd			  		OCTET STRING,
+        limitingMaskUpUseIsdnTypeUS0		TruthValue
+        }
+
+limitingMaskUpNoOfBreakPoints OBJECT-TYPE
+      SYNTAX      INTEGER  (0..16)			
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Number of breakpoints in upstream mask"
+      ::= { vdslLineConfPhysVdslLimitingMaskUpEntry 1 }
+
+limitingMaskUpBpToneIndex OBJECT-TYPE
+      SYNTAX      OCTET STRING  (SIZE (32))
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Toneindexes for 16 breakpoints. The octet string
+       has the format: [Bp0_Hi, Bp0_Low....Bp31_Hi, Bp31_Low]
+       Valid range is [0, 4096]"
+      ::= { vdslLineConfPhysVdslLimitingMaskUpEntry 2 }
+
+limitingMaskUpBpPsd OBJECT-TYPE
+      SYNTAX      OCTET STRING  (SIZE (32))
+      UNITS       "0.1 dBm/Hz"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "PSD level in 0.1 dBm/Hz for 16 breakpoints.
+       Valid range is [0,-96] dBm/Hz. The octet string
+       has the format: [Bp0_Hi, Bp0_Low....Bp31_Hi, Bp31_Low]"
+      ::= { vdslLineConfPhysVdslLimitingMaskUpEntry 3 }
+
+limitingMaskUpUseIsdnTypeUS0 OBJECT-TYPE
+      SYNTAX      TruthValue
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "If set it indicates that an ISDN type US0 has to
+       be negociated, else POTS type is used (default)."
+      ::= { vdslLineConfPhysVdslLimitingMaskUpEntry 4 }
+      
+--******************************************************************
+-- BandPlanDn
+--******************************************************************
+vdslLineConfPhysVdslBandPlanDnTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineConfPhysVdslBandPlanDnEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains information of BandPlanDn
+       configuration"
+      ::= { vdslObjects 3 }
+
+vdslLineConfPhysVdslBandPlanDnEntry OBJECT-TYPE
+      SYNTAX VdslLineConfPhysVdslBandPlanDnEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineConfPhysVdslBandPlanDnTable."
+      INDEX { lineIndex }
+      ::= { vdslLineConfPhysVdslBandPlanDnTable 1 }
+
+VdslLineConfPhysVdslBandPlanDnEntry ::=
+      SEQUENCE {
+        bandPlanDnNoOfToneGroups		INTEGER,
+        bandPlanDnToneGroups0StartTone	INTEGER,
+        bandPlanDnToneGroups0EndTone 	INTEGER,
+        bandPlanDnToneGroups1StartTone	INTEGER,
+        bandPlanDnToneGroups1EndTone 	INTEGER,
+        bandPlanDnToneGroups2StartTone	INTEGER,
+        bandPlanDnToneGroups2EndTone 	INTEGER
+        }
+
+bandPlanDnNoOfToneGroups OBJECT-TYPE
+      SYNTAX      INTEGER  (0..3)
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Number of bands downstream"
+      ::= { vdslLineConfPhysVdslBandPlanDnEntry 1 }
+
+bandPlanDnToneGroups0StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanDnEntry 2 }
+      
+bandPlanDnToneGroups0EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanDnEntry 3 }
+
+bandPlanDnToneGroups1StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanDnEntry 4 }
+      
+bandPlanDnToneGroups1EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanDnEntry 5 }
+      
+bandPlanDnToneGroups2StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanDnEntry 6 }
+      
+bandPlanDnToneGroups2EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanDnEntry 7 }
+      
+--******************************************************************
+-- BandPlanUp
+--******************************************************************
+vdslLineConfPhysVdslBandPlanUpTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineConfPhysVdslBandPlanUpEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains information of BandPlanUp
+       configuration"
+      ::= { vdslObjects 4 }
+
+vdslLineConfPhysVdslBandPlanUpEntry OBJECT-TYPE
+      SYNTAX VdslLineConfPhysVdslBandPlanUpEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineConfPhysVdslBandPlanUpTable."
+      INDEX { lineIndex }
+      ::= { vdslLineConfPhysVdslBandPlanUpTable 1 }
+
+VdslLineConfPhysVdslBandPlanUpEntry ::=
+      SEQUENCE {
+        bandPlanUpNoOfToneGroups		INTEGER,
+        bandPlanUpToneGroups0StartTone	INTEGER,
+        bandPlanUpToneGroups0EndTone 	INTEGER,
+        bandPlanUpToneGroups1StartTone	INTEGER,
+        bandPlanUpToneGroups1EndTone 	INTEGER,
+        bandPlanUpToneGroups2StartTone	INTEGER,
+        bandPlanUpToneGroups2EndTone 	INTEGER
+        }
+
+bandPlanUpNoOfToneGroups OBJECT-TYPE
+      SYNTAX      INTEGER  (0..3)
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Number of bands downstream"
+      ::= { vdslLineConfPhysVdslBandPlanUpEntry 1 }
+
+bandPlanUpToneGroups0StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanUpEntry 2 }
+      
+bandPlanUpToneGroups0EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanUpEntry 3 }
+
+bandPlanUpToneGroups1StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanUpEntry 4 }
+      
+bandPlanUpToneGroups1EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanUpEntry 5 }
+      
+bandPlanUpToneGroups2StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanUpEntry 6 }
+      
+bandPlanUpToneGroups2EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslBandPlanUpEntry 7 }
+      
+--******************************************************************
+-- InBandNotches
+--******************************************************************
+vdslLineConfPhysVdslInBandNotchesTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineConfPhysVdslInBandNotchesEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains information of InBandNotches
+       configuration"
+      ::= { vdslObjects 5 }
+
+vdslLineConfPhysVdslInBandNotchesEntry OBJECT-TYPE
+      SYNTAX VdslLineConfPhysVdslInBandNotchesEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineConfPhysVdslInBandNotchesTable."
+      INDEX { lineIndex }
+      ::= { vdslLineConfPhysVdslInBandNotchesTable 1 }
+
+VdslLineConfPhysVdslInBandNotchesEntry ::=
+      SEQUENCE {
+        inBandNotchesNoOfToneGroups			INTEGER,
+        inBandNotchesToneGroups0StartTone	INTEGER,
+        inBandNotchesToneGroups0EndTone 	INTEGER,
+        inBandNotchesToneGroups1StartTone	INTEGER,
+        inBandNotchesToneGroups1EndTone 	INTEGER,
+        inBandNotchesToneGroups2StartTone	INTEGER,
+        inBandNotchesToneGroups2EndTone 	INTEGER,
+        inBandNotchesToneGroups3StartTone	INTEGER,
+        inBandNotchesToneGroups3EndTone 	INTEGER,
+        inBandNotchesToneGroups4StartTone	INTEGER,
+        inBandNotchesToneGroups4EndTone 	INTEGER,
+        inBandNotchesToneGroups5StartTone	INTEGER,
+        inBandNotchesToneGroups5EndTone 	INTEGER,
+        inBandNotchesToneGroups6StartTone	INTEGER,
+        inBandNotchesToneGroups6EndTone 	INTEGER,
+        inBandNotchesToneGroups7StartTone	INTEGER,
+        inBandNotchesToneGroups7EndTone 	INTEGER
+        }
+
+inBandNotchesNoOfToneGroups OBJECT-TYPE
+      SYNTAX      INTEGER  (0..8)
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Number of InBand bands"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 1 }
+
+inBandNotchesToneGroups0StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 2 }
+      
+inBandNotchesToneGroups0EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 3 }
+
+inBandNotchesToneGroups1StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 4 }
+      
+inBandNotchesToneGroups1EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 5 }
+      
+inBandNotchesToneGroups2StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 6 }
+      
+inBandNotchesToneGroups2EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 7 }
+      
+inBandNotchesToneGroups3StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 8 }
+      
+inBandNotchesToneGroups3EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 9 }
+      
+inBandNotchesToneGroups4StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 10 }
+      
+inBandNotchesToneGroups4EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 11 }
+      
+inBandNotchesToneGroups5StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 12 }
+      
+inBandNotchesToneGroups5EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 13 }
+      
+inBandNotchesToneGroups6StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 14 }
+      
+inBandNotchesToneGroups6EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 15 }
+      
+inBandNotchesToneGroups7StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 16 }
+      
+inBandNotchesToneGroups7EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this  band"
+      ::= { vdslLineConfPhysVdslInBandNotchesEntry 17 }
+
+
+--******************************************************************
+-- RfiNotches
+--******************************************************************
+vdslLineConfPhysVdslRfiNotchesTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineConfPhysVdslRfiNotchesEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains information of RfiNotches
+       configuration"
+      ::= { vdslObjects 6 }
+
+vdslLineConfPhysVdslRfiNotchesEntry OBJECT-TYPE
+      SYNTAX VdslLineConfPhysVdslRfiNotchesEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineConfPhysVdslRfiNotchesTable."
+      INDEX { lineIndex }
+      ::= { vdslLineConfPhysVdslRfiNotchesTable 1 }
+
+VdslLineConfPhysVdslRfiNotchesEntry ::=
+      SEQUENCE {
+        rfiNotchesNoOfToneGroups			INTEGER,
+        rfiNotchesToneGroups0StartTone		INTEGER,
+        rfiNotchesToneGroups0EndTone 		INTEGER,
+        rfiNotchesToneGroups1StartTone		INTEGER,
+        rfiNotchesToneGroups1EndTone 		INTEGER,
+        rfiNotchesToneGroups2StartTone		INTEGER,
+        rfiNotchesToneGroups2EndTone 		INTEGER,
+        rfiNotchesToneGroups3StartTone		INTEGER,
+        rfiNotchesToneGroups3EndTone 		INTEGER,
+        rfiNotchesToneGroups4StartTone		INTEGER,
+        rfiNotchesToneGroups4EndTone 		INTEGER,
+        rfiNotchesToneGroups5StartTone		INTEGER,
+        rfiNotchesToneGroups5EndTone 		INTEGER,
+        rfiNotchesToneGroups6StartTone		INTEGER,
+        rfiNotchesToneGroups6EndTone 		INTEGER,
+        rfiNotchesToneGroups7StartTone		INTEGER,
+        rfiNotchesToneGroups7EndTone 		INTEGER,
+        rfiNotchesToneGroups8StartTone		INTEGER,
+        rfiNotchesToneGroups8EndTone 		INTEGER,
+        rfiNotchesToneGroups9StartTone		INTEGER,
+        rfiNotchesToneGroups9EndTone 		INTEGER,
+        rfiNotchesToneGroups10StartTone		INTEGER,
+        rfiNotchesToneGroups10EndTone 		INTEGER,
+        rfiNotchesToneGroups11StartTone		INTEGER,
+        rfiNotchesToneGroups11EndTone 		INTEGER,
+        rfiNotchesToneGroups12StartTone		INTEGER,
+        rfiNotchesToneGroups12EndTone 		INTEGER,
+        rfiNotchesToneGroups13StartTone		INTEGER,
+        rfiNotchesToneGroups13EndTone 		INTEGER,
+        rfiNotchesToneGroups14StartTone		INTEGER,
+        rfiNotchesToneGroups14EndTone 		INTEGER,
+        rfiNotchesToneGroups15StartTone		INTEGER,
+        rfiNotchesToneGroups15EndTone 		INTEGER
+        }
+
+rfiNotchesNoOfToneGroups OBJECT-TYPE
+      SYNTAX      INTEGER  (0..16)
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Number of Rfi bands"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 1 }
+
+rfiNotchesToneGroups0StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 2 }
+      
+rfiNotchesToneGroups0EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 3 }
+
+rfiNotchesToneGroups1StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 4 }
+      
+rfiNotchesToneGroups1EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 5 }
+      
+rfiNotchesToneGroups2StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 6 }
+      
+rfiNotchesToneGroups2EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 7 }
+      
+rfiNotchesToneGroups3StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 8 }
+      
+rfiNotchesToneGroups3EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 9 }
+      
+rfiNotchesToneGroups4StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 10 }
+      
+rfiNotchesToneGroups4EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 11 }
+      
+rfiNotchesToneGroups5StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 12 }
+      
+rfiNotchesToneGroups5EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 13 }
+      
+rfiNotchesToneGroups6StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 14 }
+      
+rfiNotchesToneGroups6EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 15 }
+      
+rfiNotchesToneGroups7StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 16 }
+      
+rfiNotchesToneGroups7EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 17 }
+      
+rfiNotchesToneGroups8StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 18 }
+      
+rfiNotchesToneGroups8EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 19 }
+    
+rfiNotchesToneGroups9StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 20 }
+      
+rfiNotchesToneGroups9EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 21 }
+
+rfiNotchesToneGroups10StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 22 }
+      
+rfiNotchesToneGroups10EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 23 }
+      
+rfiNotchesToneGroups11StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 24 }
+      
+rfiNotchesToneGroups11EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 25 }
+     
+rfiNotchesToneGroups12StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 26 }
+      
+rfiNotchesToneGroups12EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 27 }
+     
+rfiNotchesToneGroups13StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 28 }
+      
+rfiNotchesToneGroups13EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 29 }
+
+rfiNotchesToneGroups14StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 30 }
+      
+rfiNotchesToneGroups14EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 31 }
+
+rfiNotchesToneGroups15StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Start tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 32 }
+      
+rfiNotchesToneGroups15EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096) 
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "End tone for this Rfi band"
+      ::= { vdslLineConfPhysVdslRfiNotchesEntry 33 }
+
+--******************************************************************
+-- PboPsdUp
+--******************************************************************
+vdslLineConfPhysVdslPboPsdUpTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineConfPhysVdslPboPsdUpEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains information of PboPsdUp
+       configuration.
+       Ai and Bi for three upstream bands, not counting US0.
+       A and B are used by the upstream PBO algorithm as in
+       G993.2, par. 7.2.4.
+       The implementation is according to G.997.1
+       (third revision) section 7.3.1.2.14. The
+       parameters will be substituted by XDSL2 Line
+       MIB parameters."
+      ::= { vdslObjects 7 }
+
+vdslLineConfPhysVdslPboPsdUpEntry OBJECT-TYPE
+      SYNTAX VdslLineConfPhysVdslPboPsdUpEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineConfPhysVdslPboPsdUpTable."
+      INDEX { lineIndex }
+      ::= { vdslLineConfPhysVdslPboPsdUpTable 1 }
+
+VdslLineConfPhysVdslPboPsdUpEntry ::=
+      SEQUENCE {
+        vdslLineConfPhysVdslPboPsdUpNoOfToneGroups			INTEGER,
+        vdslLineConfPhysVdslPboPsdUpGroup0A					INTEGER,
+        vdslLineConfPhysVdslPboPsdUpGroup1A 				INTEGER,
+        vdslLineConfPhysVdslPboPsdUpGroup2A					INTEGER,
+        vdslLineConfPhysVdslPboPsdUpGroup0B 				INTEGER,
+        vdslLineConfPhysVdslPboPsdUpGroup1B					INTEGER,
+        vdslLineConfPhysVdslPboPsdUpGroup2B 				INTEGER,
+        vdslLineConfPhysVdslPboPsdUpForceElectricalLength	INTEGER,
+        vdslLineConfPhysVdslPboPsdUpAdvanced				TruthValue,
+        vdslLineConfPhysVdslPboPsdUpDisable					TruthValue
+        }
+
+vdslLineConfPhysVdslPboPsdUpNoOfToneGroups OBJECT-TYPE
+      SYNTAX      INTEGER  (0..3)
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Number of tone groups in the descriptor. Maximum is three.
+       Must be equal to the number of upstream bands in the bandplan,
+       not counting US0."
+      ::= { vdslLineConfPhysVdslPboPsdUpEntry 1 }
+
+vdslLineConfPhysVdslPboPsdUpGroup0A OBJECT-TYPE
+      SYNTAX      INTEGER  (-20725..-10240 | 0)
+      UNITS       "1/256 dBm/Hz"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "A value of US1. A/256 is the actual value and should
+       be in [-40, -80.96].
+       G.997.1 name: UPBOPSD-pb (per band)."
+      ::= { vdslLineConfPhysVdslPboPsdUpEntry 2 }
+      
+vdslLineConfPhysVdslPboPsdUpGroup1A OBJECT-TYPE
+      SYNTAX      INTEGER  (-20725..-10240 | 0)
+      UNITS       "1/256 dBm/Hz"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "A value of US2. A/256 is the actual value and should
+       be in [-40, -80.96].
+       G.997.1 name: UPBOPSD-pb (per band)."
+      ::= { vdslLineConfPhysVdslPboPsdUpEntry 3 }
+      
+vdslLineConfPhysVdslPboPsdUpGroup2A OBJECT-TYPE
+      SYNTAX      INTEGER  (-20725..-10240 | 0)
+      UNITS       "1/256 dBm/Hz"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "A value of US3. A/256 is the actual value and should
+       be in [-40, -80.96].
+       Should be 0 if noOfToneGroups < 3.
+       G.997.1 name: UPBOPSD-pb (per band)."
+      ::= { vdslLineConfPhysVdslPboPsdUpEntry 4 }
+      
+
+vdslLineConfPhysVdslPboPsdUpGroup0B OBJECT-TYPE
+      SYNTAX      INTEGER  (-10240..0)
+      UNITS       "1/256 dBm/Hz"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "A value of US1. B/256 is the actual value and should
+       be in [-40, 0].
+       G.997.1 name: UPBOPSD-pb (per band)."
+      ::= { vdslLineConfPhysVdslPboPsdUpEntry 5 }
+      
+vdslLineConfPhysVdslPboPsdUpGroup1B OBJECT-TYPE
+      SYNTAX      INTEGER  (-10240..0)
+      UNITS       "1/256 dBm/Hz"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "A value of US2. B/256 is the actual value and should
+       be in [-40, 0].
+       G.997.1 name: UPBOPSD-pb (per band)."
+      ::= { vdslLineConfPhysVdslPboPsdUpEntry 6 }
+      
+vdslLineConfPhysVdslPboPsdUpGroup2B OBJECT-TYPE
+      SYNTAX      INTEGER  (-10240..0)
+      UNITS       "1/256 dBm/Hz"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "A value of US3. B/256 is the actual value and should
+       be in [-40, 0].
+       Should be 0 if noOfToneGroups < 3.
+       G.997.1 name: UPBOPSD-pb (per band)."
+      ::= { vdslLineConfPhysVdslPboPsdUpEntry 7 }
+
+vdslLineConfPhysVdslPboPsdUpForceElectricalLength OBJECT-TYPE
+      SYNTAX      INTEGER  (-1..1270)
+      UNITS       "0.1 dBm"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "If set, this electrical length (unit in 0.1 dB)
+       will be enforced by the CO on the CPE, resulting
+       in a predefined US PBO. If !=0, enforce US PBO
+       corresponding to a line whose attenuation at 1MHz
+       equals this number. Valid range [0,127] dB. A negative
+       value of -1 mean: don't force the electrical length,
+       but use the measured value instead.
+       G.997.1 name: UPBOKL.
+       G.997.1 name: UPBOKLF."
+      ::= { vdslLineConfPhysVdslPboPsdUpEntry 10 }
+      
+vdslLineConfPhysVdslPboPsdUpAdvanced OBJECT-TYPE
+      SYNTAX      TruthValue
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Enables an alternative UPBOMASK calculation,
+       which differs from the standard G.997.1
+       PBO mask calculation."
+      ::= { vdslLineConfPhysVdslPboPsdUpEntry 15 }
+      
+vdslLineConfPhysVdslPboPsdUpDisable OBJECT-TYPE
+      SYNTAX      TruthValue
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Disable VDSL US power back off, forcing the CPE to use
+       the max US PSD as template. Default not disabled."
+      ::= { vdslLineConfPhysVdslPboPsdUpEntry 20 }
+      
+--******************************************************************
+-- MiscVdslConf
+--******************************************************************
+vdslLineConfPhysVdslMiscVdslConfTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineConfPhysVdslMiscVdslConfEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains information of MiscVdslConf
+       configuration"
+      ::= { vdslObjects 8 }
+
+vdslLineConfPhysVdslMiscVdslConfEntry OBJECT-TYPE
+      SYNTAX VdslLineConfPhysVdslMiscVdslConfEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineConfPhysVdslMiscVdslConfTable."
+      INDEX { lineIndex }
+      ::= { vdslLineConfPhysVdslMiscVdslConfTable 1 }
+
+VdslLineConfPhysVdslMiscVdslConfEntry ::=
+      SEQUENCE {
+        miscVdslConfForceElectricalLength		INTEGER,
+        miscVdslConfMaxTxPowerDn				INTEGER,
+        miscVdslConfDisableBitRateLimitation	TruthValue,
+        miscVdslConfDisableVdslUsPbo			TruthValue,
+        miscVdslConfDynamicInterleaverUs		TruthValue,
+        miscVdslConfDynamicInterleaverDs		TruthValue,
+        miscVdslConfDisableProfileBitmap        INTEGER,
+        miscVdslConfEnableProfileBitmap			BITS,
+        miscVdslConfigStandardLimitMask			INTEGER
+        }
+
+miscVdslConfForceElectricalLength OBJECT-TYPE
+      SYNTAX      INTEGER  (-1..1270)
+      UNITS       "0.1 dBm"
+      MAX-ACCESS  read-write
+      STATUS      obsolete
+      DESCRIPTION
+      "If set, this electrical length (unit in 0.1 dB) will be enforced
+       by the CO on the CPE, resulting in a predefined US PBO.
+       If !=0, enforce US PBO corresponding to a line whose attenuation
+       at 1MHz equals this number.
+       Valid range [0,127] dB. A negative value of -1 mean: don't force the
+       electrical length, but use the measured value instead, to be sent
+       in O-UPDATE
+       Substituted by: vdslLineConfPhysVdslPboPsdUpForceElectricalLength.
+       Obsoleted from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslMiscVdslConfEntry 1 }
+
+miscVdslConfMaxTxPowerDn OBJECT-TYPE
+      SYNTAX      INTEGER  (-256..256)
+      UNITS       "0.1 dBm"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Maximum allowed downstream transmit power. Unit is 0.1 dBm.
+       Valid range [-25.6, 25.6] dBm."
+      ::= { vdslLineConfPhysVdslMiscVdslConfEntry 2 }
+      
+miscVdslConfDisableBitRateLimitation OBJECT-TYPE
+      SYNTAX      TruthValue
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Disables the rate limitation. Only to be used
+       for test purposes. Note that disabling the
+       limitation on more lines may lead to a crash."
+      ::= { vdslLineConfPhysVdslMiscVdslConfEntry 3 }
+      
+miscVdslConfDisableVdslUsPbo OBJECT-TYPE
+      SYNTAX      TruthValue
+      MAX-ACCESS  read-write
+      STATUS      obsolete
+      DESCRIPTION
+      "Disable VDSL US power back off, forcing the CPE to use
+       the max US PSD as template. Default not disabled.
+       Substituted by: vdslLineConfPhysVdslPboPsdUpDisable.
+       Obsoleted from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslMiscVdslConfEntry 4 }
+
+miscVdslConfDynamicInterleaverUs OBJECT-TYPE
+      SYNTAX      TruthValue
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Enable support of dynamic change of interleaver
+       depth in the upstream direction.
+       Note: This field is specific to VDSL2 mode."
+      ::= { vdslLineConfPhysVdslMiscVdslConfEntry 5 }
+
+miscVdslConfDynamicInterleaverDs OBJECT-TYPE
+      SYNTAX      TruthValue
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Enable support of dynamic change of interleaver
+       depth in the downstream direction.
+       Note: This field is specific to VDSL2 mode."
+      ::= { vdslLineConfPhysVdslMiscVdslConfEntry 6 }
+
+miscVdslConfDisableProfileBitmap OBJECT-TYPE
+      SYNTAX      INTEGER (0..256)
+      MAX-ACCESS  read-write
+      STATUS      obsolete
+      DESCRIPTION
+      "Bitmap of VDSL2 profiles to be masked
+       The bits are ordered as in G994.1:
+       bit0 = 8a
+       bit6 = 17a
+       Set the respective bit to disable the profile.
+       Note: This field is specific to VDSL2 mode.
+       Substituted by  miscVdslConfEnableProfileBitmap
+       which is standard compliant .
+       Obsoleted from:			   EDA 4.0"
+      ::= { vdslLineConfPhysVdslMiscVdslConfEntry 7 }
+      
+miscVdslConfEnableProfileBitmap OBJECT-TYPE
+      SYNTAX   BITS { profile30a (0), profile17a (1), profile12b (2), profile12a (3),
+      				  profile8d (4), profile8c(5), profile8b(6), profile8a(7)}
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "VDSL2 profiles to be allowed by the near-end xTU on
+       this line. It is coded in a bit map representation
+       (0 if not allowed, 1 if allowed) as defined in
+       G.997.1 (third revision), section 7.3.1.1.11:
+	   NOTE that profile 30a is not supported in EDA.
+       BIT	PROFILE
+		7	G.993.2 Profile 8a.
+		6	G.993.2 Profile 8b.
+		5	G.993.2 Profile 8c.
+		4	G.993.2 Profile 8d.
+		3	G.993.2 Profile 12a.
+		2	G.993.2 Profile 12b.
+		1	G.993.2 Profile 17a.
+		0	G.993.2 Profile 30a.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslMiscVdslConfEntry 10 }
+      
+miscVdslConfigStandardLimitMask OBJECT-TYPE
+    SYNTAX      INTEGER {   aNUS0  (0),
+							aEU32  (1),
+							aEU36  (2),
+							aEU40  (3),
+							aEU44  (4),
+							aEU48  (5),
+							aEU52  (6),
+							aEU56  (7),
+							aEU60  (8),
+							aEU64  (9),
+							b81	  (10),
+							b82	  (11),
+							b83	  (12),
+							b84	  (13),
+							b85	  (14),
+							b86	  (15),
+							b87	  (16),
+							b88	  (17),
+							b89	  (18),
+							b810  (19),
+							b811  (20),
+							b71	  (21),
+							b72	  (22),
+							b73	  (23),
+							b74	  (24),
+							b75	  (25),
+							b76	  (26),		 
+							custom (255)		} 
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Proprietary interface for selecting a predefined
+       standard compliant Bandplan & LimitMask.
+       NOTE that selecting a predefined BandPlan & LimitMask
+       overrides the vdslLineConfPhysVdslLimitingMaskDn/Up
+       and the vdslLineConfPhysVdslBandPlanDn/Up parameters.
+       To avoid this (e.g. for using a custom BandPlan and/or
+       LimitMask), you should select the value <custom> here.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslMiscVdslConfEntry 15 }
+      
+--******************************************************************
+-- VDSL2 VTU-C Proprietary Channel Extension Table
+--******************************************************************
+vdslVtucProprietaryChanXTable   OBJECT-TYPE
+      SYNTAX          SEQUENCE OF VdslVtucProprietaryChanXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION
+      "VDSL VTU-C Proprietary Channel Extension Table."
+      ::= { vdslObjects 9 }
+
+vdslVtucProprietaryChanXEntry   OBJECT-TYPE
+      SYNTAX          VdslVtucProprietaryChanXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION     
+      "An entry in the vdslVtucProprietaryChanXEntry."
+      INDEX  { lineIndex }
+      ::= { vdslVtucProprietaryChanXTable 1 }
+
+VdslVtucProprietaryChanXEntry ::=
+      SEQUENCE {
+        vdslVtucProprietaryChanXI        	Unsigned32,
+        vdslVtucProprietaryChanXG        	Unsigned32,
+        vdslVtucProprietaryChanXU        	Unsigned32,
+        vdslVtucProprietaryChanXF        	Unsigned32,
+        vdslVtucProprietaryChanXTpsTcTypeB0	INTEGER,
+        vdslVtucProprietaryChanXTpsTcTypeB1	INTEGER
+        }
+
+vdslVtucProprietaryChanXI     OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "I is the interleaver block length.
+     Note: This parameter applies to VDSL2 protocols only."
+    ::= { vdslVtucProprietaryChanXEntry 1 } 
+
+vdslVtucProprietaryChanXG     OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "G is the total number of overhead octets in an overhead
+     superframe.
+     Note: This parameter applies to VDSL2 protocols"
+    ::= { vdslVtucProprietaryChanXEntry 2 } 
+    
+vdslVtucProprietaryChanXU     OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "U is the total number of overhead subframes per overhead
+     superframe.
+     Note: This parameter applies to VDSL2 protocols only."
+    ::= { vdslVtucProprietaryChanXEntry 3 }
+    
+vdslVtucProprietaryChanXF     OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "F is the number of overhead frames in the overhead
+     superframe.
+     Note: This parameter applies to VDSL2 protocols only."
+    ::= { vdslVtucProprietaryChanXEntry 4 } 
+
+vdslVtucProprietaryChanXTpsTcTypeB0 OBJECT-TYPE
+    SYNTAX      INTEGER {inactive(1), ptm (2), atm (4)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The TPC-TC currently used for bearer channel B0.
+     The two channels must use the same TPS-TC configuration,
+     if enabled."
+    ::= { vdslVtucProprietaryChanXEntry 10 } 
+
+vdslVtucProprietaryChanXTpsTcTypeB1 OBJECT-TYPE
+    SYNTAX      INTEGER {inactive(1), ptm (2), atm (4)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The TPC-TC currently used for bearer channel B1.
+     The two channels must use the same TPS-TC configuration,
+     if enabled."
+    ::= { vdslVtucProprietaryChanXEntry 15 }
+    
+--******************************************************************
+-- VDSL2 Proprietary Channel Extension Table
+--******************************************************************
+vdslVturProprietaryChanXTable   OBJECT-TYPE
+      SYNTAX          SEQUENCE OF VdslVturProprietaryChanXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION
+      "VDSL VTU-R Proprietary Channel Extension Table."
+      ::= { vdslObjects 10 }
+
+vdslVturProprietaryChanXEntry   OBJECT-TYPE
+      SYNTAX          VdslVturProprietaryChanXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION     
+      "An entry in the vdslVturProprietaryChanXTable."
+      INDEX  { lineIndex }
+      ::= { vdslVturProprietaryChanXTable 1 }
+
+VdslVturProprietaryChanXEntry ::=
+      SEQUENCE {
+        vdslVturProprietaryChanXI        Unsigned32,
+        vdslVturProprietaryChanXG        Unsigned32,
+        vdslVturProprietaryChanXU        Unsigned32,
+        vdslVturProprietaryChanXF        Unsigned32
+        }
+
+vdslVturProprietaryChanXI     OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "I is the interleaver block length.
+     Note: This parameter applies to VDSL2 protocols only."
+    ::= { vdslVturProprietaryChanXEntry 1 } 
+
+vdslVturProprietaryChanXG     OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "G is the total number of overhead octets in an overhead
+     superframe.
+     Note: This parameter applies to VDSL2 protocols"
+    ::= { vdslVturProprietaryChanXEntry 2 } 
+
+vdslVturProprietaryChanXU     OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "U is the total number of overhead subframes per overhead
+     superframe.
+     Note: This parameter applies to VDSL2 protocols only."
+    ::= { vdslVturProprietaryChanXEntry 3 } 
+
+vdslVturProprietaryChanXF     OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "F is the number of overhead frames in the overhead
+     superframe.
+     Note: This parameter applies to VDSL2 protocols only."
+    ::= { vdslVturProprietaryChanXEntry 4 } 
+      
+--******************************************************************
+-- BandPlanDn status
+--******************************************************************
+vdslLineStatusPhysVdslBandPlanDnTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineStatusPhysVdslBandPlanDnEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains status information of
+       the actual BandPlanDn"
+      ::= { vdslObjects 11 }
+
+vdslLineStatusPhysVdslBandPlanDnEntry OBJECT-TYPE
+      SYNTAX VdslLineStatusPhysVdslBandPlanDnEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineStatusPhysVdslBandPlanDnTable."
+      INDEX { lineIndex }
+      ::= { vdslLineStatusPhysVdslBandPlanDnTable 1 }
+
+VdslLineStatusPhysVdslBandPlanDnEntry ::=
+      SEQUENCE {
+        statusBandPlanDnNoOfToneGroups			INTEGER,
+        statusBandPlanDnToneGroups0StartTone	INTEGER,
+        statusBandPlanDnToneGroups0EndTone 		INTEGER,
+        statusBandPlanDnToneGroups1StartTone	INTEGER,
+        statusBandPlanDnToneGroups1EndTone 		INTEGER,
+        statusBandPlanDnToneGroups2StartTone	INTEGER,
+        statusBandPlanDnToneGroups2EndTone 		INTEGER
+        }
+
+statusBandPlanDnNoOfToneGroups OBJECT-TYPE
+      SYNTAX      INTEGER  (0..3)
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual number of bands downstream"
+      ::= { vdslLineStatusPhysVdslBandPlanDnEntry 1 }
+
+statusBandPlanDnToneGroups0StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual start tone for this  band"
+      ::= { vdslLineStatusPhysVdslBandPlanDnEntry 2 }
+      
+statusBandPlanDnToneGroups0EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual end tone for this  band"
+      ::= { vdslLineStatusPhysVdslBandPlanDnEntry 3 }
+
+statusBandPlanDnToneGroups1StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual start tone for this  statusBand"
+      ::= { vdslLineStatusPhysVdslBandPlanDnEntry 4 }
+      
+statusBandPlanDnToneGroups1EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual end tone for this  band"
+      ::= { vdslLineStatusPhysVdslBandPlanDnEntry 5 }
+      
+statusBandPlanDnToneGroups2StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual start tone for this  band"
+      ::= { vdslLineStatusPhysVdslBandPlanDnEntry 6 }
+      
+statusBandPlanDnToneGroups2EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual end tone for this  band"
+      ::= { vdslLineStatusPhysVdslBandPlanDnEntry 7 }
+      
+--******************************************************************
+-- BandPlanUp status
+--******************************************************************
+vdslLineStatusPhysVdslBandPlanUpTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineStatusPhysVdslBandPlanUpEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains status information of
+       the actual BandPlanUp"
+      ::= { vdslObjects 12 }
+
+vdslLineStatusPhysVdslBandPlanUpEntry OBJECT-TYPE
+      SYNTAX VdslLineStatusPhysVdslBandPlanUpEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineStatusPhysVdslBandPlanUpTable."
+      INDEX { lineIndex }
+      ::= { vdslLineStatusPhysVdslBandPlanUpTable 1 }
+
+VdslLineStatusPhysVdslBandPlanUpEntry ::=
+      SEQUENCE {
+        statusBandPlanUpNoOfToneGroups			INTEGER,
+        statusBandPlanUpToneGroups0StartTone	INTEGER,
+        statusBandPlanUpToneGroups0EndTone 		INTEGER,
+        statusBandPlanUpToneGroups1StartTone	INTEGER,
+        statusBandPlanUpToneGroups1EndTone 		INTEGER,
+        statusBandPlanUpToneGroups2StartTone	INTEGER,
+        statusBandPlanUpToneGroups2EndTone 		INTEGER
+        }
+
+statusBandPlanUpNoOfToneGroups OBJECT-TYPE
+      SYNTAX      INTEGER  (0..3)
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual number of bands downstream"
+      ::= { vdslLineStatusPhysVdslBandPlanUpEntry 1 }
+
+statusBandPlanUpToneGroups0StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual start tone for this  band"
+      ::= { vdslLineStatusPhysVdslBandPlanUpEntry 2 }
+      
+statusBandPlanUpToneGroups0EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual end tone for this  band"
+      ::= { vdslLineStatusPhysVdslBandPlanUpEntry 3 }
+
+statusBandPlanUpToneGroups1StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual start tone for this  band"
+      ::= { vdslLineStatusPhysVdslBandPlanUpEntry 4 }
+      
+statusBandPlanUpToneGroups1EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual end tone for this  band"
+      ::= { vdslLineStatusPhysVdslBandPlanUpEntry 5 }
+      
+statusBandPlanUpToneGroups2StartTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual start tone for this  band"
+      ::= { vdslLineStatusPhysVdslBandPlanUpEntry 6 }
+      
+statusBandPlanUpToneGroups2EndTone OBJECT-TYPE
+      SYNTAX      INTEGER  (0..4096)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Actual end tone for this  band"
+      ::= { vdslLineStatusPhysVdslBandPlanUpEntry 7 }
+
+--******************************************************************
+-- PboPsdDn
+--******************************************************************
+vdslLineConfPhysVdslPboPsdDnTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineConfPhysVdslPboPsdDnEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table provides a set of line configuration
+       parameters to generate a modified downstream PSD
+       mask for Downstream Power Back-Off - Shaped
+       (DPBOSHAPED).
+       The implementation is according to G.997.1
+       (third revision) section 7.3.1.2.13. The
+       parameters will be substituted by XDSL2 Line
+       MIB parameters."
+      ::= { vdslObjects 20 }
+
+vdslLineConfPhysVdslPboPsdDnEntry OBJECT-TYPE
+      SYNTAX VdslLineConfPhysVdslPboPsdDnEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineConfPhysVdslPboPsdDnTable."
+      INDEX { lineIndex }
+      ::= { vdslLineConfPhysVdslPboPsdDnTable 1 }
+
+VdslLineConfPhysVdslPboPsdDnEntry ::=
+      SEQUENCE {
+        vdslLineConfPhysVdslPboPsdDnEsel		INTEGER,
+        vdslLineConfPhysVdslPboPsdDnEscmA		INTEGER,
+        vdslLineConfPhysVdslPboPsdDnEscmB		INTEGER,
+        vdslLineConfPhysVdslPboPsdDnEscmC		INTEGER,
+        vdslLineConfPhysVdslPboPsdDnFmin		INTEGER,
+        vdslLineConfPhysVdslPboPsdDnFmax		INTEGER,
+        vdslLineConfPhysVdslPboPsdDnMus 		INTEGER,
+        vdslLineConfPhysVdslPboPsdDnAdvanced	TruthValue,
+        vdslLineConfPhysVdslPboPsdDnEselMin		INTEGER
+        }
+
+vdslLineConfPhysVdslPboPsdDnEsel OBJECT-TYPE
+      SYNTAX      INTEGER  (0..511)
+      UNITS       "0.5 dB"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "This configuration parameter defines the assumed
+       electrical length of cables (E-side cables)
+       connecting exchange based DSL services to a remote
+       flexibility point (cabinet), that hosts the xTU-C
+       that is subject to spectrally shaped downstream
+       power back-off depending on this length.
+       For this parameter the electrical length is defined
+       as the loss (in dB) of an equivalent length of
+       hypothetical cable at a reference frequency defined
+       by the network operator or in spectrum management
+       regulations. DPBOESEL shall be coded as an unsigned
+       integer representing an electrical length from
+       0 dB to 255.5 dB in steps of 0.5 dB.
+       All values in the range are valid.
+       If DPBOESEL is set to zero, the DPBO in this section
+       shall be disabled.
+       G.997.1 name: DPBOESEL.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslPboPsdDnEntry 5 }
+      
+vdslLineConfPhysVdslPboPsdDnEscmA OBJECT-TYPE
+      SYNTAX      INTEGER  (0..640)
+      UNITS       "1/256 dB"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "This configuration parameter is used to define a cable
+       model in terms of three scalars DPBOESCMA, DPBOESCMB
+       and DPBOESCMC that shall be used to describe the
+       frequency dependent loss of E-side cables.
+       Parameters DPBOESCMA, DPBOESCMB, DPBOESCMC shall be
+       coded as unsigned integers representing a scalar value
+       from -1 to 1.5 in steps of 1/256. All values in the range
+       are valid.
+       G.997.1 name: DPBOESCMA.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslPboPsdDnEntry 10 }
+
+vdslLineConfPhysVdslPboPsdDnEscmB OBJECT-TYPE
+      SYNTAX      INTEGER  (0..640)
+      UNITS       "1/256 dB"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "This configuration parameter is used to define a cable
+       model in terms of three scalars DPBOESCMA, DPBOESCMB
+       and DPBOESCMC that shall be used to describe the
+       frequency dependent loss of E-side cables.
+       Parameters DPBOESCMA, DPBOESCMB, DPBOESCMC shall be
+       coded as unsigned integers representing a scalar value
+       from -1 to 1.5 in steps of 1/256. All values in the range
+       are valid.
+       G.997.1 name: DPBOESCMB.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslPboPsdDnEntry 15 }
+      
+vdslLineConfPhysVdslPboPsdDnEscmC OBJECT-TYPE
+      SYNTAX      INTEGER  (0..640)
+      UNITS       "1/256 dB"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "This configuration parameter is used to define a cable
+       model in terms of three scalars DPBOESCMA, DPBOESCMB
+       and DPBOESCMC that shall be used to describe the
+       frequency dependent loss of E-side cables.
+       Parameters DPBOESCMA, DPBOESCMB, DPBOESCMC shall be
+       coded as unsigned integers representing a scalar value
+       from -1 to 1.5 in steps of 1/256. All values in the range
+       are valid.
+       G.997.1 name: DPBOESCMC.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslPboPsdDnEntry 20 }
+      
+vdslLineConfPhysVdslPboPsdDnFmin OBJECT-TYPE
+      SYNTAX      INTEGER  (0..2048)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Defines the minimum frequency from which the DPBO shall
+       be applied. It ranges from 0 kHz to 8832 kHz in steps of
+       4.3125 kHz.
+       G.997.1 name: DPBOFMIN.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslPboPsdDnEntry 25 }
+      
+vdslLineConfPhysVdslPboPsdDnFmax OBJECT-TYPE
+      SYNTAX      INTEGER  (32..6956)
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Defines the maximum frequency at which DPBO may be applied.
+       It ranges from 138 kHz to 29997.75 kHz in steps of 4.3125 kHz.
+       G.997.1 name: DPBOFMAX.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslPboPsdDnEntry 30 }
+      
+vdslLineConfPhysVdslPboPsdDnMus OBJECT-TYPE
+      SYNTAX      INTEGER  (-255..0)
+      UNITS       "0.5 dBm/Hz"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Defines the assumed Minimum Usable receive PSD mask (in dBm/Hz)
+       for exchange based services, used to modify parameter DPBOFMAX.
+       It shall be coded as an integer representing a PSD mask level
+       from -127.5 dBm/Hz to 0 dBm/Hz in steps of 0.5 dB. All values
+       in the range are valid.
+       NOTE - The PSD mask level is 3.5 dB above the signal PSD level
+       G.997.1 name: DPBOFMUS.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslPboPsdDnEntry 35 }
+
+vdslLineConfPhysVdslPboPsdDnAdvanced OBJECT-TYPE
+      SYNTAX      TruthValue
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Enables an alternative downstream Power
+       Back-Off, which differs from the standard
+       G.997.1 PBO calculation."
+      ::= { vdslLineConfPhysVdslPboPsdDnEntry 40 }
+      
+vdslLineConfPhysVdslPboPsdDnEselMin OBJECT-TYPE
+      SYNTAX      INTEGER  (0..511)
+      UNITS       "0.5 dB"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "This configuration parameter defines the
+       minimum value of all trunk line losses of the
+       cable distributors served (including the KVz at
+       the DSLAM site).
+       This parameter is not G.997.1 compliant and has 
+       only effect when vdslLineConfPhysVdslPboPsdDnAdvanced
+       is enabled.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslPboPsdDnEntry 45 }
+      
+--******************************************************************
+-- MibMaskDs
+--******************************************************************
+vdslLineConfPhysVdslMibMaskDsTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineConfPhysVdslMibMaskDsEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains information of MibMaskDs
+       configuration in accordance with  to G.997.1
+       section 7.3.1.2.9"
+      ::= { vdslObjects 25 }
+
+vdslLineConfPhysVdslMibMaskDsEntry OBJECT-TYPE
+      SYNTAX VdslLineConfPhysVdslMibMaskDsEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineConfPhysVdslMibMaskDsTable."
+      INDEX { lineIndex }
+      ::= { vdslLineConfPhysVdslMibMaskDsTable 1 }
+
+VdslLineConfPhysVdslMibMaskDsEntry ::=
+      SEQUENCE {
+        mibMaskDsNoOfBreakPoints			INTEGER,
+        mibMaskDsBpToneIndex				OCTET STRING,
+        mibMaskDsBpPsd			  			OCTET STRING
+        }
+
+mibMaskDsNoOfBreakPoints OBJECT-TYPE
+      SYNTAX      INTEGER  (0..32)			
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Number of breakpoints in downstream mask.
+       Each breakpoint is defined by a subcarrier
+       index (mibMaskDsBpToneIndex) and a PSD level
+       (mibMaskDsBpPsd).
+       G.997.1 name: PSDMASKds.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslMibMaskDsEntry 5 }
+
+mibMaskDsBpToneIndex OBJECT-TYPE
+      SYNTAX      OCTET STRING  (SIZE (64))
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Toneindexes for 32 breakpoints. Each ToneIndex is
+       2 octets. The octet string has the format:
+       [Bp0_Hi, Bp0_Low....Bp31_Hi, Bp31_Low]
+       Valid range is [0, 4096].
+       G.997.1 name: PSDMASKds.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslMibMaskDsEntry 10 }
+
+mibMaskDsBpPsd OBJECT-TYPE
+      SYNTAX      OCTET STRING  (SIZE (64))
+      UNITS       "0.1 dBm/Hz"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "PSD level in 0.1 dBm/Hz for 32 breakpoints. Each
+       BpPsd has to octets. The octet string has the format:
+       [Bp0_Hi, Bp0_Low....Bp31_Hi, Bp31_Low]
+       Valid range is [0,-96] dBm/Hz.
+       G.997.1 name: PSDMASKds.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslMibMaskDsEntry 15 }
+
+--******************************************************************
+-- MibMaskUs
+--******************************************************************
+vdslLineConfPhysVdslMibMaskUsTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineConfPhysVdslMibMaskUsEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains information of MibMaskUs
+       configuration in accordance with  to G.997.1
+       section 7.3.1.2.12"
+      ::= { vdslObjects 30 }
+
+vdslLineConfPhysVdslMibMaskUsEntry OBJECT-TYPE
+      SYNTAX VdslLineConfPhysVdslMibMaskUsEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineConfPhysVdslMibMaskUsTable."
+      INDEX { lineIndex }
+      ::= { vdslLineConfPhysVdslMibMaskUsTable 1 }
+
+VdslLineConfPhysVdslMibMaskUsEntry ::=
+      SEQUENCE {
+        mibMaskUsNoOfBreakPoints		INTEGER,
+        mibMaskUsBpToneIndex 			OCTET STRING,
+        mibMaskUsBpPsd			  		OCTET STRING
+        }
+
+mibMaskUsNoOfBreakPoints OBJECT-TYPE
+      SYNTAX      INTEGER  (0..16)			
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Number of breakpoints in upstream mask.
+       Each breakpoint is defined by a subcarrier
+       index (mibMaskUsBpToneIndex) and a PSD level
+       (mibMaskUsBpPsd).
+       G.997.1 name: PSDMASKus.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslMibMaskUsEntry 5 }
+
+mibMaskUsBpToneIndex OBJECT-TYPE
+      SYNTAX      OCTET STRING  (SIZE (32))
+      UNITS       "ToneIndex"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "Toneindexes for 16 breakpoints. Each ToneIndex is
+       2 octets. The octet string has the format:
+       [Bp0_Hi, Bp0_Low....Bp15_Hi, Bp15_Low]
+       Valid range is [0, 4096].
+       G.997.1 name: PSDMASKus.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslMibMaskUsEntry 10 }
+
+mibMaskUsBpPsd OBJECT-TYPE
+      SYNTAX      OCTET STRING  (SIZE (32))
+      UNITS       "0.1 dBm/Hz"
+      MAX-ACCESS  read-write
+      STATUS      current
+      DESCRIPTION
+      "PSD level in 0.1 dBm/Hz for 16 breakpoints. Each
+       BpPsd has to octets. The octet string has the format:
+       [Bp0_Hi, Bp0_Low....Bp15_Hi, Bp15_Low]
+       Valid range is [0,-96] dBm/Hz.
+       G.997.1 name: PSDMASKus.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineConfPhysVdslMibMaskUsEntry 15 }
+
+
+
+
+
+--******************************************************************
+-- VDSL Proprietary Line Configuration Profile Extention Table
+--******************************************************************
+vdslProprietaryLineConfProfileXTable   OBJECT-TYPE
+      SYNTAX          SEQUENCE OF VdslProprietaryLineConfProfileXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION
+      "VDSL Proprietary Line Configuration Profile Extention Table."
+      ::= { vdslObjects 35 }
+
+vdslProprietaryLineConfProfileXEntry   OBJECT-TYPE
+      SYNTAX          VdslProprietaryLineConfProfileXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION     
+      "An entry in the vdslLineConfProfileXTable."
+      INDEX  { lineIndex }
+      ::= { vdslProprietaryLineConfProfileXTable 1 }
+
+VdslProprietaryLineConfProfileXEntry ::=
+      SEQUENCE {
+        vdslVtucProprietaryConfXTpsTcType					INTEGER,
+        vdslVtucProprietaryConfXPreemtionAllowedB0			TruthValue,
+        vdslVtucProprietaryConfXPreemtionAllowedB1			TruthValue
+        }
+
+vdslVtucProprietaryConfXTpsTcType OBJECT-TYPE
+    SYNTAX      INTEGER {atm (2), ptm (4), both (6)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Configure allowed traffic type: ATM, PTM or both."
+    ::= { vdslProprietaryLineConfProfileXEntry 5 } 
+
+vdslVtucProprietaryConfXPreemtionAllowedB0 OBJECT-TYPE
+	SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "If True the subscriber is allowed to send 
+     preemptive traffic frames on bearer channel B0. 
+     The value can be either True(1) or False(2)." 
+    ::= { vdslProprietaryLineConfProfileXEntry 10 }
+
+vdslVtucProprietaryConfXPreemtionAllowedB1 OBJECT-TYPE
+	SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "If True the subscriber is allowed to send 
+     preemptive traffic frames on bearer channel B1. 
+     The value can be either True(1) or False(2)." 
+    ::= { vdslProprietaryLineConfProfileXEntry 15 }
+
+--******************************************************************
+-- VDSL2 VTU-C Channel Interval Extension
+--******************************************************************
+vdslVtucChanIntervalXTable   OBJECT-TYPE
+      SYNTAX          SEQUENCE OF VdslVtucChanIntervalXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION
+      "This table provides extra information in 
+       relation to the xdslXtucChanIntervalTable 
+       for each VTU-C channel's performance 
+       collection interval.
+       XDSL channel interfaces are those ifEntries where 
+       ifType is equal to Interleave(124) or 
+       Fast(125).
+       Performance Data Interval number 1 is the
+       the most recent previous interval; interval
+       96 is 24 hours ago. Intervals 2..96 are
+       optional. Interval number 1 is the only
+       interval used currently."
+      ::= { vdslObjects 40 }
+
+vdslVtucChanIntervalXEntry   OBJECT-TYPE
+      SYNTAX          VdslVtucChanIntervalXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION     
+     "An entry in the vdslVtucChanIntervalXTable."
+      INDEX  { lineIndex, adslAtucChanIntervalNumber }
+      ::= { vdslVtucChanIntervalXTable 1 }
+
+VdslVtucChanIntervalXEntry ::=
+      SEQUENCE {
+        vdslVtucChanIntervalXPtmCrcErrors         PerfIntervalCount,
+        vdslVtucChanIntervalXPtmCrcErrorsP        PerfIntervalCount,
+        vdslVtucChanIntervalXPtmCv                PerfIntervalCount,
+        vdslVtucChanIntervalXPtmCvP               PerfIntervalCount
+        }
+
+vdslVtucChanIntervalXPtmCrcErrors OBJECT-TYPE
+      SYNTAX      PerfIntervalCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM non-preemtive traffic 
+       received on this channel during this interval."
+      ::= { vdslVtucChanIntervalXEntry 5 }
+
+vdslVtucChanIntervalXPtmCrcErrorsP OBJECT-TYPE
+      SYNTAX      PerfIntervalCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM preemtive traffic 
+       received on this channel during this interval."
+      ::= { vdslVtucChanIntervalXEntry 10 }
+
+vdslVtucChanIntervalXPtmCv OBJECT-TYPE
+      SYNTAX      PerfIntervalCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM non-preemtive
+       traffic received on this channel during this interval."
+      ::= { vdslVtucChanIntervalXEntry 15 }
+
+vdslVtucChanIntervalXPtmCvP OBJECT-TYPE
+      SYNTAX      PerfIntervalCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM preemtive
+       traffic received on this channel during this interval."
+      ::= { vdslVtucChanIntervalXEntry 20 }
+
+--******************************************************************
+-- VDSL2 VTU-R Channel Interval Extension
+--******************************************************************
+vdslVturChanIntervalXTable   OBJECT-TYPE
+      SYNTAX          SEQUENCE OF VdslVturChanIntervalXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION
+      "This table provides extra information in 
+       relation to the xdslXturChanIntervalTable 
+       for each VTU-R channel's performance 
+       collection interval.
+       XDSL channel interfaces are those ifEntries where 
+       ifType is equal to Interleave(124) or 
+       Fast(125).
+       Performance Data Interval number 1 is the
+       the most recent previous interval; interval
+       96 is 24 hours ago. Intervals 2..96 are
+       optional. Interval number 1 is the only
+       interval used currently."
+      ::= { vdslObjects 45 }
+
+vdslVturChanIntervalXEntry   OBJECT-TYPE
+      SYNTAX          VdslVturChanIntervalXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION     
+     "An entry in the vdslVturChanIntervalXTable."
+      INDEX  { lineIndex, adslAtucChanIntervalNumber }
+      ::= { vdslVturChanIntervalXTable 1 }
+
+VdslVturChanIntervalXEntry ::=
+      SEQUENCE {
+        vdslVturChanIntervalXPtmCrcErrors         PerfIntervalCount,
+        vdslVturChanIntervalXPtmCrcErrorsP        PerfIntervalCount,
+        vdslVturChanIntervalXPtmCv                PerfIntervalCount,
+        vdslVturChanIntervalXPtmCvP               PerfIntervalCount
+        }
+
+vdslVturChanIntervalXPtmCrcErrors OBJECT-TYPE
+      SYNTAX      PerfIntervalCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM non-preemtive traffic 
+       received on this channel during this interval."
+      ::= { vdslVturChanIntervalXEntry 5 }
+
+vdslVturChanIntervalXPtmCrcErrorsP OBJECT-TYPE
+      SYNTAX      PerfIntervalCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM preemtive traffic 
+       received on this channel during this interval."
+      ::= { vdslVturChanIntervalXEntry 10 }
+
+vdslVturChanIntervalXPtmCv OBJECT-TYPE
+      SYNTAX      PerfIntervalCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM non-preemtive
+       traffic received on this channel during this interval."
+      ::= { vdslVturChanIntervalXEntry 15 }
+
+vdslVturChanIntervalXPtmCvP OBJECT-TYPE
+      SYNTAX      PerfIntervalCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM preemtive
+       traffic received on this channel during this interval."
+      ::= { vdslVturChanIntervalXEntry 20 }
+
+--******************************************************************
+-- VDSL2 VTU-C Channel Performance Data Extension
+--******************************************************************
+vdslVtucChanPerfDataXTable   OBJECT-TYPE
+      SYNTAX          SEQUENCE OF VdslVtucChanPerfDataXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION
+      "This table provides extra VTU-C channel information 
+       in relation to the adslAtucChanPerfDataTable.
+       VDSL2 channel interfaces are those ifEntries where 
+       ifType is equal to Interleave(124) or Fast(125)."
+      ::= { vdslObjects 50 }
+
+vdslVtucChanPerfDataXEntry   OBJECT-TYPE
+      SYNTAX          VdslVtucChanPerfDataXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION     
+      "An entry in the vdslVtucChanPerfDataXTable."
+      INDEX  { lineIndex }
+      ::= { vdslVtucChanPerfDataXTable 1 }
+
+VdslVtucChanPerfDataXEntry ::=
+      SEQUENCE  {
+        vdslVtucChanIntervalXCurr15MinPtmCrcErrors  PerfCurrentCount,
+        vdslVtucChanIntervalXCurr1DayPtmCrcErrors   AdslPerfCurrDayCount,
+        vdslVtucChanIntervalXPrev1DayPtmCrcErrors   AdslPerfPrevDayCount,
+        vdslVtucChanIntervalXCurr15MinPtmCrcErrorsP PerfCurrentCount,
+        vdslVtucChanIntervalXCurr1DayPtmCrcErrorsP  AdslPerfCurrDayCount,
+        vdslVtucChanIntervalXPrev1DayPtmCrcErrorsP  AdslPerfPrevDayCount,
+        vdslVtucChanIntervalXCurr15MinPtmCv         PerfCurrentCount,
+        vdslVtucChanIntervalXCurr1DayPtmCv          AdslPerfCurrDayCount,
+        vdslVtucChanIntervalXPrev1DayPtmCv          AdslPerfPrevDayCount,
+        vdslVtucChanIntervalXCurr15MinPtmCvP        PerfCurrentCount,
+        vdslVtucChanIntervalXCurr1DayPtmCvP         AdslPerfCurrDayCount,
+        vdslVtucChanIntervalXPrev1DayPtmCvP         AdslPerfPrevDayCount
+        }
+
+-- VDSL2 VTU-C PTM CRC errors near end non-preemptive
+vdslVtucChanIntervalXCurr15MinPtmCrcErrors OBJECT-TYPE
+      SYNTAX      PerfCurrentCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM non-preemtive traffic 
+       received on this channel within the current 15 
+       minute interval."
+      ::= { vdslVtucChanPerfDataXEntry 5 }
+
+vdslVtucChanIntervalXCurr1DayPtmCrcErrors OBJECT-TYPE
+      SYNTAX      AdslPerfCurrDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM non-preemtive traffic 
+       received on this channel during the current day 
+       as measured by adslAtucChanPerfCurr1DayTimeElapsed."
+      ::= { vdslVtucChanPerfDataXEntry 10 }
+ 
+vdslVtucChanIntervalXPrev1DayPtmCrcErrors OBJECT-TYPE
+      SYNTAX      AdslPerfPrevDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM non-preemtive traffic 
+       blocks received on this channel within the most 
+       recent previous 1-day period."
+      ::= { vdslVtucChanPerfDataXEntry 15 }
+
+-- VDSL2 VTU-C PTM CRC errors near end preemptive
+vdslVtucChanIntervalXCurr15MinPtmCrcErrorsP OBJECT-TYPE
+      SYNTAX      PerfCurrentCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM preemtive traffic 
+       received on this channel within the current 15 
+       minute interval."
+      ::= { vdslVtucChanPerfDataXEntry 20 }
+
+vdslVtucChanIntervalXCurr1DayPtmCrcErrorsP OBJECT-TYPE
+      SYNTAX      AdslPerfCurrDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM preemtive traffic 
+       received on this channel during the current day 
+       as measured by adslAtucChanPerfCurr1DayTimeElapsed."
+      ::= { vdslVtucChanPerfDataXEntry 25 }
+ 
+vdslVtucChanIntervalXPrev1DayPtmCrcErrorsP OBJECT-TYPE
+      SYNTAX      AdslPerfPrevDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM preemtive traffic 
+       blocks received on this channel within the most 
+       recent previous 1-day period."
+      ::= { vdslVtucChanPerfDataXEntry 30 }
+
+-- VDSL2 VTU-C PTM Coding Violations near end non-preemptive
+vdslVtucChanIntervalXCurr15MinPtmCv OBJECT-TYPE
+      SYNTAX      PerfCurrentCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM non-preemtive
+       received on this channel within the current 15 
+       minute interval."
+      ::= { vdslVtucChanPerfDataXEntry 35 }
+
+vdslVtucChanIntervalXCurr1DayPtmCv OBJECT-TYPE
+      SYNTAX      AdslPerfCurrDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM non-preemtive
+       received on this channel during the current day 
+       as measured by adslAtucChanPerfCurr1DayTimeElapsed."
+      ::= { vdslVtucChanPerfDataXEntry 40 }
+ 
+vdslVtucChanIntervalXPrev1DayPtmCv OBJECT-TYPE
+      SYNTAX      AdslPerfPrevDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM non-preemtive
+       blocks received on this channel within the most 
+       recent previous 1-day period."
+      ::= { vdslVtucChanPerfDataXEntry 45 }
+
+-- VDSL2 VTU-C PTM Coding Violations near end preemptive
+vdslVtucChanIntervalXCurr15MinPtmCvP OBJECT-TYPE
+      SYNTAX      PerfCurrentCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM preemtive
+       received on this channel within the current 15 
+       minute interval."
+      ::= { vdslVtucChanPerfDataXEntry 50 }
+
+vdslVtucChanIntervalXCurr1DayPtmCvP OBJECT-TYPE
+      SYNTAX      AdslPerfCurrDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM preemtive
+       received on this channel during the current day 
+       as measured by adslAtucChanPerfCurr1DayTimeElapsed."
+      ::= { vdslVtucChanPerfDataXEntry 55 }
+ 
+vdslVtucChanIntervalXPrev1DayPtmCvP OBJECT-TYPE
+      SYNTAX      AdslPerfPrevDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM preemtive
+       blocks received on this channel within the most 
+       recent previous 1-day period."
+      ::= { vdslVtucChanPerfDataXEntry 60 }
+
+--******************************************************************
+-- VDSL2 VTU-R Channel Performance Data Extension
+--******************************************************************
+vdslVturChanPerfDataXTable   OBJECT-TYPE
+      SYNTAX          SEQUENCE OF VdslVturChanPerfDataXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION
+      "This table provides extra VTU-R channel information 
+       in relation to the adslAtucChanPerfDataTable.
+       VDSL2 channel interfaces are those ifEntries where 
+       ifType is equal to Interleave(124) or Fast(125)."
+      ::= { vdslObjects 55 }
+
+vdslVturChanPerfDataXEntry   OBJECT-TYPE
+      SYNTAX          VdslVturChanPerfDataXEntry
+      MAX-ACCESS      not-accessible
+      STATUS          current
+      DESCRIPTION     
+      "An entry in the vdslVturChanPerfDataXTable."
+      INDEX  { lineIndex }
+      ::= { vdslVturChanPerfDataXTable 1 }
+
+VdslVturChanPerfDataXEntry ::=
+      SEQUENCE  {
+        vdslVturChanIntervalXCurr15MinPtmCrcErrors  PerfCurrentCount,
+        vdslVturChanIntervalXCurr1DayPtmCrcErrors   AdslPerfCurrDayCount,
+        vdslVturChanIntervalXPrev1DayPtmCrcErrors   AdslPerfPrevDayCount,
+        vdslVturChanIntervalXCurr15MinPtmCrcErrorsP PerfCurrentCount,
+        vdslVturChanIntervalXCurr1DayPtmCrcErrorsP  AdslPerfCurrDayCount,
+        vdslVturChanIntervalXPrev1DayPtmCrcErrorsP  AdslPerfPrevDayCount,
+        vdslVturChanIntervalXCurr15MinPtmCv         PerfCurrentCount,
+        vdslVturChanIntervalXCurr1DayPtmCv          AdslPerfCurrDayCount,
+        vdslVturChanIntervalXPrev1DayPtmCv          AdslPerfPrevDayCount,
+        vdslVturChanIntervalXCurr15MinPtmCvP        PerfCurrentCount,
+        vdslVturChanIntervalXCurr1DayPtmCvP         AdslPerfCurrDayCount,
+        vdslVturChanIntervalXPrev1DayPtmCvP         AdslPerfPrevDayCount
+        }
+
+-- VDSL2 VTU-R PTM CRC errors near end non-preemptive
+vdslVturChanIntervalXCurr15MinPtmCrcErrors OBJECT-TYPE
+      SYNTAX      PerfCurrentCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM non-preemtive traffic 
+       received on this channel within the current 15 
+       minute interval."
+      ::= { vdslVturChanPerfDataXEntry 5 }
+
+vdslVturChanIntervalXCurr1DayPtmCrcErrors OBJECT-TYPE
+      SYNTAX      AdslPerfCurrDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM non-preemtive traffic 
+       received on this channel during the current day 
+       as measured by adslAtucChanPerfCurr1DayTimeElapsed."
+      ::= { vdslVturChanPerfDataXEntry 10 }
+ 
+vdslVturChanIntervalXPrev1DayPtmCrcErrors OBJECT-TYPE
+      SYNTAX      AdslPerfPrevDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM non-preemtive traffic 
+       blocks received on this channel within the most 
+       recent previous 1-day period."
+      ::= { vdslVturChanPerfDataXEntry 15 }
+
+-- VDSL2 VTU-R PTM CRC errors near end preemptive
+vdslVturChanIntervalXCurr15MinPtmCrcErrorsP OBJECT-TYPE
+      SYNTAX      PerfCurrentCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM preemtive traffic 
+       received on this channel within the current 15 
+       minute interval."
+      ::= { vdslVturChanPerfDataXEntry 20 }
+
+vdslVturChanIntervalXCurr1DayPtmCrcErrorsP OBJECT-TYPE
+      SYNTAX      AdslPerfCurrDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM preemtive traffic 
+       received on this channel during the current day 
+       as measured by adslAtucChanPerfCurr1DayTimeElapsed."
+      ::= { vdslVturChanPerfDataXEntry 25 }
+ 
+vdslVturChanIntervalXPrev1DayPtmCrcErrorsP OBJECT-TYPE
+      SYNTAX      AdslPerfPrevDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM CRC errors on PTM preemtive traffic 
+       blocks received on this channel within the most 
+       recent previous 1-day period."
+      ::= { vdslVturChanPerfDataXEntry 30 }
+
+-- VDSL2 VTU-R PTM Coding Violations near end non-preemptive
+vdslVturChanIntervalXCurr15MinPtmCv OBJECT-TYPE
+      SYNTAX      PerfCurrentCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM non-preemtive
+       received on this channel within the current 15 
+       minute interval."
+      ::= { vdslVturChanPerfDataXEntry 35 }
+
+vdslVturChanIntervalXCurr1DayPtmCv OBJECT-TYPE
+      SYNTAX      AdslPerfCurrDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM non-preemtive
+       received on this channel during the current day 
+       as measured by adslAtucChanPerfCurr1DayTimeElapsed."
+      ::= { vdslVturChanPerfDataXEntry 40 }
+ 
+vdslVturChanIntervalXPrev1DayPtmCv OBJECT-TYPE
+      SYNTAX      AdslPerfPrevDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM non-preemtive
+       blocks received on this channel within the most 
+       recent previous 1-day period."
+      ::= { vdslVturChanPerfDataXEntry 45 }
+
+-- VDSL2 VTU-R PTM Coding Violations near end preemptive
+vdslVturChanIntervalXCurr15MinPtmCvP OBJECT-TYPE
+      SYNTAX      PerfCurrentCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM preemtive
+       received on this channel within the current 15 
+       minute interval."
+      ::= { vdslVturChanPerfDataXEntry 50 }
+
+vdslVturChanIntervalXCurr1DayPtmCvP OBJECT-TYPE
+      SYNTAX      AdslPerfCurrDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM preemtive
+       received on this channel during the current day 
+       as measured by adslAtucChanPerfCurr1DayTimeElapsed."
+      ::= { vdslVturChanPerfDataXEntry 55 }
+ 
+vdslVturChanIntervalXPrev1DayPtmCvP OBJECT-TYPE
+      SYNTAX      AdslPerfPrevDayCount
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "Count of all PTM Coding violations on PTM preemtive
+       blocks received on this channel within the most 
+       recent previous 1-day period."
+      ::= { vdslVturChanPerfDataXEntry 60 }
+
+ 
+  ------------------------------------------------
+  --        	vdsl2Status  	              --
+  ------------------------------------------------
+     
+  ------------------------------------------------
+  --        vdsl2SCStatusTable                --
+  ------------------------------------------------
+
+  vdsl2SCStatusTable  OBJECT-TYPE
+     SYNTAX      SEQUENCE  OF  Vdsl2SCStatusEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+        "The table vdsl2SCStatusTable contains status parameters
+         of VDSL2/ADSL/ADSL2 and ADSL2+ sub-carriers.  This table
+         contains live data from equipment.
+         
+         This table is copied from draft-ietf-adslmib-vdsl2-01.txt,
+         to secure a smooth migration to the VDSL2-LINE MIB when
+         this MIB is approved."
+     ::= { vdsl2Status 5 }
+
+  vdsl2SCStatusEntry  OBJECT-TYPE
+     SYNTAX      Vdsl2SCStatusEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+        "The table Hfvdsl2SCStatusEntry contains status parameters
+         of VDSL2/ADSL/ADSL2 and ADSL2+ sub-carriers.
+         One index of this table is an interface index where the
+         interface has an ifType of vdsl2(xxx). A second index of this
+         table is the transmission direction. A third index identifies
+         the specific segment of the sub-carriers status addressed."
+     INDEX  { lineIndex, vdsl2SCStatusDirection, vdsl2SCStatusSegment }
+     ::= { vdsl2SCStatusTable 1 }
+
+  Vdsl2SCStatusEntry  ::=
+     SEQUENCE {
+        vdsl2SCStatusDirection         Vdsl2Direction,
+        vdsl2SCStatusSegment           Unsigned32,
+        vdsl2SCStatusSnr               OCTET STRING,
+        vdsl2SCStatusBitsAlloc         OCTET STRING,
+        vdsl2SCStatusGainAlloc         OCTET STRING
+     }
+
+  vdsl2SCStatusDirection  OBJECT-TYPE
+       SYNTAX      Vdsl2Direction
+       MAX-ACCESS  not-accessible
+       STATUS      current
+       DESCRIPTION
+       "The direction of the sub-carrier either
+       upstream or downstream"
+       ::= { vdsl2SCStatusEntry 1 }
+     
+  vdsl2SCStatusSegment  OBJECT-TYPE
+       SYNTAX      Unsigned32(1..8)
+       MAX-ACCESS  not-accessible
+       STATUS      current
+       DESCRIPTION
+       "The segment of the sub-carriers
+       status information provided by this
+       row.
+       Several status parameters in this table
+       are retrieved in segments. The first segment
+       of the status information is retrieved with
+       vdsl2SCStatusSegment=1, the second segment
+       is retrieved with vdsl2SCStatusSegment=2, and
+       so on. When any status parameter is retrieved
+       in n segments where n<8) then, for that
+       parameter, GET operations for the rest segment
+       numbers (n+1 to 8) are responded with a value
+       that indicates: No measurement could be done.
+       This table is from draft-ietf-adslmib-vdsl2-01.txt."
+       ::= { vdsl2SCStatusEntry 2 }
+
+
+  vdsl2SCStatusSnr  OBJECT-TYPE
+       SYNTAX      OCTET STRING  (SIZE(0..512))
+       MAX-ACCESS  read-only
+       STATUS      current
+       DESCRIPTION
+       "The SNR Margin per sub-carrier group, expressing the
+       ratio between the received signal power and received noise
+       power per sub-scriber group.  It is an array of 512 octets,
+       designed for supporting up to 512 (downstream) sub-carriers
+       groups and can be retrieved in a single segment.
+       The number of utilized octets on downstream direction depends
+       on NSds, and on upstream direction it depends on NSus.  This
+       value is referred here as NS.
+       Octet i (0 <= i < NS) is set to a value in the range 0 to
+       254 to indicate that the respective downstream or upstream sub-
+       carrier group i has SNR of: (-32 + Xdsl2SubcarrierSnr(i)/2)
+       in dB (i.e., -32 to 95dB).
+       The special value 255 means that no measurement could be done
+       for the sub-carrier group because it is out of the PSD mask
+       passband or that the noise PSD is out of range to be
+       represented.  Each value in this array is 8 bits wide.
+       This table is from draft-ietf-adslmib-vdsl2-01.txt."
+    REFERENCE    "ITU-T G.997.1, paragraph 7.5.1.28.3 (SNRpsds)
+                  and paragraph 7.5.1.28.6 (SNRpsus)"
+      ::= { vdsl2SCStatusEntry 5 }
+
+ vdsl2SCStatusBitsAlloc  OBJECT-TYPE
+      SYNTAX      OCTET STRING  (SIZE(0..256))
+      UNITS       "bits"
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "The bits allocation per sub-carrier.  An array of 256 octets
+       (512 nibbles), designed for supporting up to 512 (downstream)
+       sub-carriers. When more then 512 sub-carriers are supported,
+       the status information is reported through multiple (up to 8)
+       segments. The first segment is then used for the first 512
+       sub-carriers. The second segment is used for the sub-carriers
+       512 to 1023 and so on.
+       The aggregate number of utilized nibbles on downstream direction
+       (in all segments) depends on NSds, and on upstream direction it
+       depends on NSus.
+       This value is referred here as NS. The segment number is in
+       vdsl2SCStatusSegment.
+       Nibble i (0 <= i < MIN(NS-(segment-1)*512,512)) in each
+       segment is set to a value in the range 0 to 15 to indicate that
+       the respective downstream or upstream sub-carrier j
+       (j=(segement-1)*512+i) has the same amount of bits allocation.
+       This table is from draft-ietf-adslmib-vdsl2-01.txt."
+    REFERENCE    "ITU-T G.997.1, paragraph 7.5.1.29.1 (BITSpsds)
+                  and paragraph 7.5.1.29.2 (BITSpsus)"
+      ::= { vdsl2SCStatusEntry 10 }
+
+ vdsl2SCStatusGainAlloc  OBJECT-TYPE
+      SYNTAX      OCTET STRING  (SIZE(0..1024))
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "The gain allocation per sub-carrier.  An array of 512 16-bits
+       values, designed for supporting up to 512 (downstream) sub-
+       carriers. When more then 512 sub-carriers are supported,
+       the status information is reported through multiple (up to 8)
+       segments. The first segment is then used for the first 512
+       sub-carriers. The second segment is used for the sub-carriers
+       512 to 1023 and so on.
+       The aggregate number of utilized octets on downstream direction
+       depends on NSds, and on upstream direction it depends on NSus.
+       This value is referred here as NS. The segment number is in
+       vdsl2SCStatusSegment.
+       Value i (0 <= i < MIN(NS-(segment-1)*512,512)) in each
+       segment is set to a value in the range 0 to 4093 to indicate
+       that the respective downstream or upstream sub-carrier j
+       (j=(segement-1)*512+i) has the same amount of gain value.
+       The gain value is represented as a multiple of 1/512 on
+       linear scale.  Each value in this array is 16 bits wide and is
+       stored in big endian format.
+       This table is from draft-ietf-adslmib-vdsl2-01.txt."
+    REFERENCE    "ITU-T G.997.1, paragraph 7.5.1.29.3 (GAINSpsds)
+                  and paragraph 7.5.1.29.4 (GAINSpsus)"
+      ::= { vdsl2SCStatusEntry 15 }
+      
+ ------------------------------------------------
+ --         	 vdsl2ProfileChannel          	   --
+ ------------------------------------------------
+
+ ------------------------------------------------
+ --          vdsl2ChConfProfileTable           --
+ ------------------------------------------------
+ vdsl2ChConfProfileTable  OBJECT-TYPE
+    SYNTAX      SEQUENCE  OF  Vdsl2ChConfProfileEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+       "The table vdsl2ChConfProfileTable contains DSL channel
+        profile configuration.
+        Entries in this table MUST be maintained in a
+        persistent manner.
+        
+        This table is copied from draft-ietf-adslmib-vdsl2-01.txt,
+        to secure a smooth migration to the VDSL2-LINE MIB when
+        this MIB is approved."
+    ::= { vdsl2ProfileChannel 1 }
+
+ vdsl2ChConfProfileEntry  OBJECT-TYPE
+    SYNTAX      Vdsl2ChConfProfileEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+       "The table vdsl2ChConfProfileTable contains DSL channel
+        profile configuration.
+        A default profile with an index of 'DEFVAL' will
+        always exist and its parameters will be set to vendor-specific
+        values, unless otherwise specified in this document"
+    INDEX  { vdsl2ChConfProfProfileName }
+    ::= { vdsl2ChConfProfileTable 1 }
+
+ Vdsl2ChConfProfileEntry  ::=
+    SEQUENCE {
+       vdsl2ChConfProfProfileName          SnmpAdminString,
+       vdsl2ChConfProfMinResDataRateDs     Unsigned32,
+       vdsl2ChConfProfMinResDataRateUs     Unsigned32
+    }
+
+ vdsl2ChConfProfProfileName  OBJECT-TYPE
+    SYNTAX      SnmpAdminString (SIZE(1..32))
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+       "This object identifies a row in this table."
+    ::= { vdsl2ChConfProfileEntry 1 }
+
+ vdsl2ChConfProfMinResDataRateDs  OBJECT-TYPE
+    SYNTAX      Unsigned32(0..200000000)
+    UNITS       "bits/second"
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+       "Minimum Reserved Data Rate on Downstream direction.  The
+        minimum reserved net data rate for the bearer channel, coded
+        in bit/s.  This parameter is used only if the Rate Adaptation
+        Mode in the direction of the bearer channel (i.e.,
+        Xdsl2LineConfRaModeDs) is set to dynamicRa.
+        This table is from draft-ietf-adslmib-vdsl2-01.txt."
+    REFERENCE    "ITU-T G.997.1, paragraph 7.3.2.1"
+    ::= { vdsl2ChConfProfileEntry 4 }
+
+ vdsl2ChConfProfMinResDataRateUs  OBJECT-TYPE
+    SYNTAX      Unsigned32(0..200000000)
+    UNITS       "bits/second"
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+       "Minimum Reserved Data Rate on Upstream direction.  The minimum
+        reserved net data rate for the bearer channel, coded in
+        bit/s.  This parameter is used only if the Rate Adaptation
+        Mode in the direction of the bearer channel (i.e.,
+        Xdsl2LineConfRaModeUs) is set to dynamicRa.
+        This table is from draft-ietf-adslmib-vdsl2-01.txt."
+    REFERENCE    "ITU-T G.997.1, paragraph 7.3.2.1"
+    ::= { vdsl2ChConfProfileEntry 5 }
+
+
+--******************************************************************
+-- MiscVdslConf
+--******************************************************************
+vdslLineMiscPhysStatusTable OBJECT-TYPE
+      SYNTAX     SEQUENCE OF VdslLineMiscPhysStatusEntry
+      MAX-ACCESS not-accessible
+      STATUS     current
+      DESCRIPTION
+      "This table contains information of MiscVdslConf
+       configuration"
+      ::= { vdslObjects 60 }
+
+vdslLineMiscPhysStatusEntry OBJECT-TYPE
+      SYNTAX VdslLineMiscPhysStatusEntry
+      MAX-ACCESS  not-accessible
+      STATUS      current
+      DESCRIPTION
+      "An entry in vdslLineMiscPhysStatusTable."
+      INDEX { lineIndex }
+      ::= { vdslLineMiscPhysStatusTable 1 }
+
+VdslLineMiscPhysStatusEntry ::=
+      SEQUENCE {
+        miscPhysStatusVdslProfileBitmap			BITS
+        }
+      
+miscPhysStatusVdslProfileBitmap OBJECT-TYPE
+      SYNTAX   BITS { profile30a (0), profile17a (1), profile12b (2), profile12a (3),
+      				  profile8d (4), profile8c(5), profile8b(6), profile8a(7)}
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+      "VDSL2 profiles to be allowed by the near-end xTU on
+       this line. It is coded in a bit map representation
+       (0 if not allowed, 1 if allowed) as defined in
+       G.997.1 (third revision), section 7.3.1.1.11:
+	   NOTE that profile 30a is not supported in EDA.
+       BIT	PROFILE
+		7	G.993.2 Profile 8a.
+		6	G.993.2 Profile 8b.
+		5	G.993.2 Profile 8c.
+		4	G.993.2 Profile 8d.
+		3	G.993.2 Profile 12a.
+		2	G.993.2 Profile 12b.
+		1	G.993.2 Profile 17a.
+		0	G.993.2 Profile 30a.
+       Valid from:                EDA 4.0"
+      ::= { vdslLineMiscPhysStatusEntry 5 }
+      
+    
+      
+END
+ 
+ 
+
+

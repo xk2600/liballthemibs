@@ -1,0 +1,685 @@
+-- *****************************************************************
+-- TELSEY-STB-MIB.txt:  Telsey Set Top Box MIB configuration
+--
+-- Copyright (c) 2008 by Telsey S.p.A.
+-- All rights reserved.
+-- 
+-- *****************************************************************
+--
+
+TELSEY-STB-MIB DEFINITIONS ::= BEGIN
+
+    IMPORTS
+        IpAddress
+               FROM RFC1155-SMI
+        OBJECT-TYPE
+            FROM RFC-1212
+        DisplayString
+            FROM RFC1213-MIB;
+
+-- ******************************************************************************************
+--
+--          ENTERPRISES ==> TELSEY (10171)
+--          TELSEY ==> STB
+--
+-- ******************************************************************************************
+
+telsey OBJECT IDENTIFIER ::= { iso org(3) dod(6) internet(1) private(4) enterprises(1) telsey(10171) }
+
+stb OBJECT IDENTIFIER ::= { telsey 2 }
+
+
+-- ******************************************************************************************
+--
+--          STB ==> INFO
+--
+-- ******************************************************************************************
+
+stbInfo     OBJECT IDENTIFIER ::= { stb 1 }
+
+hwVersion OBJECT-TYPE
+        SYNTAX  DisplayString
+        ACCESS  read-only
+        STATUS  mandatory
+        DESCRIPTION
+            "Read STB hardware version."
+     ::= { stbInfo 1 }
+
+swVersion OBJECT-TYPE
+        SYNTAX  DisplayString
+        ACCESS  read-only
+        STATUS  mandatory
+        DESCRIPTION
+            "Read STB software version."
+     ::= { stbInfo 2 }
+
+vendorVersion OBJECT-TYPE
+        SYNTAX  DisplayString
+        ACCESS  read-only
+        STATUS  mandatory
+        DESCRIPTION
+            "Read STB vendor name (always 'telsey')."
+     ::= { stbInfo 3 }
+
+collectLog OBJECT-TYPE
+             SYNTAX  INTEGER {
+                      clear (0),
+                      create (1)
+                         }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Collect STB log."
+     ::= { stbInfo 4 }
+
+stbStatus OBJECT-TYPE
+             SYNTAX  INTEGER {
+                      running (0),
+                      outportsOff (1),
+                      browserDown (2),
+                      fullStandby (3)
+                         }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB status, including standby"
+     ::= { stbInfo 5 }
+
+
+
+-- ******************************************************************************************
+--
+--          STB ==> NETWORK
+--
+-- ******************************************************************************************
+
+stbNetwork     OBJECT IDENTIFIER ::= { stb 2 }
+
+-- ******************************************************************************************
+--
+--          STB ==> NETWORK ==> IP
+--
+-- ******************************************************************************************
+
+
+networkIP     OBJECT IDENTIFIER ::= { stbNetwork 1 }
+
+ipMode OBJECT-TYPE
+             SYNTAX  INTEGER {
+                      static (0),
+                     dynamic (1)
+                    }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Upgrade STB firmware."
+     ::= { networkIP 1 }
+
+ipAddress OBJECT-TYPE
+             SYNTAX  IpAddress
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB IP address."
+     ::= { networkIP 2 }
+
+ipNetmask OBJECT-TYPE
+             SYNTAX  IpAddress
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB IP netmask."
+     ::= { networkIP 3 }
+
+ipGateway OBJECT-TYPE
+             SYNTAX  IpAddress
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB IP gateway."
+     ::= { networkIP 4 }
+
+ipDNS OBJECT-TYPE
+             SYNTAX  IpAddress
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB IP DNS."
+     ::= { networkIP 5 }
+
+
+-- ******************************************************************************************
+--
+--          STB ==> NETWORK ==> TIME
+--
+-- ******************************************************************************************
+
+networkTime     OBJECT IDENTIFIER ::= { stbNetwork 2 }
+
+timeActive OBJECT-TYPE
+             SYNTAX  INTEGER {
+                      inactive (0),
+                        active (1)
+                         }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Upgrade STB firmware."
+     ::= { networkTime 1 }
+
+timeServer OBJECT-TYPE
+             SYNTAX  IpAddress
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB Network Time server IP address."
+     ::= { networkTime 2 }
+
+timeZone OBJECT-TYPE
+        SYNTAX  DisplayString
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set STB Timezone Country."
+     ::= { networkTime 3 }
+
+
+-- ******************************************************************************************
+--
+--          STB ==> UPGRADE
+--
+-- ******************************************************************************************
+
+systemUpgrade     OBJECT IDENTIFIER ::= { stb 3 }
+
+upgradeActivate OBJECT-TYPE
+             SYNTAX  INTEGER {
+                      inactive (0),
+                        active (1)
+                    }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Active means it checks for newer image 
+                          from network at boot time."
+           ::= { systemUpgrade 1 }
+
+upgradeMode OBJECT-TYPE
+             SYNTAX  INTEGER {
+                      static (0),
+                     dynamic (1)
+                    }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set upgrade mode."
+           ::= { systemUpgrade 2 }
+
+upgradeMulticastGroup OBJECT-TYPE
+             SYNTAX  IpAddress
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set Multicast IP Group."
+           ::= { systemUpgrade 3 }
+
+upgradeMulticastPort OBJECT-TYPE
+             SYNTAX  INTEGER
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set Multicast Port."
+           ::= { systemUpgrade 4 }
+
+upgradeTftpIpAddress OBJECT-TYPE
+             SYNTAX  IpAddress
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set TFTP Server IP address."
+           ::= { systemUpgrade 5 }
+
+upgradeTftpFileName OBJECT-TYPE
+             SYNTAX  DisplayString
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set Upgrade Package Name in the TFTP server."
+           ::= { systemUpgrade 6 }
+
+upgradeMultipleServer OBJECT-TYPE
+             SYNTAX  DisplayString
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set list of HTTP URLs."
+           ::= { systemUpgrade 7 }
+
+upgradeRestoreInfo OBJECT-TYPE
+             SYNTAX  INTEGER {
+                      not-needed (0),
+                      do-done (1),
+                      error (2)
+                    }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Restore Info for Upgrade ."
+           ::= { systemUpgrade 8 }
+
+-- ******************************************************************************************
+--
+--          STB ==> SYSTEM
+--
+-- ******************************************************************************************
+
+stbSystem     OBJECT IDENTIFIER ::= { stb 4 }
+
+tvSignal OBJECT-TYPE
+             SYNTAX  INTEGER {
+                 rgbComposite (1),
+                compositeOnly (2),
+                       svideo (3)
+             }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB TV signal.
+                          Some TV with RGB input only doesn't want Composite input
+                          signal."
+          ::= { stbSystem 1 }
+
+tvHdmiActivate OBJECT-TYPE
+             SYNTAX  INTEGER {
+                     inactive (0),
+                       active (1)
+             }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Enable/Disable HDMI."
+          ::= { stbSystem 2 }
+
+tvHdmiMode OBJECT-TYPE
+             SYNTAX  INTEGER {
+                       format480i60(0),
+                       format576p50(1),
+                       format576i50(2),
+                       format720p50(3),
+                       format720p60(4),
+                      format1080i50(5),
+                      format1080i60(6),
+             formatVESA1440x900at60(7),
+            formatVESA1600x1200at60(8)
+             }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set HDMI format"
+          ::= { stbSystem 3 }
+
+tvFormat OBJECT-TYPE
+             SYNTAX  INTEGER {
+                   letterbox (1),
+                        wide (2),
+                      normal (3)
+                    }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB TV format.
+                          Normal 4:3 (3), Wide 16:9 (2), 4:3 Letterbox (1)"
+          ::= { stbSystem 4 }
+
+tvBootAutoSwitch OBJECT-TYPE
+             SYNTAX  INTEGER {
+                  inactive (0),
+                    active (1)
+}
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB TV autoswitch during boot up sequence."
+          ::= { stbSystem 5 }
+
+tvAudio OBJECT-TYPE
+             SYNTAX  INTEGER (0..30)
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB TV audio volume."
+          ::= { stbSystem 6 }
+
+
+-- ******************************************************************************************
+--
+--          STB ==> BROWSER
+--
+-- ******************************************************************************************
+
+stbBrowser     OBJECT IDENTIFIER ::= { stb 5 }
+
+browserHomepage OBJECT-TYPE
+        SYNTAX  DisplayString
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set STB T-Browsing home page."
+     ::= { stbBrowser 1 }
+
+browserURL OBJECT-TYPE
+        SYNTAX  DisplayString
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set STB T-Browsing home page."
+     ::= { stbBrowser 2 }
+
+-- ******************************************************************************************
+--
+--          STB ==> BROWSER ==> PROXY
+--
+-- ******************************************************************************************
+
+browserProxy     OBJECT IDENTIFIER ::= { stbBrowser 3 }
+
+proxyMethod OBJECT-TYPE
+             SYNTAX  INTEGER {
+                      direct (0),
+                      manual (1),
+                    download (2),
+                         acs (3)
+                         }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set method to use to set proxy."
+     ::= { browserProxy 1 }
+
+proxyServer OBJECT-TYPE
+             SYNTAX  IpAddress
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set Proxy server IP address."
+     ::= { browserProxy 2 }
+
+-- ******************************************************************************************
+--
+--          STB ==> BROWSER ==> WINDOW
+--
+-- ******************************************************************************************
+
+browserWindow     OBJECT IDENTIFIER ::= { stbBrowser 4 }
+
+windowMode OBJECT-TYPE
+             SYNTAX  INTEGER {
+                      default (0),
+                       custom (1)
+                    }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB browser window mode"
+     ::= { browserWindow 1 }
+
+windowWidth OBJECT-TYPE
+        SYNTAX  INTEGER (1..1920)
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION "Get/Set STB browser window width in pixel."
+     ::= { browserWindow 2 }
+
+windowHeight OBJECT-TYPE
+        SYNTAX  INTEGER (1..1080)
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION "Get/Set STB browser window height in pixel."
+     ::= { browserWindow 3 }
+
+windowXPos OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION "Get/Set STB browser window X Position."
+     ::= { browserWindow 4 }
+
+windowYPos OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION "Get/Set STB browser window Y Position."
+     ::= { browserWindow 5 }
+
+-- ******************************************************************************************
+--
+--          STB ==> BROWSER ==> LINK
+--
+-- ******************************************************************************************
+
+browserLink     OBJECT IDENTIFIER ::= { stbBrowser 5 }
+
+linkVisited OBJECT-TYPE
+             SYNTAX  INTEGER {
+                        blue (0),
+                      yellow (1)
+                    }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB browser visited link color."
+     ::= { browserLink 1 }
+
+-- ******************************************************************************************
+--
+--          STB ==> BROWSER ==> FONT
+--
+-- ******************************************************************************************
+
+browserFont     OBJECT IDENTIFIER ::= { stbBrowser 6 }
+
+fontSize OBJECT-TYPE
+             SYNTAX  INTEGER
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB browser font size."
+     ::= { browserFont 1 }
+
+-- ******************************************************************************************
+--
+--          STB ==> BROWSER ==> LANGUAGE
+--
+-- ******************************************************************************************
+
+browserLanguage OBJECT-TYPE
+             SYNTAX  INTEGER {
+                      italian (0),
+                      english (1)
+                    }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Get/Set STB browser language."
+     ::= { stbBrowser 7 }
+
+-- ******************************************************************************************
+--
+--          STB ==> BROWSER ==> TOOLBAR
+--
+-- ******************************************************************************************
+
+browserToolbar     OBJECT IDENTIFIER ::= { stbBrowser 8 }
+
+toolbarActivate OBJECT-TYPE
+             SYNTAX  INTEGER {
+                   inactive (0),
+                     active (1)
+                    }
+             ACCESS  read-write
+             STATUS  mandatory
+             DESCRIPTION "Show / hide browser navigation toolbar."
+     ::= { browserToolbar 1 }
+
+browserHomepageRollover OBJECT-TYPE
+        SYNTAX  DisplayString
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set STB T-Browsing home page."
+     ::= { stbBrowser 9 }
+
+browserDelay OBJECT-TYPE
+        SYNTAX  INTEGER
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set Delay Browser Execution"
+     ::= { stbBrowser 10 }
+
+
+
+-- ******************************************************************************************
+--
+--          STB ==> PLAYER
+--
+-- ******************************************************************************************
+
+stbPlayer     OBJECT IDENTIFIER ::= { stb 6 }
+
+-- ******************************************************************************************
+--
+--          STB ==> PLAYER ==> SUBTITLES
+--
+-- ******************************************************************************************
+
+playerSubtitles   OBJECT IDENTIFIER ::= { stbPlayer 1 }
+
+subtitlesActivate OBJECT-TYPE
+             SYNTAX  INTEGER {
+                   inactive (0),
+                     active (1)
+                    }
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Show / hide videostreaming subtitles."
+     ::= { playerSubtitles 1 }
+
+subtitlesLanguage OBJECT-TYPE
+        SYNTAX  INTEGER {
+                italian (0),
+                english (1),
+                french1 (2),
+                french2 (3),
+                german1 (4),
+                german2 (5),
+              norwegian (6),
+                spanish (7),
+               japanese (8)
+                    }
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set STB videostreaming subtitles language."
+     ::= { playerSubtitles 2 }
+
+-- ******************************************************************************************
+--
+--          STB ==> PLAYER ==> AUDIO
+--
+-- ******************************************************************************************
+
+playerAudio   OBJECT IDENTIFIER ::= { stbPlayer 2 }
+
+audioLanguage OBJECT-TYPE
+        SYNTAX  INTEGER {
+                italian (0),
+                english (1),
+                french1 (2),
+                french2 (3),
+                german1 (4),
+                german2 (5),
+              norwegian (6),
+                spanish (7),
+               japanese (8)
+                    }
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set STB videostreaming audio language."
+     ::= { playerAudio 1 }
+
+
+-- ******************************************************************************************
+--
+--          STB ==> REMOTE MANAGER
+--
+-- ******************************************************************************************
+
+stbRemoteManager     OBJECT IDENTIFIER ::= { stb 7 }
+
+remoteMGroup OBJECT-TYPE
+        SYNTAX  DisplayString
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set Group to belong for the Remote Management."
+     ::= { stbRemoteManager 1 }
+
+remoteMUser OBJECT-TYPE
+        SYNTAX  DisplayString
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set User for the Remote Management."
+     ::= { stbRemoteManager 2 }
+
+remoteMPwd OBJECT-TYPE
+        SYNTAX  DisplayString
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set Password of the User for Remote Management."
+     ::= { stbRemoteManager 3 }
+
+remoteMProtocol OBJECT-TYPE
+        SYNTAX  INTEGER {
+                SNMP (0)
+        }
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set Remote Management Protocol."
+     ::= { stbRemoteManager 4 }
+
+remoteMEncryptActivate OBJECT-TYPE
+        SYNTAX  INTEGER {
+                inactive (0),
+                  active (1)
+        }
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Active means use encryption at next reboot."
+     ::= { stbRemoteManager 5 }
+
+remoteMEncryptAlgo OBJECT-TYPE
+        SYNTAX  INTEGER {
+                DES (0),
+                AES (1)
+        }
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Get/Set Algorithm for the Encryption."
+     ::= { stbRemoteManager 6 }
+
+
+-- ******************************************************************************************
+--
+--          STB ==> ACTION
+--
+-- ******************************************************************************************
+
+stbAction     OBJECT IDENTIFIER ::= { stb 8 }
+
+actionReboot OBJECT-TYPE
+        SYNTAX  INTEGER {
+            nothing (0),
+             reboot (1)
+            }
+        ACCESS  write-only
+        STATUS  mandatory
+        DESCRIPTION
+            "Reboot Set Top Box."
+     ::= { stbAction 1 }
+
+
+actionPing OBJECT-TYPE
+        SYNTAX  IpAddress
+        ACCESS  read-write
+        STATUS  mandatory
+        DESCRIPTION
+            "Return alive message."
+     ::= { stbAction 2 }
+
+
+-- ******************************************************************************************
+-- END   END   END   END   END   END   END   END   END   END   END   END   END   END   END
+-- ******************************************************************************************
+
+END
+
+

@@ -1,0 +1,21 @@
+--
+-- DXD root SMI 
+-- CONTACT-INFO: 
+-- 		 Ericsson Diax A/S - Denmark
+--		 Faelledvej 17
+--		 DK-7600 Struer
+--		 Denmark
+--		 Phone : +45 97 86 90 62
+--		 
+--		 E-mail: support@dxd.ericsson.se
+
+DIESEL-SMI DEFINITIONS ::= BEGIN
+
+     IMPORTS
+         diaxMIB
+               FROM DXD-SMI;
+         
+    peaIpDslam	OBJECT IDENTIFIER ::= { diaxMIB 300 }
+
+END
+

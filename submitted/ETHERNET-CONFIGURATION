@@ -1,0 +1,254 @@
+ETHERNET-CONFIGURATION DEFINITIONS ::= BEGIN 
+
+IMPORTS
+    MODULE-IDENTITY,
+    OBJECT-TYPE,
+    Unsigned32
+        FROM SNMPv2-SMI
+        
+    peaInterfaces
+        FROM PEA-INTERFACES-SMI;
+           
+ethernetConfiguration  MODULE-IDENTITY
+    LAST-UPDATED 
+         "200601201233Z"
+    ORGANIZATION
+         "Ericsson Danmark A/S"
+    CONTACT-INFO
+         "
+         Ericsson Diax
+         Faelledvej 17
+         DK-7600 Struer
+         Denmark
+         
+         E-mail: diax.support@ericsson.com
+         "       
+   DESCRIPTION
+         "
+         The public Ethernet access software supports a number of standard 
+         and proprietary MIBs. This MIB module defines objects for
+         reading/writing common Ethernet information.
+
+         In cases where the network element is overloaded with traffic, it
+         must be ensured that the high priority packets are always processed
+         first. This is done using an overload protection mechanism that is
+         always active. The downstream traffic from the aggregate uplink
+         Ethernet will be processed according to priority. The overload
+         protection is only in use if there is more than one packet waiting
+         to be processed. There are a number of receive priorities in the
+         network element downstream overload protection. This MIB can be
+         used to configure the mapping between VLAN priority of downstream
+         packets and the receive priority in the network element. Statistics
+         for the receive priorities can also be read with this MIB.
+
+         
+         "                                                           
+    ::= { peaInterfaces 20 }
+
+uplinkEthernetRxScheduling      OBJECT IDENTIFIER ::= { ethernetConfiguration 20 }
+
+
+numberOfRxPriorities OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "
+     With this parameter it is possible to read the number of available receive
+     priorities, which can be used when mapping VLAN tagged incoming downstream
+     packets from the aggregation network to different receive priorities.
+
+     vlanPrioToRxPriorityMappingTable is used to do the actual mapping between
+     VLAN priority and receive priority.
+    "
+    ::= { uplinkEthernetRxScheduling 10 }
+
+vlanPrioToRxPriorityMappingTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF VlanPrioToRxPriorityMappingEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "
+     Different operators uses different VLAN p-bit classification of services.
+     In addition to voice, video and best effort data services, it may also be
+     required to distinguish between various data services, and to classify
+     traffic based on other criteria's than just service. As a consequence,
+     utilization of the entire range of VLAN p-bit values from 0 to 7 is needed.
+     
+     More incoming traffic may arrive from the uplink Ethernet interface, than 
+     it is possible to forward on the downlink interface. In this case it is 
+     important to forward traffic with highest priority first and drop low 
+     priority traffic if necessary.
+     
+     With this table it is possible to configure which receive priority
+     (rxPriority) is used for incoming downstream traffic carrying specific
+     VLAN p-bit values. It is possible to specify, per VLAN p-bit value, which
+     receive priority incoming downstream traffic is allocated to.
+     If more than one VLAN tag is included in the received packets, only the first
+     VLAN tags priority is taken into account when mapping to receive priority.
+     Any packets received without VLAN tag are mapped to the highest receive
+     priority (rxPriority=1).
+
+     Below is an illustration of how the VLAN priority could be mapped to the
+     receive priorities. The illustration is just and example, any combinations
+     of mappings are valid. Note that the number of receive priorities may vary
+     from one product to another.
+     
+                              ___________________________________
+                             |                                   |
+                             |                                   |
+                             |    -- p-bit 7 ----> rxPriority 1  |
+                             |   /                               |
+     Incoming traffic from   |  /                                |
+     the aggregation network | /---- p-bit 6 ----> rxPriority 2  |
+         (VLAN p-bit 0-7)    |/                                  |
+     ----------------------->|\                                  |
+                             | \---- p-bit 5 ----> rxPriority 3  |
+                             |  \                                |
+                             |   \                               |
+                             |    -- p-bit 0-4 --> rxPriority 4  |
+                             |                                   |
+                             |___________________________________|
+    "
+    ::= { uplinkEthernetRxScheduling 15 }
+
+vlanPrioToRxPriorityMappingEntry OBJECT-TYPE
+    SYNTAX      VlanPrioToRxPriorityMappingEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "
+     This is an entry of the vlanPrioToRxPriorityMappingTable
+
+     Following example map highest VLAN priority to highest rxPriority.
+     Any combinations of mappings are valid. The vlanPrioToRxPriorityMappingTable
+     will be searched from index 1 and onwards and for first match of VLAN
+     priority the corresponding rxPriority will be used. Note that the valid
+     range of rxPriority may vary from one product to another.
+     
+     vlanPrioToRxPriorityMappingEntry
+     ===================================================
+     |vlanPrioToRxPriorityIndex|vlanPriority|rxPriority|
+     |            1            |     0      |    8     |
+     |            2            |     1      |    7     |
+     |            3            |     2      |    6     |
+     |            4            |     3      |    5     |
+     |            5            |     4      |    4     |
+     |            6            |     5      |    3     |
+     |            7            |     6      |    2     |
+     |            8            |     7      |    1     |
+    "
+    INDEX  { vlanPrioToRxPriorityIndex }
+    ::= { vlanPrioToRxPriorityMappingTable 5 }
+
+VlanPrioToRxPriorityMappingEntry ::=
+    SEQUENCE {
+    		      vlanPrioToRxPriorityIndex   Unsigned32,
+              vlanPriority                Unsigned32,
+              rxPriority                  Unsigned32
+             }
+
+vlanPrioToRxPriorityIndex OBJECT-TYPE
+    SYNTAX      Unsigned32 (1..8)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "
+     This is the index to the vlanPrioToRxPriorityMappingTable.
+    "
+    ::= { vlanPrioToRxPriorityMappingEntry 5 }
+    
+vlanPriority OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..7)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "
+     This is the VLAN priority to be mapped to a receive queue priority.
+     VLAN priority zero is the lowest priority.
+    "
+    ::= { vlanPrioToRxPriorityMappingEntry 10 }
+
+rxPriority OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "
+     Incoming packets received on the uplink interface with the VLAN
+     priority equal to vlanPriority in the vlanPrioToRxQueuePrioMappingEntry,
+     are mapped to the receive queue priority specified with this parameter.
+
+     Note: Different products may implement different number of receive
+           priorities. One is the highest receive priority.
+    "
+    ::= { vlanPrioToRxPriorityMappingEntry 15 }
+
+
+    
+rxPriorityStatisticsTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF RxPriorityStatisticsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "
+      This table is used to read out statistics counters per receive
+      priority. Statistics are available for packets delivered to a
+      higher-layer, packets discarded due to no available buffers and
+      packets discarded due to errors.
+    "
+    ::= { uplinkEthernetRxScheduling 20 }
+
+rxPriorityStatisticsEntry OBJECT-TYPE
+    SYNTAX      RxPriorityStatisticsEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "
+     This is an entry of the rxPriorityStatisticsTable
+    "
+    INDEX  { rxPriority }
+    ::= { rxPriorityStatisticsTable 5 }
+    
+RxPriorityStatisticsEntry ::=
+    SEQUENCE {
+              rxPriorityStatisticsPkts        Unsigned32,
+              rxPriorityStatisticsDiscards    Unsigned32,
+              rxPriorityStatisticsErrors      Unsigned32
+             }
+
+rxPriorityStatisticsPkts OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "
+     Number of successfully received packets for the specific receive
+     priority.
+    "
+    ::= { rxPriorityStatisticsEntry 5 }
+
+rxPriorityStatisticsDiscards OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "
+     Number of packets discarded due to no available buffers for the
+     specific receive priority.
+    "
+    ::= { rxPriorityStatisticsEntry 10 }
+    
+rxPriorityStatisticsErrors OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "
+     Number of packets discarded due to any other reason than
+     no buffers available for the specific receive priority.
+    "
+    ::= { rxPriorityStatisticsEntry 15 }
+END
+
+

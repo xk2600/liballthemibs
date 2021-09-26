@@ -1,0 +1,77 @@
+-- file: DESCH-GLOBAL-REG.mib
+
+DESCH-GLOBAL-REG DEFINITIONS ::= BEGIN
+
+IMPORTS
+	enterprises,
+	MODULE-IDENTITY,
+	OBJECT-IDENTITY
+		FROM SNMPv2-SMI;
+
+deschGlobalRegModule MODULE-IDENTITY
+	LAST-UPDATED "200407202031Z"
+	ORGANIZATION "Delta Energy Systems (Switzerland) AG"
+	CONTACT-INFO
+		"postal: Delta Energy Systems (Switzerland) AG
+                         Freiburgstrasse 251,
+                         CH-3018 Bern-Buempliz
+                 web:     www.deltaenergysystems.com
+                 email: stefan.rothaermel@delta-es.com"
+	DESCRIPTION
+		"The Delta Energy Systems (Switzerland) AG cental registration modules."
+	REVISION "200407202031Z"
+	DESCRIPTION
+		"Initial version."
+	::= { deschModules 1 }
+
+-- the root of the sub-tree for Delta Energy Systems (Sweden)
+
+delta       OBJECT IDENTIFIER   ::= { enterprises 20246 }
+
+-- the root of the sub-tree for Delta Energy Systems (Switzerland)
+
+deschRoot OBJECT IDENTIFIER 	::= { delta 2 }
+
+-- sub-tree fro registrations, which includes modules
+
+deschReg OBJECT IDENTIFIER 	::= { deschRoot 1 }
+
+deschModules OBJECT IDENTIFIER 	::= { deschReg 1 }
+
+-- sub-tree for company-wide objects and events
+
+deschGeneric OBJECT IDENTIFIER 	::= { deschRoot 2 }
+
+-- sub-tree for product specific objects and events
+
+deschProducts OBJECT IDENTIFIER 	::= { deschRoot 3 }
+
+deschController OBJECT IDENTIFIER 	::= { deschProducts 1 }
+
+deschPsc3 OBJECT IDENTIFIER 	::= { deschController 1 }
+
+-- sub-tree for agent profiles
+
+deschCaps OBJECT IDENTIFIER 	::= { deschRoot 4 }
+
+-- sub-tree for requirements specifications
+
+deschRegs OBJECT IDENTIFIER 	::= { deschRoot 5 }
+
+-- sub-tree for experiements
+
+deschExpr OBJECT IDENTIFIER 	::= { deschRoot 6 }
+
+-- product families
+
+controllerReg OBJECT IDENTIFIER 	::= { deschReg 2 }
+
+-- products
+
+controllerPsc3Reg OBJECT-IDENTITY
+	STATUS current
+	DESCRIPTION
+		"The Controller Model Psc3"
+	::= { controllerReg 1 }
+
+END

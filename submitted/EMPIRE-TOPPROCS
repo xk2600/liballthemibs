@@ -1,0 +1,210 @@
+-- $Id$
+-- $Log$
+--
+-- Empire Technologies, Inc. Private Enterprise MIB for
+-- Top Processes Application Management Module for SystemEDGE 
+-- http:/www.empire.com/
+
+-- COPYRIGHT 2000 Empire Technologies, Inc. ALL RIGHTS RESERVED.
+-- THIS DOCUMENT CONTAINS CONFIDENTIAL AND TRADE SECRET INFORMATION OF 
+-- THE Empire Technologies, Inc.  COPYRIGHT NOTICE IS PRECAUTIONARY 
+-- ONLY AND DOES NOT IMPLY PUBLICATION.
+
+-- No part of this document may be reproduced, transmitted, transcribed,
+-- stored in a retrieval system, or translated into any language or
+-- computer language, in any form or by any means, without
+-- prior written consent of Empire Technologies, Inc.
+
+EMPIRE-TOPPROCS DEFINITIONS ::= BEGIN
+	IMPORTS
+                OBJECT-TYPE
+			FROM RFC-1212
+		TRAP-TYPE
+			FROM RFC-1215
+                DisplayString
+                        FROM RFC1213-MIB
+                enterprises, TimeTicks, Counter, Gauge
+                        FROM RFC1155-SMI;
+
+	empire 	   	OBJECT IDENTIFIER ::= { enterprises 546 }
+        applications    OBJECT IDENTIFIER ::= { empire 16 }
+        topProcs        OBJECT IDENTIFIER ::= { applications 7 }
+
+	topProcsVersion OBJECT-TYPE
+		SYNTAX DisplayString
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+		   "Description and version number of this module"
+		::= { topProcs 1 }
+
+	topProcsLastUpdate OBJECT-TYPE
+		SYNTAX TimeTicks
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+		   "The time, in TimeTicks, that the topProcsTable was
+                    last updated."
+		::= { topProcs 2 }
+
+	topProcsLastInterval OBJECT-TYPE
+		SYNTAX INTEGER
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+		   "The length, in seconds, of the last sample interval."
+		::= { topProcs 3 }
+
+
+        topProcsTable OBJECT-TYPE
+		SYNTAX SEQUENCE OF TopProcsTableEntry
+ 		ACCESS not-accessible
+		STATUS mandatory
+		DESCRIPTION
+		   ""
+		::= { topProcs 10 }
+
+	topProcsTableEntry OBJECT-TYPE
+		SYNTAX TopProcsTableEntry
+		ACCESS not-accessible
+		STATUS mandatory
+		DESCRIPTION
+		   ""
+		INDEX { topProcsIndex }
+		::= {  topProcsTable 1 }
+
+        TopProcsTableEntry ::= SEQUENCE {
+		topProcsIndex
+			INTEGER,
+		topProcsID
+			INTEGER,
+		topProcsUID
+			INTEGER,
+		topProcsNice
+			INTEGER,
+		topProcsSize
+			Gauge,
+                topProcsRSS
+			Gauge,
+		topProcsState
+			DisplayString,
+		topProcsTime
+			INTEGER,
+		topProcsCPU
+			INTEGER,
+		topProcsCommand
+			DisplayString
+        }
+
+	topProcsIndex OBJECT-TYPE
+		SYNTAX INTEGER
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+		   "The index in the topProcsTable starting at 1.
+                    Processes are sorted by percent CPU utilization
+                    with index 1 denoting the process currently using
+                    the greatest percentage of the CPU."
+		::= { topProcsTableEntry 1 }
+
+	topProcsID OBJECT-TYPE
+		SYNTAX INTEGER
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+                   "The unique process identifier (PID) for the
+                    process that this entry describes.  You can use
+                    this value (plus 1) to index the process in the
+                    Empire {\em processTable}." 
+		::= { topProcsTableEntry 2 }
+
+	topProcsUID OBJECT-TYPE
+		SYNTAX INTEGER
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+		    "he process owner's user ID (e.g. 0 for root)."
+		::= { topProcsTableEntry 3 }
+
+	topProcsNice OBJECT-TYPE
+		SYNTAX INTEGER
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+	            "The 'nice' value of the process which reflects
+                     the level of priority that the running process
+                     has." 
+		::= { topProcsTableEntry 4 }
+
+	topProcsSize OBJECT-TYPE
+		SYNTAX Gauge
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+ 		    "The combined size of this process' text, data,
+                     and stack segments in KBytes." 
+		::= { topProcsTableEntry 5 }
+
+        topProcsRSS OBJECT-TYPE
+		SYNTAX Gauge
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+		    "The real memory (resident set) size of the
+                     process in KBytes." 
+		::= { topProcsTableEntry 6 }
+
+	topProcsState OBJECT-TYPE
+		SYNTAX DisplayString
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+		    "The operating system-dependent process state
+                     (e.g. sleeping, waiting, running, idle, zombie,
+                     stopped)."  
+		::= { topProcsTableEntry 7 }
+
+	topProcsTime OBJECT-TYPE
+		SYNTAX INTEGER
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+		    "The CPU time, in seconds, accumulated by this
+                     process."
+		::= { topProcsTableEntry 8}
+
+	topProcsCPU OBJECT-TYPE
+		SYNTAX INTEGER
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+		    "The percent CPU utilization, of this process,
+                     over the last sample interval.  Although this
+                     value is highly system-dependent, it is usually
+                     determined by calculating the difference in the
+                     number of CPU ticks and dividing by the total
+                     possible CPU ticks.  Since fractions are not
+                     supported by SNMP, the value reported is
+                     percentage multipled by 100.  For example, a CPU
+                     percentage of 1.37 would be returned as 137." 
+		::= { topProcsTableEntry 9 }
+
+	topProcsCommand OBJECT-TYPE
+		SYNTAX DisplayString
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+		    "The name of the running process that this entry
+                     describes." 
+		::= { topProcsTableEntry 10 }
+
+	topProcsArgs OBJECT-TYPE
+		SYNTAX DisplayString
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION
+		    "The arguments (if any) to the running process
+                     that this entry describes."
+		::= { topProcsTableEntry 11 }
+
+END

@@ -1,0 +1,55 @@
+--
+-- DXD root SMI
+--
+DXD-SMI DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY
+        FROM SNMPv2-SMI
+
+    ericsson
+    	FROM ERICSSON-TOP-MIB;
+
+diaxMIB MODULE-IDENTITY
+    LAST-UPDATED
+        "200511160000Z"
+    ORGANIZATION
+        "Ericsson"
+    CONTACT-INFO
+        "Ericsson Local Support"
+    DESCRIPTION
+        "This very small module is made available so that
+         developers within the Ericsson Denmark community can import the
+         'diaxMIB' name into their own MIB modules.
+
+         Contact : Ericsson Local Support
+ 
+         (Please contact peder.jorgensen@ericsson.com for new 'diaxMIB' numbers)
+                                             
+		om2MIBObjects MODULE-IDENTITY ::= { diaxMIB 100 }
+		diaxHBS OBJECT IDENTIFIER ::= { diaxMIB 200 }
+		peaIpDslam OBJECT IDENTIFIER ::= { diaxMIB 300 }                                         
+		publicEthernetManager MODULE-IDENTITY ::= { diaxMIB 400 }
+		pemStandardObjects MODULE-IDENTITY ::= { diaxMIB 500 }
+		pemStandardObjectsTC MODULE-IDENTITY ::= { diaxMIB 501 }  
+		pea OBJECT IDENTIFIER ::= { diaxMIB 600 }   
+		PEA-POWER-ETHERNET-MIB MODULE-IDENTITY ::= { diaxMIB 601 }
+		peaLineTest OBJECT IDENTIFIER ::= { diaxMIB 602 }
+		peaIss MODULE-IDENTITY ::= { diaxMIB 603 }
+		peaFee1 OBJECT IDENTIFIER ::= { diaxMIB 700 }
+		pea_FELX MODULE-IDENTITY ::= { diaxMIB 800 }
+		esn310 MODULE-IDENTITY ::= { diaxMIB 900 }
+       		peaEmp	OBJECT IDENTIFIER ::= { diaxMIB 1000 }
+		msan MODULE-IDENTITY ::= { diaxMIB 1100 }
+		esn410 MODULE-IDENTITY ::= { diaxMIB 1200 }
+		peaPots MODULE-IDENTITY ::= { diaxMIB 1300 }
+		peaAcct MODULE-IDENTITY ::= { diaxMIB 1400 }
+		peaCallControl MODULE-IDENTITY ::= { diaxMIB 1500 }
+		peaH248 MODULE-IDENTITY ::= { diaxMIB 1501 }
+		edn324 MODULE-IDENTITY ::= { diaxMIB 1600 }
+		mathHSN MODULE-IDENTITY ::= { diaxMIB 1700 }
+		peaNBTH MODULE-IDENTITY ::= { diaxMIB 1800 }
+	"
+    ::= { ericsson 72 }
+
+END

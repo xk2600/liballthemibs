@@ -1,0 +1,359 @@
+PEA-L2CP-IPDSLAM DEFINITIONS ::= BEGIN
+
+
+IMPORTS
+    peaIpDslam
+       FROM DIESEL-SMI
+ 
+    lineIndex
+       FROM PEA-BRIDGE-IPDSLAM
+
+    managedObjectClass, 
+    managedObjectInstance, 
+    sequenceNumber, 
+    perceivedSeverity, 
+    eventTime, 
+    eventTypePem, 
+    probableCause  
+        FROM PEM-STANDARD
+
+    adslLineXTransAtucActual
+        FROM PEA-ADSL-IPDSLAM
+
+    adslAturChanCurrTxRate,
+    adslAtucChanCurrTxRate,
+    adslAturChanConfInterleaveMinTxRate,
+    adslAtucChanConfInterleaveMinTxRate,
+    adslAturCurrAttainableRate,
+    adslAtucCurrAttainableRate,
+    adslAturChanConfInterleaveMaxTxRate,
+    adslAtucChanConfInterleaveMaxTxRate,
+    adslAturChanConfMaxInterleaveDelay,
+    adslAturChanInterleaveDelay,
+    adslAtucChanConfMaxInterleaveDelay,
+    adslAtucChanInterleaveDelay
+        FROM ADSL-LINE-MIB
+
+  	TruthValue, TEXTUAL-CONVENTION  
+        FROM SNMPv2-TC
+
+    MODULE-IDENTITY, Unsigned32,
+    NOTIFICATION-TYPE, OBJECT-TYPE
+        FROM SNMPv2-SMI;
+
+peaL2cpIpDslam MODULE-IDENTITY
+    LAST-UPDATED 
+   		 "200510101200Z"  
+    ORGANIZATION
+		 "Ericsson Diax A/S - Denmark"
+    CONTACT-INFO
+		 "
+		 Ericsson Diax A/S
+		 Faelledvej 17
+		 DK-7600 Struer
+		 Denmark
+		 
+		 E-mail: support@dxd.ericsson.se
+		 "       
+   DESCRIPTION
+		 " 
+		 The IP DSLAM software supports a number of standard 
+		 and proprietary MIBs.
+		 This MIB module defines objects for the management via 
+		 SNMP of L2CP functionality in the IP DSLAM.
+		 L2CP is a protocol to be used between BRAS and DSLAM and
+		 it is described in detail in draft-wadhwa-gsmp-l2control-configuration-00.
+		 "                                                           
+
+    ::= {peaIpDslam 35 }
+    
+peaL2cpIpDslamObjects		OBJECT IDENTIFIER ::= { peaL2cpIpDslam 5 }
+peaL2cpIpDslamTraps  		OBJECT IDENTIFIER ::= { peaL2cpIpDslam 10 }
+ 
+-- NEW TYPES (textual conventions)
+--  END
+    
+l2cpAccessNodeId OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE(0..20))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Specifies the first part of the access loop circuit id (l2cpAccessLoopCircuitId) used
+     in port up / port down notifications (for addressing the port).
+
+     If not set, the IP DSLAM will use defaults as described for l2cpAccessLoopCircuitId.
+    "      
+    ::= { peaL2cpIpDslamObjects 2 } 
+
+l2cpSlotString OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE(0..15))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Specifies the middle part of the access loop circuit id (l2cpAccessLoopCircuitId)
+     known as 'Slot'. Any kind of string can be used, as long as the guidelines from WT-101
+     are followed.
+
+     Note: '/' '.' ':' should not be used for separators as they are already in use.
+
+     If not set, the IP DSLAM will use defaults as described for l2cpAccessLoopCircuitId.
+    "      
+    ::= { peaL2cpIpDslamObjects 4 } 
+
+l2cpForcePortEvents OBJECT-TYPE
+	SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Setting this parameter to true will force the IP-DSLAM to send PORT UP /
+     PORT DOWN events for all DSL lines which has L2CP enabled.
+     (l2cpPortUpEvent/l2cpPortDownEvent traps)
+     Reading this parameter will always return false.
+    " 
+    ::= { peaL2cpIpDslamObjects 7 } 
+      
+l2cpDslTransmissionSystem OBJECT-TYPE
+	SYNTAX      INTEGER {	typeADSL1     (1),
+	                        typeADSL2     (2),
+	                        typeADSL2plus (3),
+	                        typeVDSL1     (4),
+	                        typeVDSL2     (5),
+                            typeSDSL      (6) }
+    MAX-ACCESS  accessible-for-notify
+    STATUS      obsolete
+    DESCRIPTION
+    "The DSL transmission system.
+     Obsolete - replaced by l2cpLineTransmissionSystem.
+    "
+    ::= { peaL2cpIpDslamObjects 9 }
+
+l2cpPortTable OBJECT-TYPE
+	SYNTAX      SEQUENCE OF L2CPPortEntry
+  	MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "A list of entries in the L2CP port Table.
+    "
+    ::= { peaL2cpIpDslamObjects 10 }   
+
+l2cpPortEntry OBJECT-TYPE
+	SYNTAX      L2CPPortEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry containing port objects for the 
+     subscriber line identified by lineIndex.
+    "
+    INDEX  {lineIndex}
+    ::= { l2cpPortTable 1 }     
+    
+L2CPPortEntry ::= 
+	SEQUENCE {
+		l2cpEnable						 			TruthValue,
+        l2cpPartitionId                     		Unsigned32,
+        l2cpAccessLoopCircuitId						OCTET STRING,
+        l2cpPortStatus								INTEGER,
+        l2cpTrapReason								INTEGER,
+        l2cpLineTransmissionSystem					INTEGER
+        } 
+                
+l2cpEnable OBJECT-TYPE
+	SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Enable of L2CP features in the IP-DSLAM for the specific port.
+     The L2CP as specified by draft-wadhwa-gsmp-l2control-configuration-00 allows
+     the BRAS to monitor and control certain parameters in the IP-DSLAM.
+     If True, L2CP is enabled for the particular DSL line.
+    " 
+    ::= { l2cpPortEntry 1 } 
+      
+l2cpPartitionId OBJECT-TYPE
+	SYNTAX      Unsigned32 (0..255)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This parameters specify which partition the port belongs to. This
+     allows multiple BRASs to control parts (partitions) of the IP-DSLAM
+     with the L2CP.
+    "  
+    ::= { l2cpPortEntry 2 }
+
+l2cpAccessLoopCircuitId OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE(0..50))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Specifies the string access loop circuit id used in port up /
+     port down notifications (for addressing the port).
+     The format complies with WT-101 from the DSL Forum.
+
+     If this parameter is not written the string is initialized
+     in the following manner:
+
+     Access-Node-Identifier part precedence:
+      1. If l2cpAccessNodeId is set, this string is used.
+      2. Otherwise if relayAgentEdaIp is set this string is used.
+      3. Otherwise the IP address of the management interface is used.
+
+     Slot part precedence:
+      1. If l2cpSlotString is set, this string is used.
+      2. Otherwise if relayAgentEdaNodeId is set this number is used.
+         (formatted with 2 chars for ExtNo/SubRAck, 2 chars for PortLevel1/
+          Slot and 2 chars for PortLevel2/Reserved. A total of 6 chars.)
+      3. Otherwise a default slot '1' is used.
+    "      
+    ::= { l2cpPortEntry 3 } 
+
+l2cpPortStatus OBJECT-TYPE
+	SYNTAX      INTEGER {	showTime	(1),
+	                        idle		(2),
+	                        silent 		(3) }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Show the current status of a DSL line as seen from L2CP.
+     showTime = DSL line is active.
+     idle     = DSL line is not active. (De-activated on purpose)
+     silent   = DSL line is not active. (eg. CPE turned off)
+    "
+    ::= { l2cpPortEntry 4 }
+    
+l2cpTrapReason OBJECT-TYPE
+	SYNTAX      INTEGER {	portTrapsNeverSent     (0),
+	                        portConditionsChanged  (1),
+	                        portEventForced        (2),
+	                        portNowEnabled         (3),
+	                        portNowDisabled        (4),
+	                        portMadeSRA            (5),
+                            portAdminStatusChanged (6) }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Shows the reason for the latest l2cpPortDownEvent/l2cpPortUpEvent
+     sent from the port.
+     portTrapsNeverSent     = Traps have never been sent for this port.
+     portConditionsChanged  = Trap sent since a change occured on the DSL line.
+     portEventForced        = Trap was forced by l2cpForcePortEvents.
+     portNowEnabled         = Trap sent since L2CP was enabled for this port.
+     portNowDisabled        = Trap sent since L2CP was disabled for this port.
+	 portMadeSRA            = Trap sent since the DSL line made a seamless rate adaptation.
+     portAdminStatusChanged = Trap sent since the admin status changed for this port.
+    "
+    ::= { l2cpPortEntry 5 }
+
+l2cpLineTransmissionSystem OBJECT-TYPE
+	SYNTAX      INTEGER {   typeADSL1     (1),
+	                        typeADSL2     (2),
+	                        typeADSL2plus (3),
+	                        typeVDSL1     (4),
+	                        typeVDSL2     (5),
+                            typeSDSL      (6) }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The DSL transmission system.
+     Replaces l2cpDslTransmissionSystem and is now readable.
+    "
+    ::= { l2cpPortEntry 6 }
+
+--************************************************************************
+   -- definition of L2CP related traps.
+--************************************************************************
+peaL2cpIpDslamTrapsEntry    OBJECT IDENTIFIER ::= { peaL2cpIpDslamTraps 0 }
+
+l2cpPortDownEvent NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              l2cpPartitionId, l2cpAccessLoopCircuitId, l2cpLineTransmissionSystem,
+              adslAturChanCurrTxRate, adslAtucChanCurrTxRate, l2cpPortStatus,
+              l2cpTrapReason }
+    STATUS  current
+    DESCRIPTION
+    "A l2cpPortDownEvent trap signifies that the SNMPv2 entity,
+     acting in an agent role, has detected that the
+     adslIfOperStatus object for one of its communication links
+     is about to enter the down state.
+     This trap is used in the L2CP in order to signal port down.
+     This is an internally used notification.
+
+     Valid from:                EDA 2.2 MA1
+
+     Parameters
+      1: Managed object class   IP DSLAM Port
+      2: Managed object ID      (MAC + PortNo)
+      3: Sequence number        (Alarm sequence number)
+      4: Perceived severity     Warning
+      5: Event time             (Timestamp is retrieved from a SNTP server)
+      6: Event type             Other  
+      7: Probable cause         Other
+      8: Partition ID           (ID of the partition)
+      9: Access Loop Circuit ID (Identifier of the port)
+      10: Transmission system   { ADSL1, ADSL2, ADSL2plus, VDSL1, VDSL2, SDSL }
+
+      11: Actual Data Rate Upstream                 ITU-T G.997, section 7.5.2.1
+      12: Actual Data Rate Downstream               ITU-T G.997, section 7.5.2.1
+
+      13: DSL line state        { IDLE or SILENT }
+      14: Trap reason           { CONDITIONS_CHANGED, EVENT_FORCED, L2CP_ENABLED or L2CP_DISABLED }
+    "  
+
+    ::= { peaL2cpIpDslamTrapsEntry 1 }
+
+l2cpPortUpEvent NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              l2cpPartitionId, l2cpAccessLoopCircuitId, l2cpLineTransmissionSystem,
+              adslAturChanCurrTxRate, adslAtucChanCurrTxRate, adslAturChanConfInterleaveMinTxRate,
+              adslAtucChanConfInterleaveMinTxRate, adslAturCurrAttainableRate, adslAtucCurrAttainableRate,
+              adslAturChanConfInterleaveMaxTxRate, adslAtucChanConfInterleaveMaxTxRate, adslAturChanConfMaxInterleaveDelay,
+              adslAturChanInterleaveDelay, adslAtucChanConfMaxInterleaveDelay, adslAtucChanInterleaveDelay,
+              l2cpPortStatus, l2cpTrapReason }
+    STATUS  current
+    DESCRIPTION
+    "A l2cpPortDownEvent trap signifies that the SNMPv2 entity,
+     acting in an agent role, has detected that the
+     adslIfOperStatus object for one of its communication links
+     is about to enter the down state.
+     This trap is used in the L2CP in order to signal port up.
+     This is an internally used notification.
+
+     Valid from:                EDA 2.2 MA1
+
+     Parameters
+      1: Managed object class   IP DSLAM Port
+      2: Managed object ID      (MAC + PortNo)
+      3: Sequence number        (Alarm sequence number)
+      4: Perceived severity     Warning
+      5: Event time             (Timestamp is retrieved from a SNTP server)
+      6: Event type             Other  
+      7: Probable cause         Other
+      8: Partition ID           (ID of the partition)
+      9: Access Loop Circuit ID (Identifier of the port)
+      10: Transmission system   { ADSL1, ADSL2, ADSL2plus, VDSL1, VDSL2, SDSL }
+
+      11: Actual Data Rate Upstream                 ITU-T G.997, section 7.5.2.1
+      12: Actual Data Rate Downstream               ITU-T G.997, section 7.5.2.1
+      13: Minimum Data Rate Upstream (fast/interleaved)  ITU-T G.997, section 7.3.2.1.1
+      14: Minimum Data Rate Downstream (fast/interleaved)ITU-T G.997, section 7.3.2.1.1
+      15: Attainable Data Rate Upstream             ITU-T G.997, section 7.5.1.13
+      16: Attainable Data Rate Downstream           ITU-T G.997, section 7.5.1.12
+      17: Maximum Data Rate Upstream (fast/interleaved)  ITU-T G.997, section 7.3.2.1.3
+      18: Maximum Data Rate Downstream (fast/interleaved)ITU-T G.997, section 7.3.2.1.3
+      19: Maximum Interleaving Delay Upstream       ITU-T G.997, section 7.3.2.2
+      20: Actual Interleaving Delay Upstream        ITU-T G.997, section 7.5.2.3
+      21: Maximum Interleaving Delay Downstream     ITU-T G.997, section 7.3.2.2
+      22: Actual Interleaving Delay Downstream      ITU-T G.997, section 7.5.2.3
+
+      23: DSL line state        { SHOWTIME }
+      24: Trap reason           { CONDITIONS_CHANGED, EVENT_FORCED, L2CP_ENABLED or L2CP_DISABLED }
+
+          Note: The following RAM parameters are not supported yet
+          Minimum Low Power Data Rate Upstream      ITU-T G.997, section 7.3.2.1.5
+          Minimum Low Power Data Rate Downstream    ITU-T G.997, section 7.3.2.1.5
+    "
+
+    ::= { peaL2cpIpDslamTrapsEntry 2 }
+
+END

@@ -1,0 +1,2616 @@
+PEA-TEST-IPDSLAM DEFINITIONS ::= BEGIN
+
+
+IMPORTS
+    peaIpDslam
+       FROM DIESEL-SMI
+    
+   lineIndex,
+   pvcIndex
+     FROM PEA-BRIDGE-IPDSLAM 
+
+      -- standar X.733 header for the traps       
+    managedObjectClass, 
+    managedObjectInstance, 
+    sequenceNumber, 
+    perceivedSeverity, 
+    eventTime, 
+    eventTypePem, 
+    probableCause  
+       FROM PEM-STANDARD 
+
+       adslIfTestResult, adslIfTestType, adslIfTestError
+       FROM PEA-IF-IPDSLAM
+
+    DisplayString  
+       FROM SNMPv2-TC
+
+    MODULE-IDENTITY, 
+    Integer32,
+    Unsigned32, 
+    Counter32,
+    NOTIFICATION-TYPE,
+    OBJECT-TYPE
+        FROM SNMPv2-SMI
+
+   OBJECT-GROUP, NOTIFICATION-GROUP
+          FROM SNMPv2-CONF
+        ;
+
+peaTestIpDslam MODULE-IDENTITY
+    LAST-UPDATED 
+         "200405031200Z"  
+    ORGANIZATION
+         "Ericsson Diax A/S - Denmark"
+    CONTACT-INFO
+         "
+         Ericsson Diax A/S
+         Faelledvej 17
+         DK-7600 Struer
+         Denmark
+         
+         E-mail: diax.support.xu@ericsson.com
+
+         "       
+   DESCRIPTION
+         "
+         In this module are defined the control entries for input 
+         and output data for SELT (loop qualification) and NOISE tests.
+         "                                                           
+
+    ::= { peaIpDslam  20 }
+    
+peaTestIpDslamObjects           OBJECT IDENTIFIER ::= { peaTestIpDslam 1 }
+peaTestIpDslamTraps             OBJECT IDENTIFIER ::= { peaTestIpDslam 2 }
+peaTestIpDslamObjectsGroups     OBJECT IDENTIFIER ::= { peaTestIpDslam 3 }
+peaTestIpDslamTrapsGroups       OBJECT IDENTIFIER ::= { peaTestIpDslam 4 }
+
+--************************************************************************  
+-- SELT TEST INPUT TABLE
+--************************************************************************  
+seltTestInputTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF SeltTestInputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the input parameters
+     for the SELT test."
+    ::= { peaTestIpDslamObjects  1 }   
+
+seltTestInputEntry OBJECT-TYPE
+    SYNTAX      SeltTestInputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains input parameters for 
+     the SELT test for the subscriber line 
+     identified by lineIndex."
+    INDEX  {lineIndex }
+    ::= { seltTestInputTable 1 }
+
+SeltTestInputEntry ::= 
+    SEQUENCE {
+        seltNoiseNeAct                  INTEGER,
+        seltNoiseFeAct                  INTEGER,
+        seltAdvOutputTableAct           INTEGER,
+        --seltDcNoiseAct
+        --seltImpedanceAct
+        --seltWaterIngAct
+        --seltNoiseDuration
+        seltToneProfile                 INTEGER,
+        seltVop                         Unsigned32,
+        seltUsToneMask                  OCTET STRING,
+        seltDsToneMask                  OCTET STRING,
+        seltUsTransmitLevel             Integer32,
+        seltDsTransmitLevel             Integer32,
+        seltExtSplitterType             INTEGER
+        }  
+
+seltNoiseNeAct OBJECT-TYPE
+    SYNTAX      INTEGER {activated (1), deactivated(0)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Value that indicates if Near-end noise should be 
+     measured or pre-selected. If the noise should be 
+     measured this should be Activated(1). If the noise 
+     should be pre-selected seltNoiseNeAct should be 
+     set to Deactivated(0)."
+    ::= { seltTestInputEntry 1 }  
+    
+seltNoiseFeAct OBJECT-TYPE
+    SYNTAX      INTEGER {activated (1), deactivated(0)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Value that indicates if Far-end noise should be 
+     measured or pre-selected. If the noise should be 
+     measured this should be Activated(1). If the noise 
+     should be pre-selected seltNoiseFeAct should be 
+     set to Deactivated(0)."
+    ::= { seltTestInputEntry 2 } 
+ 
+seltAdvOutputTableAct OBJECT-TYPE
+    SYNTAX      INTEGER {activated (1), deactivated(0)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Switch that activates presentation of tone 
+     information or deactivates it."
+    ::= { seltTestInputEntry 3 } 
+ 
+seltToneProfile OBJECT-TYPE
+    SYNTAX      INTEGER {
+                         ansit1413(0), 
+                         etsi(1),
+                         g9921PotsNonOverlapped(2),
+                         g9921PotsOverlapped(3),
+                         g9921IsdnNonOverlapped (4),
+                         g9922PotsNonOverlapped (8),
+                         g9923AnnexA (13),
+                         g9923AnnexB (14),
+                         g9923AnnexJ (15),
+                         g9923ReAnnexAandL (16), 
+                         g9923ReNarrowPsdAnnexAandL (17),
+                         g9925AnnexA(18),
+                         g9925AnnexB(19),
+                         g9925AnnexM(20),
+                         sadsl64(128)
+                         }      
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Tone profile for different system configurations.
+     The unused values for this parameter are reserved for 
+     comming standards or future proprietary techniques."
+    ::= { seltTestInputEntry 8 }  
+
+seltVop OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..65535)
+    UNITS       "10 km per sec"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Velocity of propagation is the speed at which an 
+     electric signal passes through a cable."
+    ::= { seltTestInputEntry 9 } 
+
+seltUsToneMask OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (32))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Upstream active tones assumed in capacity estimation. 
+     Using single bits in integer set specific tones on /off. 
+     Total number of tones is 256."
+    ::= { seltTestInputEntry 10 } 
+
+seltDsToneMask OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (64))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Downstream  active tones assumed in capacity estimation. 
+     Using single bits in integer set specific tones on /off. 
+     Total number of tones is 512."
+    ::= { seltTestInputEntry 11 }   
+
+seltUsTransmitLevel OBJECT-TYPE
+    SYNTAX      Integer32 (-128..127)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Upstream transmit level."
+    ::= { seltTestInputEntry 12 } 
+
+seltDsTransmitLevel OBJECT-TYPE
+    SYNTAX      Integer32 (-128..127)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Downstream transmit level."
+    ::= { seltTestInputEntry 13 } 
+
+seltExtSplitterType OBJECT-TYPE
+    SYNTAX      INTEGER {noneOrPOTS (0), edf110i(1), edf324Ncd90127R1a(2), edf324EtsiNcd90130R1a(3), kroneIsdn(4)}      
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "External splitter filter type. 
+     This parameter is used to inform the SELT software about 
+     any installed external splitter filter. The SELT performance 
+     is affected by this parameter. 
+     The unused values for this parameter are reserved for 
+     coming external splitter types or future proprietary options."
+    ::= { seltTestInputEntry 14 }  
+                                          
+--************************************************************************  
+-- SELT NOISE INPUT TABLE
+--************************************************************************  
+--seltNoiseInputTable OBJECT-TYPE
+--      SYNTAX      SEQUENCE OF SeltNoiseInputEntry
+--      MAX-ACCESS  not-accessible
+--      STATUS      current
+--      DESCRIPTION
+--      "This table provides aditional input parameters
+--       for the SELT test."
+--      ::= { peaTestIpDslamObjects  2 }   
+--    
+--seltNoiseInputEntry OBJECT-TYPE
+--      SYNTAX      SeltNoiseInputEntry
+--      MAX-ACCESS  not-accessible
+--      STATUS      current
+--      DESCRIPTION
+--      "An entry contains the aditional input parameters  
+--      for the SELT test for the subscriber line 
+--      identified by lineIndex."
+--      INDEX  {lineIndex }
+--      ::= { seltNoiseInputTable 1 }
+--
+--SeltNoiseInputEntry ::= 
+--  SEQUENCE {
+--      lineIndex                             Unsigned32
+--      seltNoiseInputNe                      OCTET STRING,
+--      seltNoiseInputFe                      OCTET STRING
+--      }  
+
+--seltNoiseInputNe OBJECT-TYPE
+--  SYNTAX      OCTET STRING (SIZE (512))
+--    UNITS     "Tenth dBm/Hz"
+--  MAX-ACCESS  read-write
+--    STATUS      current
+--    DESCRIPTION
+--    "Pre-defined noise vector for Near-end (ATU-C) upstream band."
+--    ::= { seltNoiseInputEntry 1 } 
+    
+--seltNoiseInputFe OBJECT-TYPE
+--  SYNTAX      OCTET STRING (SIZE (512))
+--    UNITS     "Tenth dBm/Hz"
+--  MAX-ACCESS  read-write
+--    STATUS      current
+--    DESCRIPTION
+--    "Pre-defined noise vector for Far-end (ATU-R) downstream band."
+--    ::= { seltNoiseInputEntry 2 }    
+
+--************************************************************************  
+-- SELT TEST BASIC OUTPUT TABLE
+--************************************************************************  
+seltTestBasicOutputTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF SeltTestBasicOutputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the basic output parameters
+     for the SELT test."
+    ::= { peaTestIpDslamObjects  3 }   
+    
+seltTestBasicOutputEntry OBJECT-TYPE
+    SYNTAX      SeltTestBasicOutputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains the basic output parameters
+     for the SELT test for the subscriber line 
+     identified by lineIndex."
+    INDEX  {lineIndex }
+    ::= { seltTestBasicOutputTable 1 }
+
+SeltTestBasicOutputEntry ::= 
+    SEQUENCE {
+        seltLength                      Unsigned32,
+        seltSingleAttVal                Unsigned32,
+        seltAdslDeployment              INTEGER,
+        seltTermination                 INTEGER,
+        seltCapacityUs                  Unsigned32,
+        seltCapacityDs                  Unsigned32,
+        --seltBridgetap
+        --seltLoadedCoil
+        --seltImpedenceAGnd
+        --seltImpedanceBGnd
+        --seltImpedanceAB
+        --seltWaterIng
+        seltBasicReliability            INTEGER,  
+        seltUSMeanNoiseLevel            Integer32,
+        seltDSMeanNoiseLevel            Integer32,
+        seltAttenLimit                  Unsigned32 
+        }  
+
+seltLength OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..65535)
+    UNITS       "meter"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Loop length to termination."
+    ::= { seltTestBasicOutputEntry 1 } 
+
+seltSingleAttVal OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..1400)
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Attenuation at 300kHz."
+    ::= { seltTestBasicOutputEntry 2 } 
+    
+seltAdslDeployment OBJECT-TYPE
+    SYNTAX      INTEGER {possible (0), uncertain(1), notPossible(2)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Parameter indicating the possibility for ADSL deployment. 
+     A value of Possible(0) indicates that the tested loop is 
+     possible for ADSL Deployment, Uncertain(1) indicates that 
+     it might be possible but some uncertainties exist. A value 
+     of NotPossible(2) indicates that ADSL deployment is not 
+     possible on the tested loop. Decision is based on parameters 
+     calculated in the selt algorithm."
+    ::= { seltTestBasicOutputEntry 3 }   
+
+seltCapacityUs OBJECT-TYPE
+    SYNTAX      Unsigned32 
+    UNITS       "bit/sec"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Total loop capacity in the upstream direction."
+    ::= { seltTestBasicOutputEntry 4 } 
+  
+seltCapacityDs OBJECT-TYPE
+    SYNTAX      Unsigned32 
+    UNITS       "bit/sec"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Total loop capacity in the downstream direction."
+    ::= { seltTestBasicOutputEntry 5 } 
+ 
+seltTermination OBJECT-TYPE
+    SYNTAX      INTEGER {open (0), short(1), matched(2), cpePowerOnAnnexA(3),
+                         cpePowerOnAnnexB(4), cpePowerOnAnnexC(5), unknown(255)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Loop termination at customer side.
+     The values between 6 and 254 are to be defined."
+    ::= { seltTestBasicOutputEntry 6 }  
+            
+seltBasicReliability OBJECT-TYPE
+    SYNTAX      INTEGER {reliable (0), modReliable(1), notRealiable(2), 
+                         newMeasReq(3), unsupportedHw(4), shortLineReliable(5), 
+                         cpeDetected(6)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Reliability of the parameters in the seltTestBasicOutputTable.
+    The values between 7 and 255 are to be defined."
+    ::= { seltTestBasicOutputEntry 7 }     
+
+seltUSMeanNoiseLevel OBJECT-TYPE
+    SYNTAX      Integer32 (-1600..0) 
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The mean US noise level present on the line seen from IPDSLAM."
+    ::= { seltTestBasicOutputEntry 8 }   
+  
+seltDSMeanNoiseLevel OBJECT-TYPE
+    SYNTAX      Integer32 (-1600..0) 
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The mean DS noise level present on the line seen from IPDSLAM."
+    ::= { seltTestBasicOutputEntry 9 } 
+
+seltAttenLimit OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..100)
+    UNITS       "dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Reported maximum measurable/reliable attenuation @ 300 kHz."
+    ::= { seltTestBasicOutputEntry 10 }  
+
+--************************************************************************  
+-- SELT TEST ADVANCED OUTPUT TABLE
+--************************************************************************  
+seltTestAdvOutputTable OBJECT-TYPE
+  SYNTAX      SEQUENCE OF SeltTestAdvOutputEntry
+  MAX-ACCESS  not-accessible
+  STATUS      current
+  DESCRIPTION
+  "This table provides the advanced output parameters
+   for the SELT test."
+  ::= { peaTestIpDslamObjects  4 }   
+    
+seltTestAdvOutputEntry OBJECT-TYPE
+  SYNTAX      SeltTestAdvOutputEntry
+  MAX-ACCESS  not-accessible
+  STATUS      current
+  DESCRIPTION
+  "An entry contains the advanced output parameters
+   for the SELT test for the subscriber line 
+   identified by lineIndex."
+  INDEX  {lineIndex }
+  ::= { seltTestAdvOutputTable 1 }
+
+SeltTestAdvOutputEntry ::= 
+    SEQUENCE {
+        --seltAdvReliability
+        --seltDcNoiseActFlag
+        seltEcho0                             OCTET STRING,
+        seltEcho1                             OCTET STRING,
+        seltEcho2                             OCTET STRING,
+        seltEcho3                             OCTET STRING,
+        seltInsertionLoss0                    OCTET STRING,
+        seltInsertionLoss1                    OCTET STRING,
+        seltInsertionLoss2                    OCTET STRING,
+        seltInsertionLoss3                    OCTET STRING,
+        seltNoiseNe0                          OCTET STRING,
+        seltNoiseNe1                          OCTET STRING,
+        seltNoiseNe2                          OCTET STRING,
+        seltNoiseNe3                          OCTET STRING,
+        seltNoiseFe0                          OCTET STRING,
+        seltNoiseFe1                          OCTET STRING,
+        seltNoiseFe2                          OCTET STRING,
+        seltNoiseFe3                          OCTET STRING,
+        seltSnrNe0                            OCTET STRING,
+        seltSnrNe1                            OCTET STRING,
+        seltSnrNe2                            OCTET STRING,
+        seltSnrNe3                            OCTET STRING,
+        seltSnrFe0                            OCTET STRING,
+        seltSnrFe1                            OCTET STRING,
+        seltSnrFe2                            OCTET STRING,
+        seltSnrFe3                            OCTET STRING,
+        seltBitLoadingEstNe0                  OCTET STRING,
+        seltBitLoadingEstNe1                  OCTET STRING,
+        seltBitLoadingEstFe0                  OCTET STRING,
+        seltBitLoadingEstFe1                  OCTET STRING,
+        seltInsertionLoss4                    OCTET STRING,
+        seltInsertionLoss5                    OCTET STRING,
+        seltInsertionLoss6                    OCTET STRING,
+        seltInsertionLoss7                    OCTET STRING,
+        seltNoiseFe4                          OCTET STRING,
+        seltNoiseFe5                          OCTET STRING,
+        seltNoiseFe6                          OCTET STRING,
+        seltNoiseFe7                          OCTET STRING,
+        seltSnrFe4                            OCTET STRING,
+        seltSnrFe5                            OCTET STRING,
+        seltSnrFe6                            OCTET STRING,
+        seltSnrFe7                            OCTET STRING,
+        seltBitLoadingEstFe2                  OCTET STRING,
+        seltBitLoadingEstFe3                  OCTET STRING,
+        seltTDR0                              OCTET STRING,
+        seltTDR1                              OCTET STRING,
+        seltTDR2                              OCTET STRING,
+        seltTDR3                              OCTET STRING,
+        seltTDR4                              OCTET STRING,
+        seltTDR5                              OCTET STRING,
+        seltTDR6                              OCTET STRING,
+        seltTDR7                              OCTET STRING,
+        seltInputImpedance0                   OCTET STRING,
+        seltInputImpedance1                   OCTET STRING,
+        seltInputImpedance2                   OCTET STRING,
+        seltInputImpedance3                   OCTET STRING
+        --seltDcNoiseNe
+        --seltDcNoiseFe
+        }  
+ 
+seltEcho0 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Magnitude of the Echo Frequency Response of the line. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated the values should be 
+     ignored."
+    ::= { seltTestAdvOutputEntry 1 }  
+    
+seltEcho1 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Magnitude of the Echo Frequency Response of the line. Part 1.
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated the values should be 
+     ignored."
+    ::= { seltTestAdvOutputEntry 2 } 
+
+seltEcho2 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Magnitude of the Echo Frequency Response of the line. Part 2.
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated the values should be 
+     ignored."
+    ::= { seltTestAdvOutputEntry 3 } 
+
+seltEcho3 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Magnitude of the Echo Frequency Response of the line. Part 3.
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated the values should be 
+     ignored."
+    ::= { seltTestAdvOutputEntry 4 } 
+
+seltInsertionLoss0 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Line Insertion loss (attenuation) per tone. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated 
+     the values should be ignored."
+    ::= { seltTestAdvOutputEntry 5 }                               
+
+seltInsertionLoss1 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Line Insertion loss (attenuation) per tone. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated 
+     the values should be ignored."
+    ::= { seltTestAdvOutputEntry 6 } 
+
+seltInsertionLoss2 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Line Insertion loss (attenuation) per tone. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated 
+     the values should be ignored."
+    ::= { seltTestAdvOutputEntry 7 } 
+
+seltInsertionLoss3 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Line Insertion loss (attenuation) per tone. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated 
+     the values should be ignored."
+    ::= { seltTestAdvOutputEntry 8 }       
+    
+seltNoiseNe0 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Near-end line noise per tone in Upstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 9 }       
+    
+seltNoiseNe1 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Near-end line noise per tone in Upstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 10 }           
+
+seltNoiseNe2 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Near-end line noise per tone in Upstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 11 }       
+    
+seltNoiseNe3 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Near-end line noise per tone in Upstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 12 }       
+    
+seltNoiseFe0 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end line noise per tone in Downstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 13 }       
+    
+seltNoiseFe1 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end line noise per tone in Downstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 14 }       
+    
+seltNoiseFe2 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end line noise per tone in Downstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 15 }       
+    
+seltNoiseFe3 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end line noise per tone in Downstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 16 }       
+    
+seltSnrNe0 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Upstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 17 } 
+    
+seltSnrNe1 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Upstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 18 } 
+
+seltSnrNe2 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Upstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 19 } 
+
+seltSnrNe3 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Upstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 20 } 
+    
+seltSnrFe0 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 21 } 
+            
+seltSnrFe1 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 22 } 
+            
+seltSnrFe2 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 23 } 
+            
+seltSnrFe3 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 24 } 
+            
+seltBitLoadingEstNe0 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "Bit"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Estimate of the maximum attainable load of bits per tone 
+     in Upstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 25 } 
+
+seltBitLoadingEstNe1 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "Bit"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Estimate of the maximum attainable load of bits per tone 
+     in Upstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 26 } 
+
+seltBitLoadingEstFe0 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "Bit"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Estimate of the maximum attainable load of bits per tone 
+     in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 27 } 
+
+seltBitLoadingEstFe1 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "Bit"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Estimate of the maximum attainable load of bits per tone 
+     in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 28 } 
+
+seltInsertionLoss4 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Line Insertion loss (attenuation) per tone. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated 
+     the values should be ignored."
+    ::= { seltTestAdvOutputEntry 29 }       
+                                         
+seltInsertionLoss5 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Line Insertion loss (attenuation) per tone. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated 
+     the values should be ignored."
+    ::= { seltTestAdvOutputEntry 30 }                                            
+
+seltInsertionLoss6 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Line Insertion loss (attenuation) per tone. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated 
+     the values should be ignored."
+    ::= { seltTestAdvOutputEntry 31 }   
+    
+seltInsertionLoss7 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Line Insertion loss (attenuation) per tone. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated 
+     the values should be ignored."
+    ::= { seltTestAdvOutputEntry 32 }   
+ 
+seltNoiseFe4 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end line noise per tone in Downstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 33 }      
+
+seltNoiseFe5 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end line noise per tone in Downstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 34 }  
+    
+seltNoiseFe6 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end line noise per tone in Downstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 35 }  
+    
+seltNoiseFe7 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dBm/Hz"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end line noise per tone in Downstream band. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 36 }              
+     
+seltSnrFe4 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 37 } 
+
+seltSnrFe5 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 38 } 
+
+seltSnrFe6 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 39 } 
+
+seltSnrFe7 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Signal to Noise ration per tone in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 40 } 
+ 
+seltBitLoadingEstFe2 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "Bit"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Estimate of the maximum attainable load of bits per tone 
+     in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 41 }            
+ 
+seltBitLoadingEstFe3 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "Bit"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Estimate of the maximum attainable load of bits per tone 
+     in Downstream band. Part 0. 
+     Consecutive values are spaced 4.3125 kHz in frequency.             
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 42 }   
+    
+seltTDR0 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128)) 
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Time Domain Reflectometry (TDR) impulse diagram equivalent. Part 0.
+     Consecutive values are spaced 1/(1024*4312.5) seconds in time.
+     The value spacing can be interpretated in a length unit equal to 
+     [x meter], where x = 0.5*seltVop*10000*1/(1024*4312.5) 
+     corresponding to an one-way physical length fraction.
+     seltVop is read/write available via seltTestInputEntry.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 43 }   
+
+seltTDR1 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128)) 
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Time Domain Reflectometry (TDR) impulse diagram equivalent. Part 0.
+     Consecutive values are spaced 1/(1024*4312.5) seconds in time.
+     The value spacing can be interpretated in a length unit equal to 
+     [x meter], where x = 0.5*seltVop*10000*1/(1024*4312.5) 
+     corresponding to an one-way physical length fraction.
+     seltVop is read/write available via seltTestInputEntry.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+
+    ::= { seltTestAdvOutputEntry 44 } 
+    
+seltTDR2 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Time Domain Reflectometry (TDR) impulse diagram equivalent. Part 0.
+     Consecutive values are spaced 1/(1024*4312.5) seconds in time.
+     The value spacing can be interpretated in a length unit equal to 
+     [x meter], where x = 0.5*seltVop*10000*1/(1024*4312.5) 
+     corresponding to an one-way physical length fraction.
+     seltVop is read/write available via seltTestInputEntry.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 45 } 
+    
+seltTDR3 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128)) 
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Time Domain Reflectometry (TDR) impulse diagram equivalent. Part 0.
+     Consecutive values are spaced 1/(1024*4312.5) seconds in time.
+     The value spacing can be interpretated in a length unit equal to 
+     [x meter], where x = 0.5*seltVop*10000*1/(1024*4312.5) 
+     corresponding to an one-way physical length fraction.
+     seltVop is read/write available via seltTestInputEntry.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 46 }                       
+
+seltTDR4 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128)) 
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Time Domain Reflectometry (TDR) impulse diagram equivalent. Part 0.
+     Consecutive values are spaced 1/(1024*4312.5) seconds in time.
+     The value spacing can be interpretated in a length unit equal to 
+     [x meter], where x = 0.5*seltVop*10000*1/(1024*4312.5) 
+     corresponding to an one-way physical length fraction.
+     seltVop is read/write available via seltTestInputEntry.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 47 }
+    
+seltTDR5 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Time Domain Reflectometry (TDR) impulse diagram equivalent. Part 0.
+     Consecutive values are spaced 1/(1024*4312.5) seconds in time.
+     The value spacing can be interpretated in a length unit equal to 
+     [x meter], where x = 0.5*seltVop*10000*1/(1024*4312.5) 
+     corresponding to an one-way physical length fraction.
+     seltVop is read/write available via seltTestInputEntry.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 48 }
+    
+seltTDR6 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128)) 
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Time Domain Reflectometry (TDR) impulse diagram equivalent. Part 0.
+     Consecutive values are spaced 1/(1024*4312.5) seconds in time.
+     The value spacing can be interpretated in a length unit equal to 
+     [x meter], where x = 0.5*seltVop*10000*1/(1024*4312.5) 
+     corresponding to an one-way physical length fraction.
+     seltVop is read/write available via seltTestInputEntry.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 49 }
+ 
+seltTDR7 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128)) 
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Time Domain Reflectometry (TDR) impulse diagram equivalent. Part 0.
+     Consecutive values are spaced 1/(1024*4312.5) seconds in time.
+     The value spacing can be interpretated in a length unit equal to 
+     [x meter], where x = 0.5*seltVop*10000*1/(1024*4312.5) 
+     corresponding to an one-way physical length fraction.
+     seltVop is read/write available via seltTestInputEntry.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 50 }
+ 
+seltInputImpedance0 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128)) 
+    UNITS       "tenth Ohm"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Estimated input impedance of the line including far-end 
+     termination. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 51 } 
+
+seltInputImpedance1 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128)) 
+    UNITS       "tenth Ohm"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Estimated input impedance of the line including far-end 
+     termination. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 52 }  
+
+seltInputImpedance2 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128))
+    UNITS       "tenth Ohm"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Estimated input impedance of the line including far-end 
+     termination. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 53 }   
+    
+seltInputImpedance3 OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (128)) 
+    UNITS       "tenth Ohm"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Estimated input impedance of the line including far-end 
+     termination. Part 0.
+     Consecutive values are spaced 4.3125 kHz in frequency.
+     If seltAdvOutputTableAct is deactivated the values 
+     should be ignored."
+    ::= { seltTestAdvOutputEntry 54 } 
+                         
+--************************************************************************  
+-- NOISE  TEST INPUT TABLE
+--************************************************************************  
+--noiseTestInputTable OBJECT-TYPE
+--  SYNTAX      SEQUENCE OF NoiseTestInputEntry
+--  MAX-ACCESS  not-accessible
+--  STATUS      current
+--  DESCRIPTION
+--  "This table provides the intput parameters
+--   for the NOISE test."
+--  ::= { peaTestIpDslamObjects  5 }   
+    
+--noiseTestInputEntry OBJECT-TYPE
+--  SYNTAX      NoiseTestInputEntry
+--  MAX-ACCESS  not-accessible
+--  STATUS      current
+--  DESCRIPTION
+--  "An entry contains the input parameters
+--   for the NOISE test for the subscriber line 
+--   identified by lineIndex."
+--  INDEX  {lineIndex }
+--  ::= { noiseTestInputTable 1 }
+
+--NoiseTestInputEntry ::= 
+--  SEQUENCE {
+        --lineIndex                           Unsigned32,
+        --noiseType
+        --noiseDuration
+        --noiseAmplitudeThres
+        --noiseSpectrumThres
+        --noiseHistogramMin
+        --noiseHistogramMax
+--}
+
+--************************************************************************  
+-- NOISE  TEST OUTPUT TABLE
+--************************************************************************  
+--noiseTestOutputTable OBJECT-TYPE
+--  SYNTAX      SEQUENCE OF NoiseTestOutputEntry
+--  MAX-ACCESS  not-accessible
+--  STATUS      current
+--  DESCRIPTION
+--  "This table provides the output parameters
+--   for the NOISE test."
+--  ::= { peaTestIpDslamObjects  6 }   
+    
+--noiseTestOutputEntry OBJECT-TYPE
+--  SYNTAX      NoiseTestOutputEntry
+--  MAX-ACCESS  not-accessible
+--  STATUS      current
+--  DESCRIPTION
+--  "An entry contains the output parameters
+--   for the NOISE test for the subscriber line 
+--   identified by lineIndex."
+--  INDEX  {lineIndex }
+--  ::= { noiseTestOutputTable 1 }
+
+--NoiseTestOutputEntry ::= 
+--  SEQUENCE {
+        --lineIndex                           Unsigned32,
+        --noiseType
+        --noiseAmplitude
+        --noiseHistogram
+        --noiseSpectrum
+        --noiseNrViolations
+--      }                                  
+
+
+--************************************************************************
+-- ATM PVC TEST INPUT TABLE
+--************************************************************************
+atmPvcTestInputTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF AtmPvcTestInputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the input parameters
+     for the ATM PVC test."
+    ::= { peaTestIpDslamObjects 10 }
+
+atmPvcTestInputEntry OBJECT-TYPE
+    SYNTAX      AtmPvcTestInputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains input parameters for
+     the ATM PVC test for the subscriber line
+     identified by lineIndex."
+    INDEX  {lineIndex }
+    ::= { atmPvcTestInputTable 1 }
+
+AtmPvcTestInputEntry ::=
+    SEQUENCE {
+        atmF5EndToEndLoopbackInterval     INTEGER,
+        atmF5EndToEndLoopbackTimeout      INTEGER,
+        atmF5EndToEndLoopbackIntervalFine INTEGER,
+        atmF5EndToEndBatchSize            INTEGER,
+        atmF5EndToEndBatchCount           INTEGER
+        }
+
+atmF5EndToEndLoopbackInterval OBJECT-TYPE
+    SYNTAX      INTEGER (0..3600)
+    UNITS       "sec"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "A number of 'ATM OAM F5 end-to-end loopback' cell(s) are sent
+     with this interval on each PVC created for the subscriber line
+     identified by lineIndex. The CPE must return a reply
+     within atmF5EndToEndLoopbackTimeout seconds.
+     The value zero indicates that this test is disabled.
+     The first cell will be send when a non-zero value is written
+     into this variable - or when the line is ready.
+	 
+     If a resolution in msec is needed, use atmF5EndToEndLoopbackIntervalFine.
+
+     Note: In order to restart a batch (if atmF5EndToEndBatchCount != 0) this
+     parameter should be set to 0 and then set to the new (or possible) same interval.
+    "
+    ::= { atmPvcTestInputEntry 1 }
+
+atmF5EndToEndLoopbackTimeout OBJECT-TYPE
+    SYNTAX      INTEGER (1..10)
+    UNITS       "sec"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Specifies the the maximum amount of time to wait
+     for F5 replies for a batch.
+     (The batch size is set in atmF5EndToEndBatchSize)
+    "
+    ::= { atmPvcTestInputEntry 2 }
+
+atmF5EndToEndLoopbackIntervalFine OBJECT-TYPE
+    SYNTAX      INTEGER (100..3600000)
+    UNITS       "msec"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "A number of 'ATM OAM F5 end-to-end loopback' cell(s) are sent
+     with this interval on each PVC created for the subscriber line
+     identified by lineIndex. The CPE must return a reply
+     within atmF5EndToEndLoopbackTimeout seconds.
+     The value zero indicates that this test is disabled.
+     The first cell will be send when a non-zero value is written
+     into this variable - or when the line is ready.
+	 
+     This parameter follows atmF5EndToEndLoopbackInterval with a
+     finer resolution. 
+
+     Note: In order to restart a batch (if atmF5EndToEndBatchCount != 0) this
+     parameter should be set to 0 and then set to the new (or possible) same interval.
+    "
+    ::= { atmPvcTestInputEntry 3 }
+
+atmF5EndToEndBatchSize OBJECT-TYPE
+    SYNTAX      INTEGER (1..20)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Specifies how many F5 cells that is be sent in an
+     interval given by atmF5EndToEndLoopbackIntervalFine and
+     atmF5EndToEndLoopbackInterval.
+    "
+    ::= { atmPvcTestInputEntry 5 }
+
+atmF5EndToEndBatchCount OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Specifies how many batches that should be run before automatically
+     stopping the test.
+     Eg. A BatchCount of 4 and an interval of 3 seconds would run for 12
+     seconds and send a total of 20 F5 cells if BatchSize equals 5.
+	 
+     Note: A BatchCount of 0 indicates that the test should run until it
+     is stopped by setting interval to 0.
+    "
+    ::= { atmPvcTestInputEntry 6 }
+
+--************************************************************************
+-- ATM PVC TEST OUTPUT TABLE
+--************************************************************************
+atmPvcTestOutputTables		OBJECT IDENTIFIER ::= { peaTestIpDslamObjects 12 }
+
+atmPvcTestOutputTableVpiIndex OBJECT-TYPE
+	SYNTAX      Unsigned32 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "The vpi index in atmPvcTestOutputTablePvc."
+    ::= { atmPvcTestOutputTables 1 }   
+    
+atmPvcTestOutputTableVciIndex OBJECT-TYPE
+	SYNTAX      Unsigned32 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "The vci index in atmPvcTestOutputTablePvc."
+    ::= { atmPvcTestOutputTables 2 }   
+    
+atmPvcTestOutputTableLine OBJECT-TYPE
+	SYNTAX      SEQUENCE OF AtmPvcTestOutputEntryLine
+  	MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the output parameters
+     for the ATM PVC test (per line parameters).
+    "
+    ::= { atmPvcTestOutputTables 4 }
+
+atmPvcTestOutputEntryLine OBJECT-TYPE
+	SYNTAX      AtmPvcTestOutputEntryLine
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains output parameters for
+     the ATM PVC test for the subscriber line
+     identified by lineIndex.
+    "
+    INDEX  {lineIndex}
+    ::= { atmPvcTestOutputTableLine 1 }     
+    
+AtmPvcTestOutputEntryLine ::= 
+	SEQUENCE {
+        atmF5EndToEndBatchesLeft      Counter32
+        } 
+                
+atmF5EndToEndBatchesLeft OBJECT-TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "If batches are used (defined with atmF5EndToEndBatchCount != 0)
+     This counter states how many batches are left before all batches
+     have been run.
+    "
+    ::= { atmPvcTestOutputEntryLine 1 }
+
+atmPvcTestOutputTablePvc OBJECT-TYPE
+    SYNTAX      SEQUENCE OF AtmPvcTestOutputEntryPvc
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the output parameters
+     for the ATM PVC test (per pvc parameters).
+    "
+    ::= { atmPvcTestOutputTables 6 }
+
+atmPvcTestOutputEntryPvc OBJECT-TYPE
+    SYNTAX      AtmPvcTestOutputEntryPvc
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains output parameters for the ATM PVC
+    test for the subscriber PVC identified by lineIndex,
+    atmPvcTestOutputTableVpiIndex, and atmPvcTestOutputTableVciIndex.
+    "
+    INDEX  {lineIndex, atmPvcTestOutputTableVpiIndex, atmPvcTestOutputTableVciIndex }
+    ::= { atmPvcTestOutputTablePvc 1 }
+
+AtmPvcTestOutputEntryPvc ::=
+    SEQUENCE {
+        atmF5EndToEndTransmitted   Counter32,
+        atmF5EndToEndReceived      Counter32
+        }
+
+atmF5EndToEndTransmitted OBJECT-TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number of F5 cells transmitted on the PVC since the
+     test was started with atmF5EndToEndLoopbackIntervalFine or
+     atmF5EndToEndLoopbackInterval.
+    "
+    ::= { atmPvcTestOutputEntryPvc 1 }
+
+atmF5EndToEndReceived OBJECT-TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number of F5 cells received on the PVC since the test was
+     started with atmF5EndToEndLoopbackIntervalFine or
+     atmF5EndToEndLoopbackInterval.
+
+     Note: F5 cells from a previous batch that are received
+     are droped and are not counted here. (ie. very late answers
+     arriving later than atmF5EndToEndLoopbackInterval(Fine) or
+     atmF5EndToEndLoopbackTimeout - whichever are smallest - after
+     transmission of the requests)
+    "
+    ::= { atmPvcTestOutputEntryPvc 2 }
+
+--************************************************************************
+-- PPPoE TEST INPUT TABLE
+--************************************************************************
+pppoeTestInputTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF PppoeTestInputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the input parameters for the 'PPP-over-Ethernet' test.
+     Note: This OID has to be specified in 'adslIfTestType' in order to activate the test.
+     The test is a PADI packet broadcasted on the Ethernet (through the Bridge/Filter for this line).
+     The test succeds when at least one 'Access Concentrator' server replies with a PADO packet.
+     See description of result in pppoeTestOutputTable.
+     The returned AC-Name & Service-Names from each PADO packet will be stored in pppoeTestOutputTable.
+     Abbreviations:
+     - PADI: PPPoE Active Discovery Initiation
+     - PADO: PPPoE Active Discovery Offer
+     - AC-Name: Access Concentrator Name
+     See also: 'peaIfIpDslam.adslIffObjects.adslIfTestTable.adslIfTestEntry.adslIfTestType'"
+    ::= { peaTestIpDslamObjects 20 }
+
+pppoeTestInputEntry OBJECT-TYPE
+    SYNTAX      PppoeTestInputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains input parameters for
+     the 'PPP-over-Ethernet' test for the subscriber line
+     identified by lineIndex.
+     See also summary in pppoeTestInputTable."
+    INDEX  {lineIndex }
+    ::= { pppoeTestInputTable 1 }
+
+PppoeTestInputEntry ::=
+    SEQUENCE {
+        pppoeServiceRequested           DisplayString,
+        pppoeVlanId                     INTEGER,
+        pppoeTimeout                    INTEGER,
+        pppoeInnerVlanId                INTEGER
+        }
+
+pppoeServiceRequested OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The ServiceName used in the PADI packets (PPPoE Active Discovery Initiation)
+     during PPPoE tests (default empty)."
+    ::= { pppoeTestInputEntry 1 }
+
+pppoeVlanId OBJECT-TYPE
+    SYNTAX      INTEGER (0..4095)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This is the VLANID used for the pppoeTest
+     (accordingly to 802.1Q). The VLANID must
+     have been configured for this line in the pvcTable.
+     See also 'peaBridgeIpDslam.pvcTable.pvcEntry.pvcStatus.vlanID'"
+    ::= { pppoeTestInputEntry 2 }
+
+pppoeTimeout OBJECT-TYPE
+    SYNTAX      INTEGER (1..10)
+    UNITS       "sec"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Specifies the the maximum amount of time to wait
+    from the PADI packet is broadcasted until all replies (PADI packets) must have arrived."
+    ::= { pppoeTestInputEntry 3 }
+
+pppoeInnerVlanId OBJECT-TYPE
+    SYNTAX          INTEGER (0..4095)
+    MAX-ACCESS      read-write
+    STATUS          current
+    DESCRIPTION
+    "This is the InnerVlanId used for the pppoeTest
+     (accordingly to 802.1Q). This object is valid only if
+     vlanTagType value is QinQ (Double Vlan). The innerVlanId must
+     have been configured for this line in the pvcTable.
+     See also 'peaBridgeIpDslam.pvcTable.pvcEntry.pvcStatus.innerVlanId'"
+    ::= { pppoeTestInputEntry 4 }
+    
+
+--************************************************************************
+-- PPPoE TEST OUTPUT TABLE
+--************************************************************************
+pppoeTestOutputTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF PppoeTestOutputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the **additional** output parameters
+     for the 'PPP-over-Ethernet' test.
+     The test result can be read in the generic 'adslIfTestResult' variable,
+     which can have the following values:
+     - InProgress
+     - UnableToRun, details in adslIfTestError:
+     +- lanError: The specified VLAN-id is not used by any ATM PVCs that belongs to specified line (or line down).
+     +- configurationOrCustomisationError: Bridge does now allow PPPoE frames for the PVC with specified VLAN-id.
+     +- softwareError: Internal error.
+     - TestFailed, details in adslIfTestError:
+     +- timeoutExpired: No PADO reply received
+     See also: 'peaIfIpDslam.adslIfObjects.adslIfTestTable'"
+    ::= { peaTestIpDslamObjects 21 }
+
+pppoeTestOutputEntry OBJECT-TYPE
+    SYNTAX      PppoeTestOutputEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains **additional** output parameters for
+     the 'PPP-over-Ethernet' test for the subscriber line
+     identified by lineIndex. Zero or more entries may exists for each line."
+    INDEX  {lineIndex, resultIndex }
+    ::= { pppoeTestOutputTable 1 }
+
+PppoeTestOutputEntry ::=
+    SEQUENCE {
+        resultIndex             Unsigned32,
+        pppoeAccessConcentrator DisplayString,
+        pppoeServiceOffered     DisplayString 
+        }
+
+pppoeAccessConcentrator OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The name of the Access Concentrator reported in a PADO packet."
+    ::= { pppoeTestOutputEntry 1 }
+
+pppoeServiceOffered OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The name of a Service reported in a PADO packet from the Access Concentrator."
+    ::= { pppoeTestOutputEntry 2 }  
+    
+resultIndex OBJECT-TYPE
+    SYNTAX      Unsigned32 
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "Indicates the entry number for a line."
+    ::= { pppoeTestOutputEntry 3 }                    
+
+ -- resultIndex is not included in the pppoeTestOutputEntry table. Thats why SMIC giving error. 
+ -- { peaTestIpDslamObjects 22 }  
+
+--************************************************************************  
+-- LOOP DIAGNOSTICS RESULT TABLE
+--************************************************************************  
+loopDiagResultTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF LoopDiagResultEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the per line results of
+     the ADSL2 Loop Diagnostics."
+    ::= { peaTestIpDslamObjects  23 }   
+    
+loopDiagResultEntry OBJECT-TYPE
+    SYNTAX      LoopDiagResultEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains the per line results of the
+     ADSL2 Loop Diagnostics for the subscriber line
+     identified by lineIndex."
+    INDEX  {lineIndex }
+    ::= { loopDiagResultTable 1 }
+
+LoopDiagResultEntry ::= 
+    SEQUENCE {
+        loopDiagStatus                  INTEGER,
+        loopDiagAttainableBitRateNE     Unsigned32,
+        loopDiagLoopAttenuationNE       Unsigned32,
+        loopDiagSignalAttenuationNE     Unsigned32,
+        loopDiagSnrMarginNE             Integer32,
+        loopDiagActualTxPowerFarEndNE   Integer32,
+        loopDiagAttainableBitRateFE     Unsigned32,
+        loopDiagLoopAttenuationFE       Unsigned32,
+        loopDiagSignalAttenuationFE     Unsigned32,
+        loopDiagSnrMarginFE             Integer32,
+        loopDiagActualTxPowerFarEndFE   Integer32
+        }  
+
+loopDiagStatus OBJECT-TYPE
+    SYNTAX      INTEGER    {loopDiagNotStarted  (0),
+                            loopDiagInProgress  (1),
+                            loopDiagMeasOk      (2),
+                            loopDiagSuccess     (3),
+                            loopDiagFailed      (4)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Status of current Loop Diagnostics.
+     NOTE that Loop Diagnostics data are only
+     valid in case of status LoopDiagSuccess."
+    ::= { loopDiagResultEntry 1 } 
+
+loopDiagAttainableBitRateNE OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..32768000)
+    UNITS       "bps"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Near-end attainable bit rate in bit per second (bps).
+    Compliant to G.997.1: 7.5.1.13 (ATTNDRus)."
+    ::= { loopDiagResultEntry 2 } 
+    
+loopDiagLoopAttenuationNE OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..1023)
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Near-end loop attenuation. Range is [1023..0],
+     unit is 0.1 dB. LoopAttenuation = 1023 is a
+     special value indicating that the loop attenuation
+     is outside the represented range.
+     Compliant to G.997.1: 7.5.1.7 (LATNus)."
+    ::= { loopDiagResultEntry 3 }
+    
+loopDiagSignalAttenuationNE OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..1023)
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Near-end signal attenuation. Range is [1023..0],
+     unit is 0.1 dB. SignalAttenuation = 1023 is a
+     special value indicating that the attenuation
+     is outside the represented range.
+     Compliant to G.997.1: 7.5.1.9 (SATNus)."
+    ::= { loopDiagResultEntry 4 } 
+    
+loopDiagSnrMarginNE OBJECT-TYPE
+    SYNTAX      Integer32 (-512..511)
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Near-end signal-to-noise ratio margin. Range
+     is [511..-512], unit is 0.1 dB. snrMargin = -512
+     is a special value indicating that the signal-to-noise
+     ratio margin is outside the represented range.
+     Compliant to G.997.1: 7.5.1.11 (SNRMus)."
+    ::= { loopDiagResultEntry 5 } 
+    
+loopDiagActualTxPowerFarEndNE OBJECT-TYPE
+    SYNTAX      Integer32 (-512..511)
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end actual aggregate transmit power as
+     determined by the near-end receive PMD function.
+     Range is [511..-512], unit is 0.1 dBm. actualTxPowerFE =
+     -512 is a special value indicating that the actual
+     aggregate transmit power is outside the represented range.
+     Compliant to G.997.1: 7.5.1.17 (ACTATPus)."
+    ::= { loopDiagResultEntry 6 } 
+    
+loopDiagAttainableBitRateFE OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..32768000)
+    UNITS       "bps"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end attainable bit rate in bit per second (bps).
+    Compliant to G.997.1: 7.5.1.12 (ATTNDRds)."
+    ::= { loopDiagResultEntry 7 } 
+    
+loopDiagLoopAttenuationFE OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..1023)
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end loop attenuation. Range is [1023..0],
+     unit is 0.1 dB. LoopAttenuation = 1023 is a
+     special value indicating that the attenuation
+     is outside the represented range.
+     Compliant to G.997.1: 7.5.1.6 (LATNds)."
+    ::= { loopDiagResultEntry 8 }
+    
+loopDiagSignalAttenuationFE OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..1023)
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end signal attenuation. Range is [1023..0],
+     unit is 0.1 dB. SignalAttenuation = 1023
+     is a special value indicating that the attenuation
+     is outside the represented range.
+     Compliant to G.997.1: 7.5.1.8 (SATNds)."
+    ::= { loopDiagResultEntry 9 } 
+    
+loopDiagSnrMarginFE OBJECT-TYPE
+    SYNTAX      Integer32 (-512..511)
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Far-end signal-to-noise ratio margin. Range is
+     [511..-512], unit is 0.1 dB. SnrMargin = -512
+     is a special value indicating that the signal-to-noise
+     ratio margin is outside the represented range.
+     Compliant to G.997.1: 7.5.1.10 (SNRMds)."
+    ::= { loopDiagResultEntry 10 } 
+    
+loopDiagActualTxPowerFarEndFE OBJECT-TYPE
+    SYNTAX      Integer32 (-512..511)
+    UNITS       "tenth dB"
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The near-end actual aggregate transmit power as
+     determined by the far-end receive PMD function. Range is
+     [511..-512], unit is 0.1 dBm. ActualTxPowerFE = -512
+     is a special value indicating that the actual aggregate
+     transmit power is outside the represented range.
+     Compliant to G.997.1: 7.5.1.16 (ACTATPds)."
+    ::= { loopDiagResultEntry 11 } 
+    
+--************************************************************************  
+-- LOOP DIAGNOSTICS HLIN NE (US) TABLE
+--************************************************************************  
+loopDiagHlinNeTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF LoopDiagHlinNeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the per subcarrier Hlin
+     results of the ADSL2 Loop Diagnostics.
+     The linear complex channel transfer function values
+     for the tone range specified by the partId. 
+     Hlin is calculated from the given values as follows:
+     Hlin[i] = (HlinScale/215)*(Hlin[i].real + j*Hlin[i].imag)/215)
+     Compliant to G.997.1:
+     7.5.1.18.5 (HLINSCus) and
+     7.5.1.18.6 (HLINpsus)."
+    ::= { peaTestIpDslamObjects  24 }   
+    
+loopDiagHlinNeEntry OBJECT-TYPE
+    SYNTAX      LoopDiagHlinNeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains the per subcarrier Hlin results
+     of the ADSL2 Loop Diagnostics for the subscriber
+     line identified by lineIndex.
+     NOTE Low designates the first 32 tones and High is
+     the upper 32 tones for that particular partId."
+    INDEX  {lineIndex }
+    ::= { loopDiagHlinNeTable 1 }
+
+LoopDiagHlinNeEntry ::= 
+    SEQUENCE {
+        loopDiagHlinNeScale             Unsigned32,
+        loopDiagHlinNeLow               OCTET STRING,
+        loopDiagHlinNeHigh              OCTET STRING 
+        }
+        
+loopDiagHlinNeScale OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Scale factor for the normalized complex numbers Hlin."
+    ::= { loopDiagHlinNeEntry 1 } 
+
+loopDiagHlinNeLow OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId.
+     Bytes n*4 + [0..1]: Real part (int16)
+     Bytes n*4 + [2..3]: Imaginary part (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinNeEntry 2 } 
+    
+loopDiagHlinNeHigh OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId.
+     Bytes n*4 + [0..1]: Real part (int16)
+     Bytes n*4 + [2..3]: Imaginary part (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinNeEntry 3 } 
+    
+--************************************************************************  
+-- LOOP DIAGNOSTICS HLIN FE TABLE
+--************************************************************************  
+loopDiagHlinFeTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF LoopDiagHlinFeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the per subcarrier Hlin
+     results of the ADSL2 Loop Diagnostics.
+     The linear complex channel transfer function values
+     for the tone range specified by the partId. 
+     Hlin is calculated from the given values as follows:
+     Hlin[i] = (HlinScale/2^15)*(Hlin[i].real + j*Hlin[i].imag)/2^15)
+     Compliant to G.997.1:
+     7.5.1.18.1 (HLINSCds) and
+     7.5.1.18.2 (HLINpsds)."
+    ::= { peaTestIpDslamObjects  25 }   
+    
+loopDiagHlinFeEntry OBJECT-TYPE
+    SYNTAX      LoopDiagHlinFeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains the per subcarrier Hlin results
+     of the ADSL2 Loop Diagnostics for the subscriber
+     line identified by lineIndex.
+     NOTE: The partId specifies the section of the Hlin
+     table to return. The Hlin values returned correspond to
+     tones: partId * 64 to (partId * 64 + 63). PartId range is [0..7].
+     Low designates the first 32 tones and High is the upper 32
+     tones for that particular partId."
+    INDEX  {lineIndex }
+    ::= { loopDiagHlinFeTable 1 }
+
+LoopDiagHlinFeEntry ::= 
+    SEQUENCE {
+        loopDiagHlinFeScalePart0        Unsigned32,
+        loopDiagHlinFeScalePart1        Unsigned32,
+        loopDiagHlinFeScalePart2        Unsigned32,
+        loopDiagHlinFeScalePart3        Unsigned32,
+        loopDiagHlinFeScalePart4        Unsigned32,
+        loopDiagHlinFeScalePart5        Unsigned32,
+        loopDiagHlinFeScalePart6        Unsigned32,
+        loopDiagHlinFeScalePart7        Unsigned32,
+        loopDiagHlinFePart0Low          OCTET STRING,
+        loopDiagHlinFePart0High         OCTET STRING,
+        loopDiagHlinFePart1Low          OCTET STRING,
+        loopDiagHlinFePart1High         OCTET STRING,
+        loopDiagHlinFePart2Low          OCTET STRING,
+        loopDiagHlinFePart2High         OCTET STRING,
+        loopDiagHlinFePart3Low          OCTET STRING,
+        loopDiagHlinFePart3High         OCTET STRING,
+        loopDiagHlinFePart4Low          OCTET STRING,
+        loopDiagHlinFePart4High         OCTET STRING,
+        loopDiagHlinFePart5Low          OCTET STRING,
+        loopDiagHlinFePart5High         OCTET STRING,
+        loopDiagHlinFePart6Low          OCTET STRING,
+        loopDiagHlinFePart6High         OCTET STRING,
+        loopDiagHlinFePart7Low          OCTET STRING,
+        loopDiagHlinFePart7High         OCTET STRING
+        }
+        
+loopDiagHlinFeScalePart0 OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Scale factor for the normalized complex numbers Hlin."
+    ::= { loopDiagHlinFeEntry 1 } 
+
+loopDiagHlinFeScalePart1 OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Scale factor for the normalized complex numbers Hlin."
+    ::= { loopDiagHlinFeEntry 2 } 
+
+loopDiagHlinFeScalePart2 OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Scale factor for the normalized complex numbers Hlin."
+    ::= { loopDiagHlinFeEntry 3 } 
+
+loopDiagHlinFeScalePart3 OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Scale factor for the normalized complex numbers Hlin."
+    ::= { loopDiagHlinFeEntry 4 } 
+
+loopDiagHlinFeScalePart4 OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Scale factor for the normalized complex numbers Hlin."
+    ::= { loopDiagHlinFeEntry 5 } 
+    
+loopDiagHlinFeScalePart5 OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Scale factor for the normalized complex numbers Hlin."
+    ::= { loopDiagHlinFeEntry 6 } 
+
+loopDiagHlinFeScalePart6 OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Scale factor for the normalized complex numbers Hlin."
+    ::= { loopDiagHlinFeEntry 7 } 
+
+loopDiagHlinFeScalePart7 OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Scale factor for the normalized complex numbers Hlin."
+    ::= { loopDiagHlinFeEntry 8 } 
+
+loopDiagHlinFePart0Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 9 } 
+    
+loopDiagHlinFePart0High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 10 } 
+    
+loopDiagHlinFePart1Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 11 } 
+    
+loopDiagHlinFePart1High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 12 } 
+    
+loopDiagHlinFePart2Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 13 } 
+    
+loopDiagHlinFePart2High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 14 } 
+    
+loopDiagHlinFePart3Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 15 } 
+    
+loopDiagHlinFePart3High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 16 } 
+    
+loopDiagHlinFePart4Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 17 } 
+    
+loopDiagHlinFePart4High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 18 } 
+    
+loopDiagHlinFePart5Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 19 } 
+    
+loopDiagHlinFePart5High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 20 } 
+    
+loopDiagHlinFePart6Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 21 } 
+    
+loopDiagHlinFePart6High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 22 } 
+    
+loopDiagHlinFePart7Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 23 } 
+    
+loopDiagHlinFePart7High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The linear complex channel transfer function values for the
+     tone range specified by the partId. Range is [32767..-32768].
+     Bytes n*4 + [0..1]: Real part(n) (int16)
+     Bytes n*4 + [2..3]: Imaginary part(n) (int16)
+     real[n] = imag[n] = -32768 indicates no measurement."
+    ::= { loopDiagHlinFeEntry 24 } 
+    
+--************************************************************************  
+-- LOOP DIAGNOSTICS HLOG TABLE
+--************************************************************************  
+loopDiagHlogTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF LoopDiagHlogEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the per subcarrier Hlog
+     results of the ADSL2 Loop Diagnostics. Hlog
+     is calculated from the given values, as follows:
+     Hlog[i] = 6 - hlogNE(i)/10(dB) and 
+     Hlog[i] = 6 - hlogFE(i)/10(dB)
+     Compliant to G.997.1:
+     7.5.1.18.4 (HLOGpsds) and
+     7.5.1.18.8 (HLOGpsus)"
+    ::= { peaTestIpDslamObjects  26 }   
+    
+loopDiagHlogEntry OBJECT-TYPE
+    SYNTAX      LoopDiagHlogEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains the per subcarrier Hlog results
+     of the ADSL2 Loop Diagnostics for the subscriber
+     line identified by lineIndex.
+     NOTE: The partId specifies the section of the far-end (US)
+     Hlog table to return. The hlog values returned correspond to
+     tones partId * 128 to (partId * 128 + 127). PartId range
+     is [3..0]. Low designates the first 64 tones and High is
+     the upper 64 tones for that particular partId."
+    INDEX  {lineIndex }
+    ::= { loopDiagHlogTable 1 }
+
+LoopDiagHlogEntry ::= 
+    SEQUENCE {
+        loopDiagHlogNE                  OCTET STRING,
+        loopDiagHlogFEPart0Low          OCTET STRING,
+        loopDiagHlogFEPart0High         OCTET STRING,
+        loopDiagHlogFEPart1Low          OCTET STRING,
+        loopDiagHlogFEPart1High         OCTET STRING,
+        loopDiagHlogFEPart2Low          OCTET STRING,
+        loopDiagHlogFEPart2High         OCTET STRING,
+        loopDiagHlogFEPart3Low          OCTET STRING,
+        loopDiagHlogFEPart3High         OCTET STRING
+        }  
+
+loopDiagHlogNE OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The near-end logarithmic scale channel transfer
+     function magnitudes. Range is [1023..0]. The value
+     1023 indicates no measurement available.
+     Bytes n*2 + [0..1]: Hlog(n) (uint16)"
+    ::= { loopDiagHlogEntry 1 } 
+    
+loopDiagHlogFEPart0Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end logarithmic scale channel transfer
+     function magnitudes. Range is [1023..0]. The value
+     1023 indicates no measurement available.
+     Bytes n*2 + [0..1]: Hlog(n) (uint16)"
+    ::= { loopDiagHlogEntry 2 } 
+    
+loopDiagHlogFEPart0High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end logarithmic scale channel transfer
+     function magnitudes. Range is [1023..0]. The value
+     1023 indicates no measurement available.
+     Bytes n*2 + [0..1]: Hlog(n) (uint16)"
+    ::= { loopDiagHlogEntry 3 }
+
+loopDiagHlogFEPart1Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end logarithmic scale channel transfer
+     function magnitudes. Range is [1023..0]. The value
+     1023 indicates no measurement available.
+     Bytes n*2 + [0..1]: Hlog(n) (uint16)"
+    ::= { loopDiagHlogEntry 4 } 
+    
+loopDiagHlogFEPart1High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end logarithmic scale channel transfer
+     function magnitudes. Range is [1023..0]. The value
+     1023 indicates no measurement available.
+     Bytes n*2 + [0..1]: Hlog(n) (uint16)"
+    ::= { loopDiagHlogEntry 5 } 
+    
+loopDiagHlogFEPart2Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end logarithmic scale channel transfer
+     function magnitudes. Range is [1023..0]. The value
+     1023 indicates no measurement available.
+     Bytes n*2 + [0..1]: Hlog(n) (uint16)"
+    ::= { loopDiagHlogEntry 6 } 
+    
+loopDiagHlogFEPart2High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end logarithmic scale channel transfer
+     function magnitudes. Range is [1023..0]. The value
+     1023 indicates no measurement available.
+     Bytes n*2 + [0..1]: Hlog(n) (uint16)"
+    ::= { loopDiagHlogEntry 7 } 
+    
+loopDiagHlogFEPart3Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end logarithmic scale channel transfer
+     function magnitudes. Range is [1023..0]. The value
+     1023 indicates no measurement available.
+     Bytes n*2 + [0..1]: Hlog(n) (uint16)"
+    ::= { loopDiagHlogEntry 8 } 
+    
+loopDiagHlogFEPart3High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end logarithmic scale channel transfer
+     function magnitudes. Range is [1023..0]. The value
+     1023 indicates no measurement available.
+     Bytes n*2 + [0..1]: Hlog(n) (uint16)"
+    ::= { loopDiagHlogEntry 9 } 
+
+--************************************************************************  
+-- LOOP DIAGNOSTICS QLN TABLE
+--************************************************************************  
+loopDiagQlnTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF LoopDiagQlnEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the per subcarrier Qln
+     results of the ADSL2 Loop Diagnostics. QLN
+     is calculated from the given values as follows:
+     QLN[i] = -23 - (n[i]/2)(dBm/Hz), where n designates
+     the QlnNE and QlnFE respectively.
+     Compliant to G.997.1:
+     7.5.1.19.2 (QLNpsds) and
+     7.5.1.19.4 (QLNpsus)"
+    ::= { peaTestIpDslamObjects  27 }   
+    
+loopDiagQlnEntry OBJECT-TYPE
+    SYNTAX      LoopDiagQlnEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains the per subcarrier Qln results
+     of the ADSL2 Loop Diagnostics for the subscriber
+     line identified by lineIndex.
+     NOTE: The partId specifies the section of the far-end (US)
+     QLN table to return. The QLN values returned correspond
+     to tones partId * 256 to (partId * 256 + 255). PartId range
+     is [1..0]. Low designates the first 128 tones and High is
+     the upper 128 tones for that particular partId."
+    INDEX  {lineIndex }
+    ::= { loopDiagQlnTable 1 }
+
+LoopDiagQlnEntry ::= 
+    SEQUENCE {
+        loopDiagQlnNE                   OCTET STRING,
+        loopDiagQlnFEPart0Low           OCTET STRING,
+        loopDiagQlnFEPart0High          OCTET STRING,
+        loopDiagQlnFEPart1Low           OCTET STRING,
+        loopDiagQlnFEPart1High          OCTET STRING
+        }  
+
+loopDiagQlnNE OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (64))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The near-end quiet line noise PSD. Range is [255..0].
+     The value 255 indicates no measurement available."
+    ::= { loopDiagQlnEntry 1 } 
+    
+loopDiagQlnFEPart0Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end quiet line noise PSD. Range is [255..0].
+     The value 255 indicates no measurement available."
+    ::= { loopDiagQlnEntry 2 } 
+    
+loopDiagQlnFEPart0High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end quiet line noise PSD. Range is [255..0].
+     The value 255 indicates no measurement available."
+    ::= { loopDiagQlnEntry 3 } 
+    
+loopDiagQlnFEPart1Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end quiet line noise PSD. Range is [255..0].
+     The value 255 indicates no measurement available."
+    ::= { loopDiagQlnEntry 4 } 
+    
+loopDiagQlnFEPart1High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end quiet line noise PSD. Range is [255..0].
+     The value 255 indicates no measurement available."
+    ::= { loopDiagQlnEntry 5 } 
+    
+--************************************************************************  
+-- LOOP DIAGNOSTICS SNR TABLE
+--************************************************************************  
+loopDiagSnrTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF LoopDiagSnrEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table provides the per subcarrier Snr
+     results of the ADSL2 Loop Diagnostics. SNR
+     is calculated from the given values as follows:
+     SNR[i] = -32 + (n[i]/2)(dB) where n designates
+     the SnrNE and SnrFE respectively.
+     Compliant to G.997.1:
+     7.5.1.20.2 (SNRpsds) and
+     7.5.1.20.4 (SNRpsus)"
+    ::= { peaTestIpDslamObjects  28 }   
+
+
+loopDiagSnrEntry OBJECT-TYPE
+    SYNTAX      LoopDiagSnrEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "An entry contains the per subcarrier Snr results
+     of the ADSL2 Loop Diagnostics for the subscriber
+     line identified by lineIndex.
+     NOTE: The partId specifies the section of the
+     far-end (US) SNR table to return. The SNR values
+     returned correspond to tones partId * 256 to
+     (partId * 256 + 255). PartId range is [0..1].
+     Low designates the first 128 tones and High is
+     the upper 128 tones for that particular partId."
+    INDEX  {lineIndex }
+    ::= { loopDiagSnrTable 1 }
+
+LoopDiagSnrEntry ::= 
+    SEQUENCE {
+        loopDiagSnrNE                   OCTET STRING,
+        loopDiagSnrFEPart0Low           OCTET STRING,
+        loopDiagSnrFEPart0High          OCTET STRING,
+        loopDiagSnrFEPart1Low           OCTET STRING,
+        loopDiagSnrFEPart1High          OCTET STRING
+        }  
+
+loopDiagSnrNE OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (64))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The near-end signal-to-noise ratio. Range is [255..0].
+     The value 255 indicates no measurement available."
+    ::= { loopDiagSnrEntry 1 } 
+    
+loopDiagSnrFEPart0Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end signal-to-noise ratio. Range is [255..0].
+     The value 255 indicates no measurement available."
+    ::= { loopDiagSnrEntry 2 } 
+    
+loopDiagSnrFEPart0High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end signal-to-noise ratio. Range is [255..0].
+     The value 255 indicates no measurement available."
+    ::= { loopDiagSnrEntry 3 } 
+    
+loopDiagSnrFEPart1Low OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end signal-to-noise ratio. Range is [255..0].
+     The value 255 indicates no measurement available."
+    ::= { loopDiagSnrEntry 4 } 
+    
+loopDiagSnrFEPart1High OBJECT-TYPE
+    SYNTAX      OCTET STRING  (SIZE (128))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The far-end signal-to-noise ratio. Range is [255..0].
+     The value 255 indicates no measurement available."
+    ::= { loopDiagSnrEntry 5 } 
+    
+--************************************************************************
+-- trap definitions
+--************************************************************************
+peaTestIpDslamTrapsEntry        OBJECT IDENTIFIER ::= { peaTestIpDslamTraps 0 }
+
+ifTestCompletion      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              adslIfTestResult, adslIfTestType, adslIfTestError }
+    STATUS  current
+    DESCRIPTION
+    "Indicates that the test is ready.
+
+     Valid from:                EDA 1.1R2A
+   
+     Parameters
+      1: Managed object class   IP DSLAM Port
+      2: Managed object ID      (MAC + PortNo)
+      3: Sequence number        (Alarm sequence number)
+      4: Perceived severity     Warning
+      5: Event time             (Timestamp is retrieved from a SNTP server)
+      6: Event type             Equipment  
+      7: Probable cause         Other
+      8: Test Result            (Success, NotSupported, UnableToRun, Aborted or Failed)
+      9: Test Type              (Type of the test performed)
+     10: Test Error             (Probable cause value)
+    "
+    
+    --Ericsson Diax additional information:
+    --Format: Test is ready from: $2; Probable cause: $7; TestResult: $8;  TestType: $9; TestError: $10; Sequence Number: $3;
+
+    ::= { peaTestIpDslamTrapsEntry 1 } 
+
+peaTestIpDslamObjectsGroup OBJECT-GROUP
+OBJECTS     { 
+                 seltNoiseNeAct, seltNoiseFeAct,       seltAdvOutputTableAct, seltToneProfile,  
+                 seltVop,  seltUsToneMask, seltDsToneMask,         
+                          seltUsTransmitLevel,  seltDsTransmitLevel,       seltExtSplitterType, 
+                 seltLength, seltSingleAttVal, seltAdslDeployment, seltTermination, 
+                           seltCapacityUs, seltCapacityDs, seltBasicReliability, seltUSMeanNoiseLevel, 
+                           seltDSMeanNoiseLevel, seltAttenLimit,  
+                      seltEcho0, seltEcho1, seltEcho2, seltEcho3, seltInsertionLoss0,        
+		   seltInsertionLoss1, seltInsertionLoss2, seltInsertionLoss3,   seltNoiseNe0, 
+		   seltNoiseNe1, seltNoiseNe2, seltNoiseNe3,   seltNoiseFe0, seltNoiseFe1, 
+		   seltNoiseFe2, seltNoiseFe3, seltSnrNe0,   seltSnrNe1, seltSnrNe2, seltSnrNe3, 
+		   seltSnrFe0, seltSnrFe1,   seltSnrFe2, seltSnrFe3,   seltBitLoadingEstNe0, 
+		   seltBitLoadingEstNe1, seltBitLoadingEstFe0, seltBitLoadingEstFe1, 
+		   seltInsertionLoss4, seltInsertionLoss5, seltInsertionLoss6, seltInsertionLoss7, 
+		   seltNoiseFe4, seltNoiseFe5, seltNoiseFe6, seltNoiseFe7, seltSnrFe4, 
+		   seltSnrFe5,   seltSnrFe6, seltSnrFe7,  seltBitLoadingEstFe2, seltBitLoadingEstFe3, 
+		   seltTDR0, seltTDR1, seltTDR2, seltTDR3, seltTDR4, seltTDR5, seltTDR6, 
+		   seltTDR7, seltInputImpedance0, seltInputImpedance1, seltInputImpedance2, 
+		   seltInputImpedance3,
+		atmF5EndToEndLoopbackInterval, atmF5EndToEndLoopbackTimeout,
+		pppoeServiceRequested, pppoeVlanId, pppoeTimeout, pppoeInnerVlanId,
+		pppoeAccessConcentrator, pppoeServiceOffered, 
+		loopDiagStatus, loopDiagAttainableBitRateNE,   loopDiagLoopAttenuationNE,    
+		    loopDiagSignalAttenuationNE,   loopDiagSnrMarginNE,  loopDiagActualTxPowerFarEndNE, 
+		    loopDiagAttainableBitRateFE,   loopDiagLoopAttenuationFE,     loopDiagSignalAttenuationFE,  
+		    loopDiagSnrMarginFE,           loopDiagActualTxPowerFarEndFE, 
+                        loopDiagHlinNeScale, loopDiagHlinNeLow, loopDiagHlinNeHigh, 
+                       loopDiagHlinFeScalePart0, loopDiagHlinFeScalePart1, loopDiagHlinFeScalePart2, loopDiagHlinFeScalePart3 ,
+			loopDiagHlinFeScalePart4, loopDiagHlinFeScalePart5, loopDiagHlinFeScalePart6, loopDiagHlinFeScalePart7, 
+			loopDiagHlinFePart0Low, loopDiagHlinFePart0High, loopDiagHlinFePart1Low, loopDiagHlinFePart1High,   
+			loopDiagHlinFePart2Low, loopDiagHlinFePart2High, loopDiagHlinFePart3Low, loopDiagHlinFePart3High,  
+			loopDiagHlinFePart4Low, loopDiagHlinFePart4High, loopDiagHlinFePart5Low, loopDiagHlinFePart5High,  
+			loopDiagHlinFePart6Low, loopDiagHlinFePart6High, loopDiagHlinFePart7Low, loopDiagHlinFePart7High,
+		loopDiagHlogNE,  loopDiagHlogFEPart0Low, loopDiagHlogFEPart0High, loopDiagHlogFEPart1Low,   
+			loopDiagHlogFEPart1High, loopDiagHlogFEPart2Low, loopDiagHlogFEPart2High, loopDiagHlogFEPart3Low,   
+			loopDiagHlogFEPart3High,
+		loopDiagQlnNE, loopDiagQlnFEPart0Low, loopDiagQlnFEPart0High, loopDiagQlnFEPart1Low, loopDiagQlnFEPart1High,  
+		loopDiagSnrNE, loopDiagSnrFEPart0Low, loopDiagSnrFEPart0High, loopDiagSnrFEPart1Low, loopDiagSnrFEPart1High
+              }
+    STATUS      current
+    DESCRIPTION
+        "Objects for the fssServiceLine Group"
+    ::= { peaTestIpDslamObjectsGroups 1 }
+
+peaTestIpDslamTrapsGroup NOTIFICATION-GROUP
+    NOTIFICATIONS     { ifTestCompletion  } 
+    
+    STATUS      current
+    DESCRIPTION
+        "Deprecated Notifications Group"
+     ::= { peaTestIpDslamTrapsGroups 2 }
+END

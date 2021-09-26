@@ -1,0 +1,22 @@
+--
+-- DXD root SMI 
+-- CONTACT-INFO: 
+-- 		 Ericsson Diax A/S - Denmark
+--		 Faelledvej 17
+--		 DK-7600 Struer
+--		 Denmark
+--		 Phone : +45 97 86 90 62
+--		 
+--		 Contact : Michael Sandholm
+--		 E-mail: michael.sandholm@dxd.ericsson.se
+
+PEA-FELX-SMI DEFINITIONS ::= BEGIN
+
+     IMPORTS
+         diaxMIB
+               FROM DXD-SMI;
+         
+    peaFelx	OBJECT IDENTIFIER ::= { diaxMIB 800 }
+
+END
+

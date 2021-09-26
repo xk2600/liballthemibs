@@ -1,0 +1,794 @@
+HUAWEI-IAS-VRP-MIB DEFINITIONS ::= BEGIN
+IMPORTS
+	MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE, private
+		FROM SNMPv2-SMI
+	MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+		FROM SNMPv2-CONF
+	TEXTUAL-CONVENTION
+		FROM SNMPv2-TC
+	Counter32,IpAddress
+		FROM SNMPv2-SMI
+	RowStatus
+		FROM SNMPv2-TC
+;
+
+hwIASVrpObjects MODULE-IDENTITY
+	LAST-UPDATED "0412031415Z"
+	ORGANIZATION ""
+	CONTACT-INFO ""
+	DESCRIPTION ""
+	::= { hwIASVrp 1 }
+
+
+
+hwVlanInfoTable OBJECT IDENTIFIER ::= { hwIASVrpObjects 7 }
+
+enterprises OBJECT IDENTIFIER ::= { private 1 }
+
+huawei OBJECT IDENTIFIER ::= { enterprises 2011 }
+
+huaweiUtility OBJECT IDENTIFIER ::= { huawei 6 }
+
+hwIASVrp OBJECT IDENTIFIER ::= { huaweiUtility 37 }
+
+
+  hwIfConfigureTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF HwIfConfigureEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      " 
+      接口配置表 
+      "
+    ::= { hwIASVrpObjects 1 }
+
+  hwIfConfigureEntry OBJECT-TYPE
+    SYNTAX      HwIfConfigureEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      ""
+    INDEX    {  
+              hwIndex
+             }
+    ::= { hwIfConfigureTable 1 }
+
+  HwIfConfigureEntry ::=
+    SEQUENCE
+    {
+      hwIndex	INTEGER,
+      hwIfDescript	OCTET STRING,
+      hwIfType	INTEGER,
+      hwIfMTU	INTEGER,
+      hwIfPhyAddr	OCTET STRING,
+      hwIfMode	INTEGER,
+      hwIfFlowControl	INTEGER,
+      hwIfAdminStatus	INTEGER,
+      hwIfOperStatus	INTEGER,
+      hwIfInPackets	Counter32,
+      hwIfOutPackets	Counter32
+    }
+
+  hwIndex OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口索引( 接口类型+框+槽+端口 ) 
+        "
+    ::= { hwIfConfigureEntry 1 }
+
+  hwIfDescript OBJECT-TYPE
+    SYNTAX      OCTET STRING(SIZE(1..47))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口描述 
+        "
+    ::= { hwIfConfigureEntry 2 }
+
+  hwIfType OBJECT-TYPE
+    SYNTAX      INTEGER{fe(1),ge(2)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口类型 
+        "
+    ::= { hwIfConfigureEntry 3 }
+
+  hwIfMTU OBJECT-TYPE
+    SYNTAX      INTEGER(46..1500)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口MTU 
+        "
+    ::= { hwIfConfigureEntry 4 }
+
+  hwIfPhyAddr OBJECT-TYPE
+    SYNTAX      OCTET STRING(SIZE(17))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口物理地址 
+        "
+    ::= { hwIfConfigureEntry 5 }
+
+  hwIfMode OBJECT-TYPE
+    SYNTAX      INTEGER{auto(1),half10(2),full10(3),half100(4),full100(5),full1000(6)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口工作模式(VPU板FE光口不支持) 
+        "
+    ::= { hwIfConfigureEntry 6 }
+
+  hwIfFlowControl OBJECT-TYPE
+    SYNTAX      INTEGER{on(1),off(2)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口流控打开/关闭（VPU板GE口不支持） 
+        "
+    ::= { hwIfConfigureEntry 7 }
+
+  hwIfAdminStatus OBJECT-TYPE
+    SYNTAX      INTEGER{reset(1),down(2),up(3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口操作类型：1、复位 2、关闭 3、启动 
+        "
+    ::= { hwIfConfigureEntry 8 }
+
+  hwIfOperStatus OBJECT-TYPE
+    SYNTAX      INTEGER{down(1),up(2)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口状态：1、故障 2、正常 
+        "
+    ::= { hwIfConfigureEntry 9 }
+
+  hwIfInPackets OBJECT-TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口所属端口接收的报文数（IPU板不支持） 
+        "
+    ::= { hwIfConfigureEntry 10 }
+
+  hwIfOutPackets OBJECT-TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口所属端口发送的报文数（IPU板不支持） 
+        "
+    ::= { hwIfConfigureEntry 11 }
+
+  hwIpAddrConfTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF HwIpAddrConfEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      " 
+      IP地址配置表（VPU板不支持配置） 
+      "
+    ::= { hwIASVrpObjects 2 }
+
+  hwIpAddrConfEntry OBJECT-TYPE
+    SYNTAX      HwIpAddrConfEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      ""
+    INDEX    {  
+              hwIpAddrIndex
+             }
+    ::= { hwIpAddrConfTable 1 }
+
+  HwIpAddrConfEntry ::=
+    SEQUENCE
+    {
+      hwIpAddrIndex	INTEGER,
+      hwIpAddrIpAddr	IpAddress,
+      hwIpAddrNetMask	IpAddress,
+      hwIpAddrBcastAddr	IpAddress,
+      hwIpAddrIpSecondary	INTEGER,
+      hwIpAddrRowStatus	RowStatus
+    }
+
+  hwIpAddrIndex OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口索引( 接口类型+框+槽+端口 ) 
+        "
+    ::= { hwIpAddrConfEntry 1 }
+
+  hwIpAddrIpAddr OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        IP地址 
+        "
+    ::= { hwIpAddrConfEntry 2 }
+
+  hwIpAddrNetMask OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        子网掩码 
+        "
+    ::= { hwIpAddrConfEntry 3 }
+
+  hwIpAddrBcastAddr OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        广播地址 
+        "
+    ::= { hwIpAddrConfEntry 4 }
+
+  hwIpAddrIpSecondary OBJECT-TYPE
+    SYNTAX      INTEGER{primary(1), secondary(2) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        主/从标志（VPU板不支持从标志） 
+        "
+    ::= { hwIpAddrConfEntry 5 }
+
+  hwIpAddrRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        行状态 
+        "
+    ::= { hwIpAddrConfEntry 6 }
+
+  hwArpConfigureTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF HwArpConfigureEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      " 
+      ARP配置表 
+      "
+    ::= { hwIASVrpObjects 3 }
+
+  hwArpConfigureEntry OBJECT-TYPE
+    SYNTAX      HwArpConfigureEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      ""
+    INDEX    {  
+              hwArpIpAddress
+             }
+    ::= { hwArpConfigureTable 1 }
+
+  HwArpConfigureEntry ::=
+    SEQUENCE
+    {
+      hwArpIpAddress	IpAddress,
+      hwArpMacAddress	OCTET STRING,
+      hwArpFlags	INTEGER,
+      hwArpRowStatus	RowStatus
+    }
+
+  hwArpIpAddress OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        IP地址 
+        "
+    ::= { hwArpConfigureEntry 1 }
+
+  hwArpMacAddress OBJECT-TYPE
+    SYNTAX      OCTET STRING(SIZE(17))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        物理地址 
+        "
+    ::= { hwArpConfigureEntry 2 }
+
+  hwArpFlags OBJECT-TYPE
+    SYNTAX      INTEGER{static(1),dynamic(2)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        ARP类型  
+        "
+    ::= { hwArpConfigureEntry 3 }
+
+  hwArpRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        行状态 
+        "
+    ::= { hwArpConfigureEntry 4 }
+
+  hwIpRouteTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF HwIpRouteEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      " 
+      路由表, 该表属性只读 
+      "
+    ::= { hwIASVrpObjects 4 }
+
+  hwIpRouteEntry OBJECT-TYPE
+    SYNTAX      HwIpRouteEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      ""
+    INDEX    {  
+              hwIpRouteDest,
+              hwIpRouteMask,
+              hwIpRouteNextHop
+             }
+    ::= { hwIpRouteTable 1 }
+
+  HwIpRouteEntry ::=
+    SEQUENCE
+    {
+      hwIpRouteDest	IpAddress,
+      hwIpRouteMask	IpAddress,
+      hwIpRouteNextHop	IpAddress,
+      hwIpRoutePref	INTEGER,
+      hwIpRouteTag	INTEGER,
+      hwIpRouteIndex	INTEGER,
+      hwIpRouteMetric	INTEGER,
+      hwIpRouteProto	INTEGER,
+      hwIpRouteAge	INTEGER
+    }
+
+  hwIpRouteDest OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        目的地址 
+        "
+    ::= { hwIpRouteEntry 1 }
+
+  hwIpRouteMask OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        目的掩码 
+        "
+    ::= { hwIpRouteEntry 2 }
+
+  hwIpRouteNextHop OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        下一跳地址 
+        "
+    ::= { hwIpRouteEntry 3 }
+
+  hwIpRoutePref OBJECT-TYPE
+    SYNTAX      INTEGER(0..255)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        优先级 
+        "
+    DEFVAL      { 60 }
+    ::= { hwIpRouteEntry 4 }
+
+  hwIpRouteTag OBJECT-TYPE
+    SYNTAX      INTEGER{accept(1),reject(2),blackhole(3)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        路由标记 
+        "
+    DEFVAL      { 1 }
+    ::= { hwIpRouteEntry 5 }
+
+  hwIpRouteIndex OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口标识 
+        "
+    ::= { hwIpRouteEntry 6 }
+
+  hwIpRouteMetric OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        路由费用 
+        "
+    ::= { hwIpRouteEntry 7 }
+
+  hwIpRouteProto OBJECT-TYPE
+    SYNTAX      INTEGER{gateway(1),direct(2),static(3)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        协议类型 
+        "
+    ::= { hwIpRouteEntry 8 }
+
+  hwIpRouteAge OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        路由生存时间（单位：秒，由网管转化为时.分.秒） 
+        "
+    ::= { hwIpRouteEntry 9 }
+
+  hwStaticIpRouteTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF HwStaticIpRouteEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      " 
+      路由表, 该表创建后不能修改，除非整行删除 
+      "
+    ::= { hwIASVrpObjects 5 }
+
+  hwStaticIpRouteEntry OBJECT-TYPE
+    SYNTAX      HwStaticIpRouteEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      ""
+    INDEX    {  
+              hwStaticIpRouteDest,
+              hwStaticIpRouteMask,
+              hwStaticIpRouteNextHop,
+              hwStaticIpRoutePref
+             }
+    ::= { hwStaticIpRouteTable 1 }
+
+  HwStaticIpRouteEntry ::=
+    SEQUENCE
+    {
+      hwStaticIpRouteDest	IpAddress,
+      hwStaticIpRouteMask	IpAddress,
+      hwStaticIpRouteNextHop	IpAddress,
+      hwStaticIpRoutePref	INTEGER,
+      hwStaticIpRouteTag	INTEGER,
+      hwStaticIpRouteRowStatus	RowStatus
+    }
+
+  hwStaticIpRouteDest OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        目的地址 
+        "
+    ::= { hwStaticIpRouteEntry 1 }
+
+  hwStaticIpRouteMask OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        目的掩码 
+        "
+    ::= { hwStaticIpRouteEntry 2 }
+
+  hwStaticIpRouteNextHop OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        下一跳地址 
+        "
+    ::= { hwStaticIpRouteEntry 3 }
+
+  hwStaticIpRoutePref OBJECT-TYPE
+    SYNTAX      INTEGER(0..255)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        优先级 
+        "
+    DEFVAL      { 60 }
+    ::= { hwStaticIpRouteEntry 4 }
+
+  hwStaticIpRouteTag OBJECT-TYPE
+    SYNTAX      INTEGER{accept(1),reject(2),blackhole(3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        路由标记 
+        "
+    DEFVAL      { 1 }
+    ::= { hwStaticIpRouteEntry 5 }
+
+  hwStaticIpRouteRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        行状态 
+        "
+    ::= { hwStaticIpRouteEntry 6 }
+
+  hwIfBakGroupTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF HwIfBakGroupEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      " 
+      接口备份组自动创建，只支持VPU板 
+      "
+    ::= { hwIASVrpObjects 6 }
+
+  hwIfBakGroupEntry OBJECT-TYPE
+    SYNTAX      HwIfBakGroupEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      ""
+    INDEX    {  
+              hwIfBakGroupNo,
+              hwSharedIPAddress
+             }
+    ::= { hwIfBakGroupTable 1 }
+
+  HwIfBakGroupEntry ::=
+    SEQUENCE
+    {
+      hwIfBakGroupNo	INTEGER,
+      hwSharedIPAddress	IpAddress,
+      hwSharedIPAddressMask	IpAddress,
+      hwSharedIpAddrIpSecondary	INTEGER,
+      hwMainIFID	OCTET STRING,
+      hwMainIFState	INTEGER,
+      hwBackupIFID	OCTET STRING,
+      hwBackupIFState	INTEGER,
+      hwVirtualMac	OCTET STRING,
+      hwSwitch-over	INTEGER,
+      hwIfBakGroupRowStatus	RowStatus,
+      hwMainIfIndex      INTEGER,
+      hwBackupIfIndex    INTEGER
+    }
+
+  hwIfBakGroupNo OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口备份组组号 
+        "
+    ::= { hwIfBakGroupEntry 1 }
+
+  hwSharedIPAddress OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        共享IP地址 
+        "
+    ::= { hwIfBakGroupEntry 2 }
+
+  hwSharedIPAddressMask OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        共享IP地址掩码 
+        "
+    ::= { hwIfBakGroupEntry 3 }
+
+  hwSharedIpAddrIpSecondary OBJECT-TYPE
+    SYNTAX      INTEGER{primary(1), secondary(2)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        主/从标志（VPU板不支持从标志）
+        "
+    ::= { hwIfBakGroupEntry 4 }
+
+  hwMainIFID OBJECT-TYPE
+    SYNTAX      OCTET STRING(SIZE(1..47))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        主接口描述 
+        "
+    ::= { hwIfBakGroupEntry 5 }
+
+  hwMainIFState OBJECT-TYPE
+    SYNTAX      INTEGER{down(1),standby(2),active(3)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        主接口状态  1：故障；2：备用；3：主用 
+        "
+    ::= { hwIfBakGroupEntry 6 }
+
+  hwBackupIFID OBJECT-TYPE
+    SYNTAX      OCTET STRING(SIZE(1..47))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        备接口描述 
+        "
+    ::= { hwIfBakGroupEntry 7 }
+
+  hwBackupIFState OBJECT-TYPE
+    SYNTAX      INTEGER{down(1),standby(2),active(3)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        备接口状态  1：故障；2：备用；3：主用 
+        "
+    ::= { hwIfBakGroupEntry 8 }
+
+  hwVirtualMac OBJECT-TYPE
+    SYNTAX      OCTET STRING(SIZE(17))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        虚拟MAC地址 
+        "
+    ::= { hwIfBakGroupEntry 9 }
+
+  hwSwitch-over OBJECT-TYPE
+    SYNTAX      INTEGER{switch-over(1)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        接口备份组倒换(1:倒换) 
+        "
+    ::= { hwIfBakGroupEntry 10 }
+
+  hwIfBakGroupRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        行状态 
+        "
+    ::= { hwIfBakGroupEntry 11 }
+    
+  hwMainIfIndex OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        主接口类型+框＋槽＋端口 
+        "
+    ::= { hwIfBakGroupEntry 12 }
+    
+  hwBackupIfIndex OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        " 
+        备接口类型＋框＋槽＋端口 
+        "
+    ::= { hwIfBakGroupEntry 13 }
+
+
+
+  hwVoicePktID OBJECT-TYPE
+    SYNTAX      INTEGER(1..4095)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+      " 
+      语音报文的VLAN ID(系统默认为1) 
+      "
+    ::= { hwVlanInfoTable 1 }
+
+  hwOthersPktID OBJECT-TYPE
+    SYNTAX      INTEGER(1..4095)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+      " 
+      非语音报文的VLAN ID(系统默认为1) 
+      "
+    ::= { hwVlanInfoTable 2 }
+
+  hwVoicePKtPriority OBJECT-TYPE
+    SYNTAX      INTEGER(0..7)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+      " 
+      语音报文的优先级别(系统默认为0) 
+      "
+    ::= { hwVlanInfoTable 3 }
+
+  hwOthersPktPriority OBJECT-TYPE
+    SYNTAX      INTEGER(0..7)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+      " 
+      非语音报文的优先级别(系统默认为0) 
+      "
+    ::= { hwVlanInfoTable 4 }
+
+  hwVlanSwith OBJECT-TYPE
+    SYNTAX      INTEGER{close(1),open(2)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+      " 
+      VLAN控制开关 1：关闭；2：打开（系统默认关闭）
+      "
+    ::= { hwVlanInfoTable 5 }
+
+
+
+END

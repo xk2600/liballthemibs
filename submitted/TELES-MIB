@@ -1,0 +1,11 @@
+TELES-MIB DEFINITIONS ::= BEGIN
+
+
+IMPORTS
+	enterprises
+		FROM RFC1155-SMI;
+
+teles			OBJECT IDENTIFIER ::= { enterprises 2170 }
+
+
+END

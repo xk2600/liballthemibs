@@ -1,0 +1,22 @@
+--
+-- DXD LineTest root SMI 
+--
+-- CONTACT-INFO: 
+--
+--        Ericsson Diax
+--        Faelledvej 17
+--        DK-7600 Struer
+--        Denmark
+--               
+--        E-mail: diax.support@ericsson.com
+--
+
+PEA-LINE-TEST-SMI DEFINITIONS ::= BEGIN
+
+     IMPORTS
+         diaxMIB
+               FROM DXD-SMI;
+         
+    peaLineTest	OBJECT IDENTIFIER ::= { diaxMIB 602 }
+
+END

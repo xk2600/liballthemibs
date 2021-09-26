@@ -1,0 +1,1993 @@
+PEA-EQUIPMENT-IPDSLAM DEFINITIONS ::= BEGIN
+
+
+IMPORTS
+    peaIpDslam
+       FROM DIESEL-SMI 
+
+    -- standar X.733 header for the traps       
+    managedObjectClass, 
+    managedObjectInstance, 
+    sequenceNumber, 
+    perceivedSeverity, 
+    eventTime, 
+    eventTypePem, 
+    probableCause  
+       FROM PEM-STANDARD 
+    
+    TruthValue,
+    DisplayString,  
+    MacAddress, TEXTUAL-CONVENTION
+       FROM SNMPv2-TC
+
+    InterfaceIndex         
+           FROM IF-MIB
+ 
+    MODULE-IDENTITY,  
+    NOTIFICATION-TYPE, 
+    OBJECT-TYPE, 
+    Integer32, Unsigned32,IpAddress 
+        FROM SNMPv2-SMI
+    OBJECT-GROUP, NOTIFICATION-GROUP
+          FROM SNMPv2-CONF
+        ;
+
+peaEquipmentIpDslam  MODULE-IDENTITY
+    LAST-UPDATED 
+         "200407041200Z"  
+    ORGANIZATION
+         "Ericsson Diax A/S - Denmark"
+    CONTACT-INFO
+         "
+         Ericsson Diax A/S
+         Faelledvej 17
+         DK-7600 Struer
+         Denmark
+         
+         E-mail: support@dxd.ericsson.se
+         "       
+   DESCRIPTION
+         "
+         The IP DSLAM software supports a number of standard 
+         and proprietary MIBs.
+         This MIB module defines objects for reading out system 
+         specific information about the IP DSLAM and the control 
+         entries for restarting the IP DSLAM, for setting the 
+         alarm filter and for controlling the LEDs.      
+         "                                                           
+
+    ::= { peaIpDslam 1 }
+    
+peaEquipmentIpDslamObjects          OBJECT IDENTIFIER ::= { peaEquipmentIpDslam  1 }
+peaEquipmentIpDslamTraps            OBJECT IDENTIFIER ::= { peaEquipmentIpDslam  2 }
+peaEquipmentIpDslamObjectsGroups    OBJECT IDENTIFIER ::= { peaEquipmentIpDslam  3 }
+peaEquipmentIpDslamTrapsGroups      OBJECT IDENTIFIER ::= { peaEquipmentIpDslam  4 }
+
+-- peaEquipmentIpDslamObjects 1 & 2 used below
+temperatureControlStatus    OBJECT IDENTIFIER ::= { peaEquipmentIpDslamObjects 3 }
+ledControl                  OBJECT IDENTIFIER ::= { peaEquipmentIpDslamObjects 4 }
+-- peaEquipmentIpDslamObjects 5 & 6 used below
+mainProcessor               OBJECT IDENTIFIER ::= { peaEquipmentIpDslamObjects 7 }
+-- peaEquipmentIpDslamObjects 8 used below  
+alarmFilter                 OBJECT IDENTIFIER ::= { peaEquipmentIpDslamObjects 9 }
+identificationData          OBJECT IDENTIFIER ::= { peaEquipmentIpDslamObjects 10 }
+configurationData           OBJECT IDENTIFIER ::= { peaEquipmentIpDslamObjects 11 }
+-- peaEquipmentIpDslamObjects 12 used below 
+productDescription          OBJECT IDENTIFIER ::= { peaEquipmentIpDslamObjects 13 }
+remoteStorage               OBJECT IDENTIFIER ::= { peaEquipmentIpDslamObjects 14 }
+multilink                   OBJECT IDENTIFIER ::= { peaEquipmentIpDslamObjects 15 }
+
+
+PhyModeType ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT "1x"
+    STATUS       current
+    DESCRIPTION
+            "Represent the Ethernet PHY Mode."
+    SYNTAX       OCTET STRING (SIZE (1))
+
+cfgVersion OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "The CfgVersion will initially be zero, but is set to
+     the version number defined in the configuration file 
+     received from the tftp server at system start-up. The 
+     management system may use this version number to verify 
+     that the unit contains the correct configuration 
+     parameter values. The management system may update the 
+     version number when configuration parameters are modified."
+    ::= { peaEquipmentIpDslamObjects 1 }     
+    
+restartModemPool OBJECT-TYPE
+    SYNTAX      INTEGER {restart(1)}
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "When set to 'restart' the IP DSLAM restarts, which includes 
+    loading the SW image and configuration data from the server. 
+    In this way a new SW version can be loaded and/or the configu-
+    ration data can be updated. All the ADSL lines will be out of 
+    service while the IP DSLAM restarts."
+    ::= { peaEquipmentIpDslamObjects 2 }    
+    
+systemIdentification OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..255))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "This value includes the full name and version
+     identification of the IP DSLAM software."
+    ::= { peaEquipmentIpDslamObjects 8 }    
+ 
+bootSwIdentification OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..255))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "This value includes the full name and version
+     identification of the BOOT software."
+    ::= { peaEquipmentIpDslamObjects 12 }       
+--************************************************************************
+-- the management system can read the status of temperature control
+-- which supposed the temperature control state, the temperature value
+-- in the IP DSLAM and the status of the fans 
+--************************************************************************
+
+temperatureControlState OBJECT-TYPE
+    SYNTAX      INTEGER {low(0), normal(1), high(2), tooHigh(3)}
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The state of the temperature control can be:
+     0 - Low
+     1 - Normal
+     2 - High
+     3 - TooHigh"
+    ::= { temperatureControlStatus 1 }
+
+temperatureValue OBJECT-TYPE
+    SYNTAX      Integer32 (1..150)
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The temperature value in the IP DSLAM in grade Celsius."
+    ::= { temperatureControlStatus 2 }
+          
+fansStatus     OBJECT IDENTIFIER ::= { temperatureControlStatus 3 }
+
+fanGreenStatus OBJECT-TYPE
+    SYNTAX      INTEGER {failed(0), working(1)}
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The status of the fan which is placed closest to the green LED."
+    ::= { fansStatus 1 }
+
+fanRedStatus OBJECT-TYPE
+    SYNTAX      INTEGER {failed(0), working(1)}
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The status of the fan which is placed closest to the red LED."
+    ::= { fansStatus 2 }
+
+fanGreenSpeed OBJECT-TYPE
+    SYNTAX      Unsigned32 
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The speed of the fan which is placed closest to the
+     green LED measured in rpm (rotations per minute)." 
+    ::= { fansStatus 3 } 
+    
+fanRedSpeed OBJECT-TYPE
+    SYNTAX      Unsigned32 
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The speed of the fan which is placed closest to the
+     red LED measured in rpm (rotations per minute)." 
+    ::= { fansStatus 4 }    
+
+--************************************************************************
+-- The management system can control the LEDs to blink alternatively   
+--************************************************************************
+
+ledsAlternativeBlink OBJECT-TYPE
+    SYNTAX      INTEGER {on(1), off(0)}
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "When the ledsAlternativeBlink is set to ON(1) the
+     LEDs will start to blink alternatively."
+    ::= { ledControl 1 }
+
+--************************************************************************
+-- The management system can chose to hide all interfaces
+-- (RFC1233/RFC2233) except the Ethernet interface (HP OpenView issue).
+--************************************************************************
+
+onlyShowEthernetInterface OBJECT-TYPE
+    SYNTAX      INTEGER {on(1), off(0)}
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "When set to ON(1) only the Ethernet interface 
+     is visible (RFC1233/RFC2233).
+     When is set to OFF(0) the ATM and software loop 
+     back interfaces are also visible."
+    ::= { peaEquipmentIpDslamObjects 5 }
+         
+--************************************************************************
+-- IP DSLAM performance statistics
+--************************************************************************
+mpProcessorLoad OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..100)
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The percentage of time that the main processor was not idle.
+     Average over 10 seconds. (almost like hrProcessorLoad in RFC1514)."
+    ::= { mainProcessor 1 }
+
+mpMemFree OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..100)
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The amount of free memory on main processor in percent."
+    ::= { mainProcessor 2 }
+    
+mpMemFreeBytes OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The amount of free memory on main processor in bytes."
+    ::= { mainProcessor 3 }
+    
+mpMemBuffersUsed OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The total number of memory buffers currently used (Ethernet, ATM & local IP-stack)."
+    ::= { mainProcessor 4 }    
+    
+--************************************************************************
+-- alarm filter parameters
+--************************************************************************
+communicationsAlarmFilter  OBJECT-TYPE
+    SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "This alarm filter will filter out all communication 
+     alarms with lower severity than the selected.
+     E.g. Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    DEFVAL { major }
+    ::= { alarmFilter 1 }
+
+environmentAlarmFilter  OBJECT-TYPE
+    SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "This alarm filter will filter out all environment 
+     alarms with lower severity than the selected.
+     E.g. Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    DEFVAL { major }
+    ::= { alarmFilter 2 }
+
+equipmentAlarmFilter  OBJECT-TYPE
+    SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "This alarm filter will filter out all equipment 
+     alarms with lower severity than the selected.
+     E.g. Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    DEFVAL { major }
+    ::= { alarmFilter 3 }
+    
+processingAlarmFilter  OBJECT-TYPE
+    SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "This alarm filter will filter out all processing 
+     alarms with lower severity than the selected.
+     E.g. Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    DEFVAL { major }
+    ::= { alarmFilter 4 }
+    
+qualityOfServiceAlarmFilter  OBJECT-TYPE
+    SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "This alarm filter will filter out all quality 
+     alarms with lower severity than the selected.
+     E.g. Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    DEFVAL { major }
+    ::= { alarmFilter 5 }      
+    
+--************************************************************************
+-- Identification Data
+--************************************************************************   
+ipdslamIdData           OBJECT IDENTIFIER ::= { identificationData 1 }
+dupBoardIdData          OBJECT IDENTIFIER ::= { identificationData 2 }
+dafeBoardIdData         OBJECT IDENTIFIER ::= { identificationData 3 }
+ddcBoardIdData          OBJECT IDENTIFIER ::= { identificationData 4 }
+difBoardIdData          OBJECT IDENTIFIER ::= { identificationData 5 }
+
+--************************************************************************
+-- IP DSLAM identification data
+--************************************************************************
+productNumberMP OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Index number that identifies the IP DSLAM hardware unit."
+    ::= { ipdslamIdData 1 }    
+          
+revisionStateMP OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     E.g. different types of components or new boot SW."
+    ::= { ipdslamIdData 2 }    
+    
+functionDesignationMP OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { ipdslamIdData 3 }    
+
+dateOfProductionMP OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { ipdslamIdData 4 }
+    
+dateOfRepairMP OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+   ::= { ipdslamIdData 5 }
+
+productionSerialNumberMP OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { ipdslamIdData 6 }
+    
+layoutVersionCodeMP OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { ipdslamIdData 7 }  
+    
+idCheckSumMP OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "CRC32 Checksum of identification data structure 
+     of the IP DSLAM."
+    ::= { ipdslamIdData 8 }          
+    
+--************************************************************************
+-- DUP board identification data
+--************************************************************************
+productNumberDUP OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Index number that identifies the DUP board."
+    ::= { dupBoardIdData 1 }    
+          
+revisionStateDUP OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     E.g. different types of components or new boot SW."
+    ::= { dupBoardIdData 2 }    
+    
+functionDesignationDUP OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { dupBoardIdData 3 }    
+
+dateOfProductionDUP OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { dupBoardIdData 4 }
+    
+dateOfRepairDUP OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     he format is described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { dupBoardIdData 5 }
+
+productionSerialNumberDUP OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { dupBoardIdData 6 }
+    
+layoutVersionCodeDUP OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { dupBoardIdData 7 }  
+    
+idCheckSumDUP OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "CRC32 Checksum of identification data structure
+     for the DUP board."
+    ::= { dupBoardIdData 8 }        
+
+--************************************************************************
+-- DAFE board identification data
+--************************************************************************
+productNumberDAFE OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Index number that identifies the DAFE board."
+    ::= { dafeBoardIdData 1 }    
+          
+revisionStateDAFE OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     E.g. different types of components or new boot SW."
+    ::= { dafeBoardIdData 2 }    
+    
+functionDesignationDAFE OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { dafeBoardIdData 3 }    
+
+dateOfProductionDAFE OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { dafeBoardIdData 4 }
+    
+dateOfRepairDAFE OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { dafeBoardIdData 5 }
+
+productionSerialNumberDAFE OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { dafeBoardIdData 6 }
+    
+layoutVersionCodeDAFE OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { dafeBoardIdData 7 }  
+    
+idCheckSumDAFE OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "CRC32 Checksum of identification data structure
+     for the DAFE board."
+    ::= { dafeBoardIdData 8 }        
+
+--************************************************************************
+-- DDC board identification data
+--************************************************************************
+productNumberDDC OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Index number that identifies the DDC board."
+    ::= { ddcBoardIdData 1 }    
+          
+revisionStateDDC OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     E.g. different types of components or new boot SW."
+    ::= { ddcBoardIdData 2 }    
+    
+functionDesignationDDC OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { ddcBoardIdData 3 }    
+
+dateOfProductionDDC OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { ddcBoardIdData 4 }
+    
+dateOfRepairDDC OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { ddcBoardIdData 5 }
+
+productionSerialNumberDDC OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { ddcBoardIdData 6 }
+    
+layoutVersionCodeDDC OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { ddcBoardIdData 7 }  
+    
+idCheckSumDDC OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "CRC32 Checksum of identification data for the DDC board."
+    ::= { ddcBoardIdData 8 } 
+    
+
+--************************************************************************
+-- DIF board identification data
+--************************************************************************
+productNumberDIF OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Index number that identifies the DIF board."
+    ::= { difBoardIdData 1 }    
+          
+revisionStateDIF OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     E.g. different types of components or new boot SW."
+    ::= { difBoardIdData 2 }    
+    
+functionDesignationDIF OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { difBoardIdData 3 }    
+
+dateOfProductionDIF OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { difBoardIdData 4 }
+    
+dateOfRepairDIF OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { difBoardIdData 5 }
+
+productionSerialNumberDIF OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { difBoardIdData 6 }
+    
+layoutVersionCodeDIF OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { difBoardIdData 7 }  
+    
+idCheckSumDIF OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "CRC32 Checksum of identification data for the DIF board."
+    ::= { difBoardIdData 8 } 
+    
+
+--************************************************************************
+-- Configuration Data
+--************************************************************************
+localMacAddrMP OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Unique MAC address of the IP DSLAM."
+    ::= { configurationData 1 }
+
+phyModeMP OBJECT-TYPE
+    SYNTAX      PhyModeType
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "Ethernet PHY Mode setting.
+     The Phy Mode is coded as a bitfield:
+     *  Bit 0: Auto-negotiation. If set, auto-negotiation is OFF else ON.
+     *  Bit 2: Full Duplex control. If set, full duplex operation is NOT allowed.
+     *  Bit 3: 100 Mbit/s control. If set, 100 Mbit/s operation is NOT allowed.
+     *  Bit 4: Half Duplex control. If set, half duplex operation is NOT allowed
+     *  Bit 5: 10 Mbit/s control. If set, 10 Mbit/s operation is NOT allowed.
+     Examples of PHY Mode values:
+     *  0x00: Full auto-negotiation.
+     *  0x20: 100 Mbit/s only. Auto-negotiation between half & full duplex.
+     *  0x31: Fixed 100 Mbit/s, full duplex only operation.
+     *  0x25: Fixed 100 Mbit/s, half duplex only operation
+    "
+    ::= { configurationData 2 }
+ 
+watchDogEnableMP OBJECT-TYPE
+    SYNTAX      INTEGER { off (0), on (1) }
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Enabling of the HW Watchdog.
+     If 0 (zero), the watchdog is OFF, 
+     else the watchdog is ON."
+    ::= { configurationData 3 }
+
+vlanIdMP OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..4095)
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "The VLAN ID setting for the management VLAN."  
+    ::= { configurationData 5 }     
+    
+vlanPrioMP OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..7)
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "Specifies the IEEE 802.1Q priority used for the management VLAN."  
+    ::= { configurationData 6 }     
+      
+vlanTaggingMP OBJECT-TYPE
+    SYNTAX      INTEGER { off (0), on (1) }
+    MAX-ACCESS  read-write
+    STATUS      deprecated
+    DESCRIPTION
+    "If 0, VLAN tagging is off, meaning that VLAN is not used.
+     If 1, VLAN tagging is used, with the given ID and Prio."  
+    ::= { configurationData 7 } 
+    
+bootStringMP OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (0..255))
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "Text commands for the bootloader."
+    ::= { configurationData 8 }
+
+--************************************************************************
+-- productDescription parameters
+--************************************************************************ 
+
+numberOfLines OBJECT-TYPE
+    SYNTAX      Unsigned32 (1..10)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number of subscriber lines supported by this IP DSLAM."  
+    ::= { productDescription 1 }     
+ 
+ 
+--************************************************************************
+-- remoteStorage parameters
+--************************************************************************  
+remoteStorageFTPServerIPMP OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION 
+    "The IP Address of FTP server to be used with the remote storage area.
+    The value can be any IP address"
+    ::={remoteStorage 1}
+
+
+remoteStorageFilePathMP OBJECT-TYPE
+    SYNTAX      DisplayString  (SIZE(1..255))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The path to the remote storage file. The path should be relatetive to home of the
+    FTP server. (I.e. Files/MPRemoteStorageFiles where the 'Files' directory is can be
+    reached from home through the FTP server."
+    ::={remoteStorage 2}
+
+remoteStorageFTPUserMP OBJECT-TYPE
+    SYNTAX      DisplayString  (SIZE(1..255))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION 
+    "The user name which should be used by the IP DSLAM to access
+    the remote storage ftp server."
+    ::={remoteStorage 3}
+
+remoteStorageFTPPasswordMP OBJECT-TYPE
+    SYNTAX      DisplayString   (SIZE(1..255))
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION 
+    "The password which should be used by the IP DSLAM to access
+    the remote storage ftp server."
+    ::={remoteStorage 4}
+
+remoteStorageTrafficInfoTimeMP OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..24)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION 
+    "The time interval for periodically triggering a backup of the
+    remote storage file. All traffic counters will be backed up with
+    remote storage. This includes total number of send bytes, total
+    number of send frames, total number of received bytes and total
+    number of received frames for each PVC.
+    Valid range is 0 - 24 hours. 0 means disabled"
+    ::={remoteStorage 5}
+
+remoteStorageTrafficInfoSizeMP OBJECT-TYPE
+    SYNTAX      Unsigned32 (0|50..1000)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION 
+    "The size interval for triggering a backup of the remote
+    storage file. Whenever x MBytes has been transfered on any PVC since
+    last backup all traffic counters will be backed up with remote
+    storage. This includes total number of send bytes, total
+    number of send frames, total number of received bytes and total
+    number of received frames for each PVC.
+    Valid range is 50 - 1000 MBytes. 0 means disabled
+
+    Note: Backup is limited to maximum once every minute"
+    ::={remoteStorage 6}
+
+--************************************************************************
+-- multilink parameters
+--************************************************************************  
+
+multilinkMode OBJECT-TYPE
+    SYNTAX       INTEGER { singleLink(1), linkAggregation(2), 
+                           redundantConfiguration(3) }
+    MAX-ACCESS   read-write
+    STATUS       current
+    DESCRIPTION
+    "
+     This defines the mode the multiple network-side links operate in.
+
+     singleLink(1)             - only one link is used for active data 
+                                 transfer. This is the only possible 
+                                 value for devices with a single 
+                                 network-side link.  
+
+     linkAggregation(2)        - the multiple links are used as one trunk 
+                                 aggregating the traffic.
+
+     redundantConfiguration(3) - only one of the the multiple links is 
+                                 used for active data transfer, but the
+                                 other are kept stand by for resilience 
+                                 (uses RSTP protocol). 
+
+     Note: the read value may not match the actual mode during switch over. 
+    "
+    ::= { multilink 1 }
+
+
+multilinkPreferredInterface OBJECT-TYPE
+    SYNTAX      Integer32 (0..2147483646)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "
+     Shows the index of the interface (link) selected for traffic forwarding
+     whenever there is no other explicit indication on which one to choose. 
+     The interface is selected during boot - it is the interface the device 
+     was booted from. The value is the same as used for interfaces in the 
+     IF-MIB (1-based).
+     This interface will be used in case of multilinkMode is set to
+     redundantConfiguration and the rootID is equal for the links. If
+     the rootIDs are different this value is ignored and the one with
+     highest priority (lowest cost) will be selected.
+    "
+    ::= { multilink 2 }
+
+multilinkInterfaceTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF MultilinkInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "
+     This is a table of interfaces (links) on the network-side. The table 
+     is indexed by the same interface numbers as used in the IF-MIB (1-based).
+    "
+    ::= { multilink 3 }
+
+multilinkForceManagementToUsePreferredInterface OBJECT-TYPE
+    SYNTAX      INTEGER { enabled (1), disabled (2) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "
+	 Setting this value to 'enabled (1)' forces the management traffic to be sent on
+     the interface towards the Active ECN thereby overruling the RSTP protocol
+     for management traffic towards this node.
+     This enables the node controller to stay in contact with the DSLAM, even if the
+     link is switched to the other interface by RSTP.
+    "
+    ::= { multilink 4 }
+    
+multilinkInterfaceEntry OBJECT-TYPE
+    SYNTAX      MultilinkInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "
+     This is an entry of the multilinkInterfaceTable 
+    "
+    INDEX  { multilinkInterfaceIndex }
+    ::= { multilinkInterfaceTable 1 }
+
+
+MultilinkInterfaceEntry ::=
+    SEQUENCE {
+              multilinkInterfaceIndex InterfaceIndex,
+              multilinkIsForwarding   TruthValue,
+              multilinkIsUp           TruthValue
+             }
+
+
+multilinkInterfaceIndex OBJECT-TYPE
+    SYNTAX      InterfaceIndex (1..2147483647)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "
+     This is the index to the multilinkInterfaceTable. The values
+     are the same as used in the IF-MIB (1-based).
+    "
+    ::= { multilinkInterfaceEntry 1 }
+
+
+multilinkIsForwarding OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "
+     This shows if the corresponding interface (link) is forwarding 
+     traffic - true(1) or not - false(2). An interface that is not 
+     forwarding may still carry some service data (e.g. PDUs).
+    "
+    ::= { multilinkInterfaceEntry 2 }
+
+        
+multilinkIsUp OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "
+     This shows if the corresponding interface (link) is up 
+     true(1) or down - false(2). The true(1) value is returned
+     if the ifOperState of the corresponding port is up. 
+     The false(1) value is returned if the ifOperState of the 
+     corresponding port is NOT up (e.g. down, testing, etc.).
+    "
+    ::= { multilinkInterfaceEntry 3 }
+
+
+--************************************************************************
+-- trap definitions
+--************************************************************************
+traps                   OBJECT IDENTIFIER ::= { peaEquipmentIpDslamTraps 0 }
+                            
+temperatureTooHigh      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              temperatureControlState, temperatureValue }
+    STATUS  deprecated
+    DESCRIPTION
+    "The temperature is too high and has increased above a fixed threshold
+     value. The high temperature value is probably caused by fan failure or
+     high environment temperature.
+
+     For the IP DSLAM  the lines are stopped in order to reduce the power
+     consumption and avoid damage to the device.
+
+     Corrective Actions:
+     - Check that the fans for the device is working properly.
+     - Check that the environment temperature is acceptable.
+     - For the IPDSLAM it might help to remove some subscibers from the lines.
+
+     Deprecated from:                EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Critical
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         temperatureUnacceptable
+      8: Temp control state     [Low, Normal, High or TooHigh]
+      9: Temperature value      [Value in degree Celsius]
+
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.2 # temperatureTooHighCeasing
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.8 # IP DLSAM RestartAlarm
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Temperature is too high from: $2; Probable cause: $7; Temperature Value: $9; Temperature control state: $8; Sequence Number: $3;
+    --CeasingId: "agent-addr", 0
+    --CeasingId: "agent-addr", 0
+     
+    ::= { traps 1 }
+
+temperatureTooHighCeasing      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              temperatureControlState, temperatureValue }
+    STATUS  deprecated
+    DESCRIPTION
+    "The too high temperature has ceased and has decreased below a fixed
+     threshold value in the normal working area. 
+
+     For the IP DSLAM the lines are brought into service again, which will lead 
+     to increasing power consumption and possibly an increased temperature.
+
+     Deprecated from:                EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Ceasing
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         ThresholdCrossed
+      8: Temp control state     [Low, Normal, High or TooHigh]
+      9: Temperature value      [Value in degree Celsius]
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Temperature is normal again from: $2; Probable cause: $7; Temperature Value: $9; Temperature control state: $8; Sequence Number: $3;
+    
+    ::= { traps 2 }  
+               
+stateEventError      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber,perceivedSeverity, 
+              eventTime, eventTypePem, probableCause, processName, processState, 
+              fileName, lineNo, senderTask, messageId, messageData }
+    STATUS  deprecated
+    DESCRIPTION
+    "A state/event SW error has been detected on the device. This trap is seen
+     if the IPDSLAM is discarding a message that it did not know how to handle.
+     This kind of problem is sometimes related to an unforeseen state in the IP DSLAM.
+
+     Corrective Actions:
+     - Save the alarm information to a file, e.g. using a screenshot. It has to show
+       all the trap parameters.
+     - Give a brief explanation to how the error was provoked. If it can be provoked
+       again, then it is important for the Ericsson support team to know how this is done. 
+     - Create a trouble report, which includes the log files, and send it to Ericsson support.
+
+     Deprecated from:           EDA 1.1 R2A
+
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Major
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             ProcessingErrorAlarm
+      7: Probable cause         SoftwareError
+      8: Process name           [Name of DMAPI task]
+      9: Process state          [DMAPI task state]
+     10: File name              [The file name from where the alarm was sent]
+     11: Line no                [The line number in the specified file]
+     12: Sender task            [The task name of the task sending the message]
+     13: Message id             [Internal message number]
+     14: Message data           [Message content - hex bytes]
+    "
+
+    --Ericsson Diax additional information:
+    --Format: State/Event SW error detected from: $2; Probable cause: $7; ProcessName: $8; ProcessState: $9; Filename: $10; LineNo: $11; SenderTask: $12; MessageId: $13; MessageData: $14; Sequence Number: $3;
+    
+    ::= { traps 4 }    
+    
+nonFatalSoftwareError      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, perceivedSeverity, 
+              eventTime, eventTypePem, probableCause, processName, processState, 
+              fileName, lineNo, errorCode, errorData }
+    STATUS  deprecated
+    DESCRIPTION
+    "A non-fatal SW error has been detected on the device. This type of software
+     error is normally not fatal for your system, It could be a configuration error
+     or a minor problem in the software, so do not panic if this alarm is seen. 
+    
+     Corrective Actions:
+     - Save the alarm information to a file, e.g. using a screenshot. It has to show
+       all the trap parameters.
+     - Give a brief explanation to how the error was provoked. If it can be provoked
+       again, then it is important for the Ericsson support team to know how this is done. 
+     - Create a trouble report, which includes the log files, and send it to Ericsson support.
+
+     Deprecated from:           EDA 1.1 R2A
+    
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Major
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             ProcessingErrorAlarm
+      7: Probable cause         SoftwareError
+      8: Process name           [Name of DMAPI task]
+      9: Process state          [DMAPI task state]
+     10: File name              [The file name from where the alarm was sent]
+     11: Line no                [The line number in the specified file]
+     12: Error code             [Additional error information]
+     13: Error data             [Additional data related to the error - hex bytes]
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Nonfatal SW error detected from: $2; Probable cause: $7; ProcessName: $8; ProcessState: $9; Filename: $10; LineNo: $11;  ErrorCode: $12; ErrorData: $13; Sequence Number: $3;
+    
+    ::= { traps 5 } 
+    
+fatalSoftwareError      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              processName, processState, fileName, lineNo, errorCode }
+    STATUS  deprecated
+    DESCRIPTION
+   "A fatal SW error has been detected on your device. The device will now restart
+     in order to recover. This type of error is very serious and if it is seen in your
+     system, then it is important that it is handled right away. 
+
+     Corrective Actions:
+     - Save the alarm information to a file, e.g. using a screenshot. It has to show
+       all the trap parameters.
+     - Give a brief explanation to how the error was provoked. If it can be provoked
+       again, then it is important for the Ericsson support team to know how this is done. 
+     - Create a trouble report which includes the log files and send it to Ericsson support.
+
+     Deprecated from:           EDA 1.1 R2A
+    
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Critical
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             ProcessingErrorAlarm
+      7: Probable cause         SoftwareError
+      8: Process name           [Name of DMAPI task]
+      9: Process state          [DMAPI task state]
+     10: File name              [The file name from where the alarm was sent]
+     11: Line no                [The line number in the specified file]
+     12: Error code             [Additional error information]
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Fatal SW error detected - IP DSLAM SW will restart from: $2; Probable cause: $7; ProcessName: $8; ProcessState: $9;  Filename: $10; LineNo: $11; ErrorCode: $12; Sequence Number: $3;
+    
+    ::= { traps 6 }  
+
+configurationFileError      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              errorCode }
+    STATUS  deprecated
+    DESCRIPTION
+    "The configuration file which the device is using failed to pass or load.
+
+     Corrective Actions:
+     - Check that the device can reach the server where the configuration file is located.
+     - Check that the configuration is physically located on the server.
+     - Check that the configuration file does not contain any syntax errors.
+
+     Deprecated from:           EDA 1.1 R2A
+    
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Critical
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             ProcessingErrorAlarm
+      7: Probable cause         FileError
+      8: Error code             [Additional error information]
+
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.8 # restartAlarm
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Configuration file unavailable or contains errors - IP DSLAM SW will restart from: $2; Probable cause: $7; ErrorCode: $8; Sequence Number: $3;
+    --CeasingId: "agent-addr", 0
+    
+    ::= { traps 7 }  
+
+modemPoolRestartAlarm      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              postMortemInformation }
+    STATUS  deprecated
+    DESCRIPTION
+    "The IP DSLAM has restarted. The post mortem information will indicate the
+     reason for the restart.
+
+     If the device has restarted from an unknown reason, then it is strongly
+     advised that you contact Ericsson support, which will help you do make
+     the necessary logs. A trace is very valuable for the Ericsson support team
+     in case an error correction has to be made. The trace should afterwards be
+     sent for further investigations.
+
+     Deprecated from:           EDA 1.1 R2A
+
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Major
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         Other
+      8: Post mortem info       [reason for the restart]
+    "
+
+    --Ericsson Diax additional information:
+    --Format: IP DSLAM Restart Alarm from: $2; Probable cause: $7; Post Mortem information: $8; Sequence Number: $3;
+    
+   ::= { traps 8 } 
+
+fanGreenFailure      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              fanGreenStatus }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates that the fan located near to the green LED has failed. This means that the
+     fan control cannot secure that the temperature is kept in the normal state in the
+     worst-case scenario (e.g. high environmental temperature, high traffic).
+     
+     Corrective Actions:
+     - Replace the fan.
+    
+     Deprecated from:           EDA 1.1 R2A
+
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Major
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         CoolingFanFailure
+      8: Fan green status       Failed
+
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.10 # fanGreenCeasing
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.8 # IP DLSAM RestartAlarm
+    "
+
+    --Ericsson Diax additional information:
+    --Format: The fan which is closest to the green LED failed from: $2; Probable cause: $7; GreenFan status: $8; GreenFan speed: $9 rpm; Sequence Number: $3; 
+    --CeasingId: "agent-addr", 0
+    --CeasingId: "agent-addr", 0
+
+    ::= { traps 9 }      
+
+fanGreenCeasing      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              fanGreenStatus }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates the ceasing of the fan, which is located near to the green LED.
+
+     Deprecated from:           EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Ceasing
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         CoolingFanFailure
+      8: Fan green status       Failed
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Ceasing: Green fan failure from: $2; Probable cause: $7; GreenFan status: $8; GreenFan speed: $9 rpm; Sequence Number: $3;
+
+    ::= { traps 10 }      
+
+fanRedFailure      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              fanRedStatus }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates that the fan located near to the red LED has failed, This means that the fan
+     control cannot secure that the temperature is kept in the normal state in the worst-case
+     scenario (e.g. high environmental temperature, high traffic).
+     
+     Corrective Actions:
+     - Replace the fan.
+
+     Deprecated from:           EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Major
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         CoolingFanFailure
+      8: Fan red status         Failed
+
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.12 # redFanCeasing
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.8 # IP DSLAM RestartAlarm
+    "
+
+    --Ericsson Diax additional information:
+    --Format: The fan which is closest to the red LED failed from: $2; Probable cause: $7; RedFan status: $8; RedFan speed: $9 rpm; Sequence Number: $3;
+    --CeasingId: "agent-addr", 0
+    --CeasingId: "agent-addr", 0
+
+    ::= { traps 11 }      
+
+fanRedCeasing      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              fanRedStatus }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates the ceasing of the fan which is located near to the red LED.
+     
+     Deprecated from:           EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Ceasing
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         CoolingFanFailure
+      8: Fan red status         Failed
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Ceasing: Red fan failure from: $2; Probable cause: $7; RedFan status: $8; RedFan speed: $9 rpm; Sequence Number: $3;
+
+    ::= { traps 12 }      
+
+idDataReadError      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              hwUnit }
+    STATUS  deprecated
+    DESCRIPTION
+    "This alarm indicates that the identification data the device has in flash memory
+     is corrupted. Identification data could be parameters like 'product number',
+     'revision state', 'date of repair' in other words data that is loaded to
+     the device when it is manufactured.
+
+     The 'hwUnitId' parameter in the alarm shows which type of unit that is corrupted
+     in the flash memory. 
+    
+     Corrective Actions:
+     - Save the alarm information to a file, e.g. using a screenshot. It has to show
+       all the trap parameters.
+     - Give a brief explanation to how the error was provoked. If it can be provoked
+       again, then it is important for the Ericsson support team to know how this is done.
+     - Send the trouble report and the physical device to Ericsson support for further
+       investigations.
+
+     Deprecated from:           EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Major
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         InformationMissing
+      8: HwUnit                 [device, MicroProcessorBoard, FrontAnalogueBoard or ddcBoard]
+    "
+    
+    --Ericsson Diax additional information:
+    --Format: Id data read from FLASH is corrupted from: $2; HwUnit: $8; Probable cause: $7; Sequence Number: $3;
+
+    ::= { traps 13 }  
+    
+cfgDataReadError      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              cfgData }
+    STATUS  deprecated
+    DESCRIPTION
+    "This alarm indicates that the configuration data it has in flash is corrupted.
+     Configuration data could be parameters like 'local mac address', 'phy mode', 'vlan id',
+     'vlan tagging' etc.
+
+     The 'configData' parameter in the alarm shows which data that is corrupted. 
+
+     Corrective Actions:
+     - Give it a valid configuration data and reboot the device. 
+
+     Deprecated from:           EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Major
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         InformationMissing
+      8: CfgData                [localMacAddr, phyMode, watchdogEnable, vlanInfo or bootString]
+    "
+    
+    --Ericsson Diax additional information:
+    --Format: The $8 configuration data read from FLASH is corrupted from: $2; Probable cause: $7; Sequence Number: $3;
+    ::= { traps 14 }  
+    
+writeFlashError      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              idOrCfgData}
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates that an error occurred during the writing to the flash memory.
+
+     Corrective Actions:
+     - Try to restart the device and if the error keeps appearing then replace the
+       device with a new unit. 
+
+     Deprecated from:           EDA 1.1 R2A
+    
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Major
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         CorruptData
+      8: idOrCfgData            [The configuration item, which failed writing to FLASH]
+    "
+
+    --Ericsson Diax additional information:
+    --Format: An error occured while writing $8 to FLASH from: $2; Probable cause: $7; Sequence Number: $3;
+    
+    ::= { traps 15 }   
+    
+bothFansFailure      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              fanGreenStatus, fanRedStatus }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates that both fans on the device have failed. This means that the fan control
+     cannot secure that the temperature is kept in the normal state in the worst-case
+     scenario (e.g. high environmental temperature, high traffic).
+     
+     Corrective Actions:
+     - Replace the fans of the device.
+
+     Deprecated from:           EDA 1.1 R2A
+    
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Critical
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         CoolingFanFailure
+      8: Fan green status       Failed
+      9: Fan red status         Failed
+
+     Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.16 # bothFansFailed
+     Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Both fans failed from: $2; Probable cause: $7; GreenFan status: $8; RedFan status: $9; GreenFan speed: $10 rpm; RedFan speed: $11 rpm; Sequence Number: $3;
+    --CeasingId: "agent-addr", 0
+    --CeasingId: "agent-addr", 0
+    
+    ::= { traps 16 }      
+
+bothFansCeasing      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              fanGreenStatus, fanRedStatus }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates that at least one of the fans is working again. This means that the
+     fan control cannot secure that the temperature is kept in the normal state in
+     the worst-case scenario (e.g. high environmental temperature, high traffic).
+
+     Deprecated from:           EDA 1.1 R2A
+    
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Ceasing
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         CoolingFanFailure
+      8: Fan green status       [Failed, Working]
+      9: Fan red status         [Failed, Working]
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Ceasing: Both fans failure from: $2; Probable cause: $7; GreenFan status: $8; RedFan status: $9; GreenFan speed: $10 rpm; RedFan speed: $11 rpm; Sequence Number: $3;
+    
+    ::= { traps 17 }
+
+
+modemPoolTypeUnknown      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              productNumberMP, revisionStateMP }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates that the device type can not be identified. The product number and
+     revision state are either unkonwn or corrupted. The application software cannot handle
+     its hardware correctly.
+
+     Corrective Actions:
+     - Reinstall the device in the management system.
+
+     Deprecated from:           EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Critical
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         Other
+      8: Product number MP      Product number of the device
+      9: Revision state MP      Revision state of the device
+    "
+
+    --Ericsson Diax additional information:
+    --Format: IP DSLAM type unknown from: $2; Probable cause: $7; Product number: $8; Revision state: $9; Sequence Number: $3;
+    
+    ::= { traps 18 }
+    
+fanGreenLowPerformance      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              fanGreenStatus, fanGreenSpeed }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates that the fan located near the green LED has a low performance. This means that
+     the fan control cannot secure that the temperature is kept in the normal state in the worst-case
+     scenario (e.g. high environmental temperature, high traffic).
+
+     Corrective Actions:
+     - Replace the fan next time you get near the device, since it will soon break.
+     
+     Deprecated from:           EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Major
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         CoolingFanFailure
+      8: Fan green status       [Failed, Working]
+      9: Fan green speed        [The speed of the fan measured in rotations per minute]
+
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.20 # fanGreenLowPerformanceCeasing
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.8 # IP DSLAM RestartAlarm
+    "
+
+    --Ericsson Diax additional information:
+    --Format: The fan closest to the green LED has a low performance from: $2;  Probable cause: $7; GreenFan status: $8;  GreenFan speed: $9 rpm; Sequence Number: $3;
+    --CeasingId: "agent-addr", 0
+    --CeasingId: "agent-addr", 0
+    
+    ::= { traps 19 }      
+          
+fanGreenLowPerformanceCeasing      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              fanGreenStatus, fanGreenSpeed }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates that the low performance of the green fan, which is the one located
+     near the green LED, has ceased. If this ceasing alarm is seen frequently on a device
+     in your system, then you should find a way to replace the fan, which causes problems. 
+
+     Deprecated from:           EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Ceasing
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         CoolingFanFailure
+      8: Fan green status       Working
+      9: Fan green speed        [The speed of the fan measured in rotations per minute]
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Ceasing of the low performance of the green fan from: $2; Probable cause: $7; GreenFan status: $8;  GreenFan speed: $9 rpm; Sequence 
+     
+    ::= { traps 20 }      
+
+fanRedLowPerformance      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              fanRedStatus, fanRedSpeed }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates that the fan located near the red LED has a low performance. This means that
+     the fan control cannot secure that the temperature is kept in the normal state in the
+     worst-case scenario (e.g. high environmental temperature, high traffic).
+
+     Corrective Actions:
+     - Replace the fan next time you get near the device, since it will soon break.
+     
+     Deprecated from:           EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Major
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         CoolingFanFailure
+      8: Fan red status         [Failed, Working]
+      9: Fan red speed          [The speed of the fan measured in rotations per minute]
+
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.22 # fanRedLowPerformanceCeasing
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.8 #  IP DSLAM RestartAlarm
+    "
+
+    --Ericsson Diax additional information:
+    --Format: The fan closest to the red LED has a low performance from: $2;  Probable cause: $7; RedFan status: $8;  RedFan speed: $9 rpm; Sequence Number: $3;
+    --CeasingId: "agent-addr", 0
+    --CeasingId: "agent-addr", 0
+
+    ::= { traps 21}      
+          
+fanRedLowPerformanceCeasing      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              fanRedStatus, fanRedSpeed }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates that the low performance of the red fan, which is the one located near
+     the red LED, has ceased. If this ceasing alarm is seen frequently on a device in
+     your system, then you should find a way to replace the fan, which causes problems.
+
+     Deprecated from:           EDA 1.1 R2A
+     
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Ceasing
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         CoolingFanFailure
+      8: Fan red status         Working
+      9: Fan red speed          [The speed of the fan measured in rotations per minute]
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Ceasing of the low performance of the red fan from: $2; Probable cause: $7; RedFan status: $8; RedFan speed: $9 rpm; Sequence 
+
+    ::= { traps 22 }   
+
+temperatureCloseToTooHigh      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              temperatureValue }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates the temperature is close to the too high value. This alarm should be
+     considered as a warning alarm that is received a while before the high temperature
+     is reached.
+
+     Corrective Actions:
+     - Check that the fans for the device are working properly.
+     - Check that the environment temperature is acceptable.
+     - For the IPDSLAM it might help to remove some subscribers from the line.
+     
+     Deprecated from:           EDA 1.1 R2A
+    
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Major
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         TemperatureUnacceptable
+      8: Temperature value      [Value in degree Celsius]
+
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.24 # tempCloseToTooHighCeasing 
+     Ceasing OID:               1.3.6.1.4.1.193.72.300.1.2.0.8 # IP DSLAM RestartAlarm
+    "
+    
+    --Ericsson Diax additional information:
+    --Format: Temperature is close to the threshold, where the subscriber lines will be shut down from: $2; Probable cause: $7; Temperature Value : $8; Sequence Number: $3;
+    --CeasingId: "agent-addr", 0
+    --CeasingId: "agent-addr", 0
+
+    ::= { traps 23 }    
+    
+temperatureCloseToTooHighCeasing      NOTIFICATION-TYPE
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              temperatureValue }
+    STATUS  deprecated
+    DESCRIPTION
+    "Indicates that the temperatureCloseToTooHigh alarm is no longer active. The
+     temperature has been successfully reduced to level where the device can work normal. 
+
+     Deprecated from:           EDA 1.1 R2A
+    
+     Parameters
+      1: Managed object class   IPDSLAM
+      2: Managed object ID      [MAC]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Ceasing
+      5: Event time             [Timestamp is retrieved from a SNTP server]
+      6: Event type             Equipment
+      7: Probable cause         TemperatureUnacceptable
+      8: Temperature value      [Value in degree Celsius]
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Ceasing of the temperature close too high from: $2; Probable cause: $7; Sequence Number: $3;
+
+    ::= { traps 24 }
+             
+--************************************************************************
+-- special operands for event report operations
+--************************************************************************
+trapsParameters             OBJECT IDENTIFIER ::= { peaEquipmentIpDslamTraps 1 }
+
+processName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "The name of the process which sent the alarm."
+    ::= { trapsParameters 1 }   
+    
+processState OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "The state of the process which sent the alarm."
+    ::= { trapsParameters 2 }
+
+fileName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "The file name from where the alarm was sent"
+    ::= { trapsParameters 3 }   
+
+lineNo OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "The line number in the file indicated by fileName,
+     from where the alarm was sent"
+    ::= { trapsParameters 4 }  
+    
+senderTask OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "Indicates the name of the task which sent the message 
+     causing a stateEventErrror."
+    ::= { trapsParameters 5 }   
+
+errorCode OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "Additional error information."
+    ::= { trapsParameters 6 }  
+
+postMortemInformation OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "Indicates the reason of the restart."
+    ::= { trapsParameters 7 }   
+    
+errorData OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "Additional data related to the error."
+    ::= { trapsParameters 8 }       
+    
+messageId OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "Message ID of the last received message. 
+     E.g. the ID of the message causing a state event error."
+    ::= { trapsParameters 9 }
+
+messageData OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "Message content of the last received message. E.g. 
+     the content of the message causing a state event error."
+    ::= { trapsParameters 10 } 
+
+hwUnit OBJECT-TYPE
+    SYNTAX      INTEGER { modemPool (1), dupBoard (2), dafeBoard (3), ddcBoard (4)}
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "Identifies the HW unit which has the identification
+     data corrupted into FLASH."
+    ::= { trapsParameters 11 }  
+
+cfgData OBJECT-TYPE
+    SYNTAX      INTEGER { localMacAddr (1), phyMode (2), watchdogEnable (3), 
+                          vlanInfo (4), bootString (5)}
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "Identifies the corrupted configuration data read from FLASH for
+     the IP DSLAM."
+    ::= { trapsParameters 12 }          
+    
+idOrCfgData OBJECT-TYPE
+    SYNTAX      INTEGER { ipdslamIdData (1), dupBoardIdData (2), dafeBoardIdData (3),
+                          ddcBoardIdData (4), localMacAddr (5), phyMode (6), 
+                          watchdogEnable (7), vlanInfo (8), bootString (9)}
+    MAX-ACCESS  accessible-for-notify
+    STATUS      deprecated
+    DESCRIPTION
+    "Identifies during which data writing occured an error."
+    ::= { trapsParameters 13 }  
+
+peaEquipmentIpDslamDeprecatedObjectsGroup OBJECT-GROUP
+    OBJECTS     {  cfgVersion, restartModemPool, onlyShowEthernetInterface, systemIdentification, bootSwIdentification,
+                          temperatureControlState, temperatureValue, 
+                          fanGreenStatus, fanRedStatus, fanGreenSpeed, fanRedSpeed,
+                          ledsAlternativeBlink,
+                          mpProcessorLoad, mpMemFree, mpMemFreeBytes, mpMemBuffersUsed,
+                          communicationsAlarmFilter, environmentAlarmFilter, equipmentAlarmFilter, processingAlarmFilter, qualityOfServiceAlarmFilter,
+                          productNumberMP,  revisionStateMP,  functionDesignationMP,    dateOfProductionMP,   dateOfRepairMP,   
+                                   productionSerialNumberMP,   layoutVersionCodeMP,   idCheckSumMP,
+                          productNumberDUP,  revisionStateDUP,  functionDesignationDUP,  dateOfProductionDUP,   
+                                 dateOfRepairDUP,  productionSerialNumberDUP,    layoutVersionCodeDUP,  idCheckSumDUP,                         
+                           productNumberDAFE,  revisionStateDAFE,  functionDesignationDAFE,   dateOfProductionDAFE, 
+                                 dateOfRepairDAFE, productionSerialNumberDAFE, layoutVersionCodeDAFE, idCheckSumDAFE,
+                           productNumberDDC, revisionStateDDC, functionDesignationDDC, dateOfProductionDDC, 
+                                dateOfRepairDDC, productionSerialNumberDDC, layoutVersionCodeDDC, idCheckSumDDC,
+                           localMacAddrMP, phyModeMP, watchDogEnableMP, vlanIdMP, vlanPrioMP, vlanTaggingMP, bootStringMP,
+                           processName, processState, fileName, lineNo, senderTask, errorCode, postMortemInformation, 
+                                errorData, messageId, messageData, hwUnit, cfgData, idOrCfgData
+                          }
+    STATUS      deprecated
+    DESCRIPTION
+        "Objects for the peaEquipmentIpDslamObjects Group"
+    ::= { peaEquipmentIpDslamObjectsGroups 1 }
+
+
+peaEquipmentIpDslamCurrentObjectsGroup OBJECT-GROUP
+    OBJECTS     {  productNumberDIF, revisionStateDIF, functionDesignationDIF, dateOfProductionDIF, dateOfRepairDIF, 
+                               productionSerialNumberDIF, layoutVersionCodeDIF, idCheckSumDIF, 
+                          numberOfLines, remoteStorageFTPServerIPMP, remoteStorageFilePathMP, remoteStorageFTPUserMP,
+                              remoteStorageFTPPasswordMP, remoteStorageTrafficInfoTimeMP, remoteStorageTrafficInfoSizeMP, 
+                          multilinkMode, multilinkPreferredInterface,   multilinkIsForwarding,   multilinkIsUp                        
+                          
+                          }
+    STATUS      current
+    DESCRIPTION
+        "Objects for the peaEquipmentIpDslamObjects Group"
+    ::= { peaEquipmentIpDslamObjectsGroups 2 }
+
+ peaEquipmentIpDslamDeprecatedTrapsGroup NOTIFICATION-GROUP
+    NOTIFICATIONS     { temperatureTooHigh, temperatureTooHighCeasing,  stateEventError, 
+                                    nonFatalSoftwareError, fatalSoftwareError, configurationFileError, 
+                                    modemPoolRestartAlarm, fanGreenFailure, fanGreenCeasing, fanRedFailure, 
+                                    fanRedCeasing, idDataReadError, cfgDataReadError, writeFlashError,
+                                    bothFansFailure, bothFansCeasing, modemPoolTypeUnknown, fanGreenLowPerformance,
+                                    fanGreenLowPerformanceCeasing, fanRedLowPerformance, fanRedLowPerformanceCeasing, 
+                                    temperatureCloseToTooHigh, temperatureCloseToTooHighCeasing } 
+    STATUS      deprecated
+    DESCRIPTION
+        "Deprecated Notifications Group"
+     ::= { peaEquipmentIpDslamTrapsGroups 1 }
+
+
+END

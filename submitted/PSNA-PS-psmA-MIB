@@ -1,0 +1,1107 @@
+-- ----------------------------------------------------------------------------
+--                     PSNA-PS-MIB
+--                  PSNA-PS-psma-MIB
+--
+--      Copyright (c) 2002-2005 EMERSON NETWORK POWER CO., LTD.
+--      All rights reserved.
+--
+--      Created    by: yj
+--      Created  date: 2003-10-15
+--      Modified Date: 2003-10-15     Modified the TRAP from enterprises to products
+-- ----------------------------------------------------------------------------
+
+PSNA-PS-psmA-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    OBJECT-TYPE
+        FROM RFC-1212
+
+    TRAP-TYPE 
+        FROM RFC-1215
+
+    enterprises, IpAddress
+        FROM RFC1155-SMI;
+
+    DisplayString ::= OCTET STRING                  
+
+
+    -- ------------------------------------------------------------------------
+    -- the location of PS group in ENP enterprise.
+    -- ------------------------------------------------------------------------ 
+    emersonNetworkPower     OBJECT IDENTIFIER ::= { enterprises 13400 }
+    products                OBJECT IDENTIFIER ::= { emersonNetworkPower 2 }
+    psm                     OBJECT IDENTIFIER ::= { products 8 }
+    
+    -- ------------------------------------------------------------------------
+    -- the main objects about PS
+    -- ------------------------------------------------------------------------ 
+    psAgent         OBJECT IDENTIFIER ::= { psm 1 }
+    psCommon        OBJECT IDENTIFIER ::= { psm 2 }
+    psSpecial       OBJECT IDENTIFIER ::= { psm 3 }
+    psAlarm         OBJECT IDENTIFIER ::= { psm 4 }
+
+    psIdent         OBJECT IDENTIFIER ::= { psCommon 1 }
+    
+    psm-a           OBJECT IDENTIFIER ::= { psSpecial 1 }
+    psm-a9          OBJECT IDENTIFIER ::= { psSpecial 2 }
+
+    -- ------------------------------------------------------------------------
+    -- the detail objects about a special PS
+    -- ------------------------------------------------------------------------ 
+    psBattery       OBJECT IDENTIFIER ::=  { psm-a 2 }
+    psInput         OBJECT IDENTIFIER ::=  { psm-a 3 }
+    psOutput        OBJECT IDENTIFIER ::=  { psm-a 4 }
+    psStatus        OBJECT IDENTIFIER ::=  { psm-a 5 }
+    psTest          OBJECT IDENTIFIER ::=  { psm-a 6 }
+    psControl       OBJECT IDENTIFIER ::=  { psm-a 7 }
+    psConfig        OBJECT IDENTIFIER ::=  { psm-a 8 }
+
+    -- ------------------------------------------------------------------------
+    -- 1. psAgent group
+    -- ------------------------------------------------------------------------ 
+   
+    agentRevision OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The firmware revision of the agent."
+        ::= { psAgent 1 }
+
+    agentManagersNum OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+           "The number of managers that can manage the agent. "
+        ::= { psAgent 2 }
+ 
+    agentManagersTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF AgentManagersEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "A list of managers of the agent.  The number of
+             entries is given by the value of agentManagersNum."
+        ::= { psAgent 3 }
+ 
+    agentManagersEntry OBJECT-TYPE
+        SYNTAX AgentManagersEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "The managers of the agent."
+        INDEX  { managerIndex}
+        ::= { agentManagersTable 1 }
+ 
+    AgentManagersEntry ::=
+        SEQUENCE {
+            managerIndex
+                INTEGER,
+            managerAddr
+                IpAddress,
+            publicCommunityString
+                 DisplayString,
+            privateCommunityString
+                 DisplayString,
+            managerPrivilege
+                INTEGER,
+            acceptTrapLevel
+                INTEGER,
+            managerAccept
+                INTEGER
+        }
+ 
+    managerIndex OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The index of the managers entry."
+        ::= { agentManagersEntry 1 }
+    
+    managerAddr OBJECT-TYPE
+        SYNTAX IpAddress
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+            "The IP address of the manager."
+        ::= { agentManagersEntry 2 }
+
+    publicCommunityString OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+           "The public community name to use in the query request."
+        ::= { agentManagersEntry 3 }
+ 
+    privateCommunityString OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+           "The private community name to use in the control request."
+        ::= { agentManagersEntry 4 }
+ 
+    managerPrivilege OBJECT-TYPE
+        SYNTAX INTEGER {
+            forbidden(0),
+            query(1),
+            control(2),
+            administrator(3)
+       }
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+            "The privilege of the manager to access the agent.
+             setting forbidden(0) indicates the manager have no any privilege to access the agent,
+             setting query(1) indicates the manager can GET information from agent only,
+             setting control(2) indicates the manager can GET information from agent and 
+             send control command to the agent.
+             setting administrator(3) indicates the manager has all management privilege
+             including set or modify this managers table."
+       ::= { agentManagersEntry 5 }
+
+    acceptTrapLevel OBJECT-TYPE
+         SYNTAX INTEGER {
+            information(1),
+            warning(2),
+            severe(3),
+            noTraps(4)
+        }
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+            "The severity threshold of traps to send to the manager.
+             traps are labeled in severity as informational(1), warning(2),
+             severe(3).  Only traps of equal or greater severity than
+             this value are sent to the manager. setting noTraps(4) indicates
+             agent do not send any traps to the manager."
+       ::= { agentManagersEntry 6 }
+
+    managerAccept OBJECT-TYPE
+        SYNTAX INTEGER   {
+            view(0),
+            new(1),
+            modify(2),
+            delete(3)
+        }
+        ACCESS read-write
+        STATUS mandatory
+        DESCRIPTION
+           "An entry will be added if new(1), will be modified if modify(2), 
+            and will be removed if delete(3)."
+        ::= { agentManagersEntry 7 }
+
+    -- ------------------------------------------------------------------------
+    -- 2. psm_a group
+    -- ------------------------------------------------------------------------ 
+
+    -- ------------------------------------------------------------------------
+    -- 2.1 psIdent group
+    -- ------------------------------------------------------------------------ 
+
+    psIdentControllerModel OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The controller model of the Power System."
+        ::= { psIdent 1 }
+
+    psIdentFirmwareRevision OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The firmware revision of the controller of the Power System."
+        ::= { psIdent 2 }
+        
+    psIdentFactory OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The name of the Power System manufacturer."
+        ::= { psIdent 3 }
+    
+    -- ------------------------------------------------------------------------ 
+    -- 3.1.2. the psBattery group
+    -- ------------------------------------------------------------------------ 
+
+    psBatteryVoltage OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The voltage of battery in 0.1 VDC."
+        ::= { psBattery 1 }
+    
+    psBatteryCurrent OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The total current of the batteries in 0.1 ADC."
+        ::= { psBattery 2 }
+
+    psBatteryTemperature OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The temperature around the battery in 0.1 Celsius degree."
+        ::= { psBattery 3 }
+    
+    -- psBatteryCapacity OBJECT-TYPE
+    --    SYNTAX INTEGER
+    --    ACCESS read-only
+    --    STATUS mandatory
+    --    DESCRIPTION
+    --        "The remaining battery capacity expressed in percent of full capacity."
+    -- ::= { psBattery 4 }
+  
+    -- ------------------------------------------------------------------------ 
+    -- 3.1.3. the psInput group
+    -- ------------------------------------------------------------------------ 
+
+    psInputLineAVoltage OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The AC line A voltage in 0.1 VAC."
+        ::= { psInput 1 }
+
+    psInputLineBVoltage OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The AC line B voltage in 0.1 VAC."
+        ::= { psInput 2 }
+
+    psInputLineCVoltage OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The AC line C voltage in 0.1 VAC."
+        ::= { psInput 3 }
+
+    -- ------------------------------------------------------------------------ 
+    -- 3.1.4. the psOutput group
+    -- ------------------------------------------------------------------------ 
+
+    psOutputVoltage OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The DC voltage of the Power System in 0.1 VDC."
+        ::= { psOutput 1 }
+
+    psOutputCurrent OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The DC current of the Power System in 0.1 ADC."
+        ::= { psOutput 2 }
+
+    -- --------------------------------------------------------------------- 
+    -- 3.1.5. the psStatus group
+    ------------------------------------------------------------------------ 
+
+    psStatusAlarm OBJECT-TYPE
+        SYNTAX INTEGER {
+            unknown(1),
+            normal(2),
+            alarm(3)
+        }
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The alarm status of the Power System."
+        ::= { psStatus 1 }
+
+    psStatusCommunication OBJECT-TYPE
+        SYNTAX INTEGER {
+            unknown(1),
+            normal(2),
+            interrupt(3)
+        }
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The status of communication with the Power System. interrupt(3) indicates
+             some errors occurred between Power System and agent."
+        ::= { psStatus 2 }
+    
+    psStatusControlMode OBJECT-TYPE
+        SYNTAX INTEGER {
+            unknown(1),
+            auto(2),
+            manual(3)
+        }
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The AUTO/MANUAL control mode of the Power System."
+        ::= { psStatus 3 }
+
+    psStatusChargingMode OBJECT-TYPE
+        SYNTAX INTEGER  {
+            unknown(1),
+            floatCharging(2),
+            equalizeCharging(3),
+            testing(4)
+        }
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The status of battery charging, floatCharging(2), equalizeCharging(3), testing(4)."
+        ::= { psStatus 4 }
+
+    -- ------------------------------------------------------------------------ 
+    -- 3.1.6. the psTest group
+    -- ------------------------------------------------------------------------ 
+    
+    -- no variables
+
+    -- ------------------------------------------------------------------------ 
+    -- 3.1.7. the psControl group
+    -- ------------------------------------------------------------------------ 
+    
+    -- no variables
+
+    -- ------------------------------------------------------------------------ 
+    -- 3.1.8. the psConfig group
+    -- ------------------------------------------------------------------------ 
+    
+    -- no variables
+    
+    -- ------------------------------------------------------------------------ 
+    -- 4. the psAlarm group
+    -- ------------------------------------------------------------------------ 
+
+    psAlarmPresentNum OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+           "The present number of active alarams."
+        ::= { psAlarm 1 }
+ 
+    psAlarmPresentTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF PsAlarmPresentEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "A list of current alarms, The number of entries is given 
+             by the value of psAlarmPresentNum."
+        ::= { psAlarm 2 }
+ 
+    psAlarmPresentEntry OBJECT-TYPE
+        SYNTAX PsAlarmPresentEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "The present alarms list. "
+        INDEX  { presentAlarmIndex}
+        ::= { psAlarmPresentTable 1 }
+ 
+    PsAlarmPresentEntry ::=
+        SEQUENCE {
+            presentAlarmIndex
+                INTEGER,
+            presentAlarmTime
+                DisplayString,
+            presentAlarmId
+                INTEGER,
+            presentAlarmName
+                DisplayString,
+            presentAlaramLevel
+                INTEGER
+        }
+ 
+    presentAlarmIndex OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The index of the present alaram entry."
+        ::= { psAlarmPresentEntry 1 }
+    
+    presentAlarmTime OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+           "The time of the alarm generated, format as mm/dd/yyyy hh:mm:ss"
+        ::= { psAlarmPresentEntry 2 }
+ 
+    presentAlarmId OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The alarm ID."
+       ::= { psAlarmPresentEntry 3 }
+
+    presentAlarmName OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+           "The name of the alarm."
+        ::= { psAlarmPresentEntry 4 }
+
+    presentAlaramLevel OBJECT-TYPE
+        SYNTAX INTEGER {
+            information(1),
+            warning(2),
+            severe(3)
+        }
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "The alarm level."
+       ::= { psAlarmPresentEntry 5 }
+
+    -- ------------------------------------------------------------------------ 
+    -- Traps
+    -- ------------------------------------------------------------------------ 
+
+    --
+    -- trap args
+    --
+    -- NOTE: this OID must be at the end of mib.
+
+    trapArgsString OBJECT-TYPE
+        SYNTAX  DisplayString 
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "This OID allows Power System traps to be sent with an octet string argument
+             that may not be defined in the PSNA_PS_MIB.
+             A get of this OID will return a NULL string."
+        ::= { psAlarm 2008 }
+   
+    psOnNormal TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: The Power System is on normal status."
+       --#TYPE "The Power System is on normal status."
+       --#SUMMARY "The Power System is on normal status."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 1
+
+    communicationLost TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+             "SEVERE: Communication with the Power System lost."
+       --#TYPE "Communication with the Power System lost."
+       --#SUMMARY "Communication with the Power System lost."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 2
+    
+    communicationResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: Communication with the Power System Resumed."
+       --#TYPE "Communication with the Power System Resumed."
+       --#SUMMARY "Communication with the Power System Resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 3
+
+    acFail TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: AC Power failed."
+       --#TYPE "AC Power failed"
+       --#SUMMARY "AC Power failed."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 4
+
+    acResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: AC power Resumed."
+       --#TYPE "AC power Resumed."
+       --#SUMMARY "AC power Resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 5
+
+    acVoltageoutofRange TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: AC voltage is out of normal range."
+       --#TYPE "AC voltage is out of normal range."
+       --#SUMMARY "AC voltage is out of normal range."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 6
+
+    acVoltageNormal TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: AC voltage is normal."
+       --#TYPE "AC voltage is normal."
+       --#SUMMARY "AC voltage is normal."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 7
+
+    dcVoltageoutofRange TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: DC voltage is out of normal range."
+       --#TYPE "DC voltage is out of normal range"
+       --#SUMMARY "DC voltage is out of normal range."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 8
+
+    dcVoltageNormal TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: DC voltage is normal."
+       --#TYPE "DC voltage is normal."
+       --#SUMMARY "DC voltage is normal."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 9
+
+    llvd TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: Load low voltage disconnected."
+       --#TYPE "Load low voltage disconnected."
+       --#SUMMARY "Load low voltage disconnected."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 10
+
+    llvdResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: Load low voltage disconnection resumed."
+       --#TYPE "Load low voltage disconnection resumed."
+       --#SUMMARY "Load low voltage disconnection resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 11
+
+    blvd TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: Battery low voltage disconnected."
+       --#TYPE "Battery low voltage disconnected."
+       --#SUMMARY "Battery low voltage disconnected."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 12
+
+    blvdResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: Battery low voltage disconnection resumed."
+       --#TYPE "Battery low voltage disconnection resumed."
+       --#SUMMARY "Battery low voltage disconnection resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 13
+        
+    highTemperature TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: The temperature around battery is too high."
+       --#TYPE "The temperature around battery is too high."
+       --#SUMMARY "The temperature around battery is too high."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 14
+
+    highTemperatureResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: The temperature around battery is normal."
+       --#TYPE "The temperature around battery is normal."
+       --#SUMMARY "The temperature around battery is normal."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 15
+
+    dcRouteDisconnect TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: Some DC route(s) disconnected."
+       --#TYPE "Some DC route(s) disconnected."
+       --#SUMMARY "Some DC route(s) disconnected."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 16
+
+    dcRouteDisconnectResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: DC route(s) disconnection resumed."
+       --#TYPE "DC route(s) disconnection resumed."
+       --#SUMMARY "DC route(s) disconnection resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 17
+
+    batteryRouteDisconnect TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: The battery route(s) disconnected."
+       --#TYPE "The battery route(s) disconnected."
+       --#SUMMARY "The battery route(s) disconnected."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 18
+
+    batteryRouteDisconnectResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: The battery route(s) disconnection resumed."
+       --#TYPE "The battery route(s) disconnection resumed."
+       --#SUMMARY "The battery route(s) disconnection resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 19
+
+    acSPDfault TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: AC SPD fault."
+       --#TYPE "AC SPD fault."
+       --#SUMMARY "AC SPD fault."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 20
+
+    acSPDfaultResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: AC SPD fault resumed."
+       --#TYPE "AC SPD fault resumed."
+       --#SUMMARY "AC SPD fault resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 21
+
+    acCircuitBreakerfault TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: AC circuit breaker fault."
+       --#TYPE "AC circuit breaker fault."
+       --#SUMMARY "AC circuit breaker fault."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 22
+
+    acCircuitBreakerfaultResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: AC circuit breaker fault resumed."
+       --#TYPE "AC circuit breaker fault resumed."
+       --#SUMMARY "AC circuit breaker fault resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 23
+
+    batteryCurrentOver TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: Battery current is over limit."
+       --#TYPE "Battery current is over limit."
+       --#SUMMARY "Battery current is over limit."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 24
+
+    batteryCurrentOverResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: Battery current over resumed."
+       --#TYPE "Battery current over resumed."
+       --#SUMMARY "Battery current over resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 25
+
+    rectifierFault TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: Some Rectifier(s) fault."
+       --#TYPE "Some Rectifier(s) fault."
+       --#SUMMARY "Some Rectifier(s) fault."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 26
+
+    rectifierFaultResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: Rectifier(s) fault resumed."
+       --#TYPE "Rectifier(s) fault resumed."
+       --#SUMMARY "Rectifier(s) fault resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 27
+
+    rectifierProtection TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: Some Rectifier(s) protection."
+       --#TYPE "Some Rectifier(s) protection."
+       --#SUMMARY "Some Rectifier(s) protection."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 28
+
+    rectifierProtectionResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: Rectifier(s) protection resumed."
+       --#TYPE "Rectifier(s) protection resumed."
+       --#SUMMARY "Rectifier(s) protection resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 29
+
+    rectifierFanFault TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: Some Rectifier(s) fan fault."
+       --#TYPE "Some Rectifier(s) fan fault."
+       --#SUMMARY "Some Rectifier(s) fan fault."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 30
+
+    rectifierFanFaultResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: Rectifier(s) fan fault resumed."
+       --#TYPE "Rectifier(s) fan fault resumed."
+       --#SUMMARY "Rectifier(s) fan fault resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 31
+
+    rectifierOverTemperature TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: Some Rectifier(s) over temperature."
+       --#TYPE "Some Rectifier(s) over temperature."
+       --#SUMMARY "Some Rectifier(s) over temperature."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 32
+
+    rectifierOverTemperatureResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: Rectifier(s) over temperature resumed."
+       --#TYPE "Rectifier(s) over temperature resumed."
+       --#SUMMARY "Rectifier(s) over temperature resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 33
+
+    communicationACDLost TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: Power System communication with ACD lost."
+       --#TYPE "Power System communication with ACD lost."
+       --#SUMMARY "Power System communication with ACD lost."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 34
+
+    communicationACDResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: Power System communication with ACD resumed."
+       --#TYPE "Power System communication with ACD resumed."
+       --#SUMMARY "Power System communication with ACD resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 35
+
+    communicationDCDLost TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: Power System communication with DCD lost."
+       --#TYPE "Power System communication with DCD lost."
+       --#SUMMARY "Power System communication with DCD lost."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 36
+
+    communicationDCDResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: Power System communication with DCD resumed."
+       --#TYPE "Power System communication with DCD resumed."
+       --#SUMMARY "Power System communication with DCD resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 37
+
+    communicationRectifierLost TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: Power System communication with rectifier lost."
+       --#TYPE "Power System communication with rectifier lost."
+       --#SUMMARY "Power System communication with rectifier lost."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 38
+
+    communicationRectifierResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: Power System communication with rectifier resumed."
+       --#TYPE "Power System communication with rectifier resumed."
+       --#SUMMARY "Power System communication with rectifier resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 39
+
+    dcdcFault TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "SEVERE: DC/DC convertor fault."
+       --#TYPE "DC/DC convertor fault."
+       --#SUMMARY "DC/DC convertor fault."
+       --#ARGUMENTS { }
+       --#SEVERITY CRITICAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE DEGRADED
+        ::= 40
+
+    dcdcFaultResumed TRAP-TYPE
+        ENTERPRISE psm
+        VARIABLES { trapArgsString }
+        DESCRIPTION
+            "INFORMATION: DC/DC convertor fault resumed."
+       --#TYPE "DC/DC convertor fault resumed."
+       --#SUMMARY "DC/DC convertor fault resumed."
+       --#ARGUMENTS { }
+       --#SEVERITY INFORMATIONAL
+       --#TIMEINDEX 1
+       --#HELP ""
+       --#HELPTAG 0
+       --#STATE OPERATIONAL
+        ::= 41
+
+END -- end of PSNA_PS_MIB

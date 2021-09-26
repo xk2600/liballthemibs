@@ -1,0 +1,2119 @@
+AT-RG600-MIB DEFINITIONS ::= BEGIN
+
+-- Date 2004 02 02
+-- 1) voipEpAnalogDialCountry SYNTAX from INTEGER to DisplayString
+-- 2) voipEpAnalogDialMode	SYNTAX
+--    FROM
+--         	SYNTAX		INTEGER { auto (1),dtmf (2),pulse (3)}
+--    TO
+--         	SYNTAX		INTEGER { auto (1),dtmf (2),pulse10pps (3),pulse20pps (4)}
+-- 3) voipMgcpProtocolPackages      MAX-ACCESS	changes from read-write to read-only
+-- 4) voipMgcpProtocolNetworkLoss   MAX-ACCESS	changes from read-write to read-only
+-- 5) All objects in voipMgcpCallAgentEntry becomse read-only
+-- 6) Added switchAgeingTimeValue 
+-- 7) switchRoutingLimit becomes integer with a list af all possible values
+-- 8) switchQoSValue becomes read-only
+-- 9) switchQosPriority becomes integer with just two values, low and high
+-- 10) Add switchPortName item to switchPortEntry
+-- 11) Add switchFDBStatus item to switchFDB
+-- 12) Rename  switchAgeingTime as switchAgeingTimeStatus with just two value enable/disable
+-- 13) Add switchAgeingTimeMode integer with value fast or normal
+-- 14) switchPortName becomes read-only
+-- 15) switchFDBPort becomes displaystring
+-- 16) switchPortMediaType becomes read-only
+-- 17) igmpGroupTable radically changed, added igmpServerTable
+-- 18) voipEpAnalogCfwEntry modified
+-- 19) exchange OBJECTS between powerBackpupBatteryOn and powerBackpupBatteryMissing
+-- 20) switchPortQoSStatus becomes read-write
+-- 21) vLanIndex becomes Integer32
+-- 22) delete igmpQueryInterval
+
+-- Date 2004 02 19
+--  1) Add voipEpAnalogAdminAllStats to manage all counters with one object
+--  2) Delete voipMgcpProtocolNatInterface and move voipMgcpProtocolNatIpAddress under voipMgcpProtocol
+
+IMPORTS
+	Integer32, IpAddress, MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE, enterprises
+		FROM SNMPv2-SMI
+	DisplayString
+		FROM SNMPv2-TC
+	;
+
+	alliedTelesyn	MODULE-IDENTITY
+		LAST-UPDATED        ""
+		ORGANIZATION        "Allied Telesis K.K."
+		CONTACT-INFO        "Allied Telesis K.K.- Customer Service"
+		DESCRIPTION ""
+        ::= { enterprises 207 }
+	        
+   mibObject		         OBJECT IDENTIFIER ::= { alliedTelesyn 8 }
+   residentialGateway	   OBJECT IDENTIFIER ::= { mibObject 44 }
+	rg600                   OBJECT IDENTIFIER
+		     -- LAST-UPDATED        "0402190000Z"
+	        -- ORGANIZATION        "Allied Telesis K.K."
+	        -- CONTACT-INFO
+	        --                Allied Telesis K.K.
+	        --                Customer Service
+	        --
+	        --
+	        --
+	        -- DESCRIPTION
+	        --         "MIB for RG600 product family
+	        --
+	 	     ::= { residentialGateway  4 }
+   
+   rg600system        OBJECT IDENTIFIER::= { rg600 1 } 
+      sysInfo           OBJECT IDENTIFIER::= { rg600system 1 } 
+   
+         sysVendor      OBJECT-TYPE  
+            SYNTAX        DisplayString (SIZE (0..255))
+            MAX-ACCESS    read-only
+            STATUS        current
+            DESCRIPTION   "Vendor name."             
+            ::= { sysInfo 1 }	
+
+         sysURL         OBJECT-TYPE  
+            SYNTAX        DisplayString (SIZE (0..255))
+            MAX-ACCESS    read-only
+            STATUS        current
+            DESCRIPTION   "URL"             
+            ::= { sysInfo 2 }	
+
+         sysMAC         OBJECT-TYPE  
+            SYNTAX        DisplayString (SIZE (0..255))
+            MAX-ACCESS    read-only
+            STATUS        current
+            DESCRIPTION   "MAC assigned."             
+            ::= { sysInfo 3 }	
+
+         sysHardware    OBJECT-TYPE  
+            SYNTAX        DisplayString (SIZE (0..255))
+            MAX-ACCESS    read-only
+            STATUS        current
+            DESCRIPTION   "Hardware release."             
+            ::= { sysInfo 4 }	
+
+         sysSoftware    OBJECT-TYPE  
+            SYNTAX        DisplayString (SIZE (0..255))
+            MAX-ACCESS    read-only
+            STATUS        current
+            DESCRIPTION   "Software release."             
+            ::= { sysInfo 5 }	
+
+      sysUsers           OBJECT IDENTIFIER::= { rg600system 2 } 
+
+         sysUserTable OBJECT-TYPE
+             SYNTAX      SEQUENCE OF SysUserEntry
+             MAX-ACCESS  not-accessible
+             STATUS      current
+             DESCRIPTION
+                     "A list of User name."
+             ::= { sysUsers 2 }
+      
+         sysUserEntry OBJECT-TYPE
+             SYNTAX      SysUserEntry
+             MAX-ACCESS  not-accessible
+             STATUS      current
+             DESCRIPTION
+                     "An entry containing user User information"
+             INDEX   { sysUserIndex }
+             ::= { sysUserTable 1 }
+      
+         SysUserEntry ::=
+             SEQUENCE {
+                 sysUserIndex           Integer32,
+                 sysUserName            DisplayString,
+                 sysUserConfig          INTEGER,
+                 sysUserAccess          INTEGER,
+                 sysUserComment         DisplayString,
+                 sysUserPassword        DisplayString
+             }
+      
+      
+            sysUserIndex OBJECT-TYPE
+                SYNTAX      Integer32
+                MAX-ACCESS  read-only
+                STATUS      current
+                DESCRIPTION
+                        "A unique value, greater than zero, for each
+                        User name."
+                ::= { sysUserEntry 1 }
+         
+            sysUserName OBJECT-TYPE
+                SYNTAX      DisplayString (SIZE (0..255))
+                MAX-ACCESS  read-only
+                STATUS      current
+                DESCRIPTION
+                        "User name."
+                ::= { sysUserEntry 2 }
+      
+            sysUserConfig OBJECT-TYPE
+                SYNTAX  INTEGER {
+                            enabled(1),
+                            disabled(2)
+                        }
+                MAX-ACCESS  read-write
+                STATUS      current
+                DESCRIPTION
+                        "This User may configure."
+                ::= { sysUserEntry 3 }
+
+            sysUserAccess OBJECT-TYPE
+                SYNTAX  INTEGER {
+                            default(1),
+                            engineer(2),
+                            superuser(3)
+                        }
+                MAX-ACCESS  read-write
+                STATUS      current
+                DESCRIPTION
+                        "This User may configure."
+                ::= { sysUserEntry 4 }
+
+            sysUserComment OBJECT-TYPE
+                SYNTAX      DisplayString (SIZE (0..255))
+                MAX-ACCESS  read-write
+                STATUS      current
+                DESCRIPTION
+                        "Additional comment associated to this user"
+                ::= { sysUserEntry 5 }
+
+
+            sysUserPassword OBJECT-TYPE
+                SYNTAX      DisplayString (SIZE (0..255))
+                MAX-ACCESS  read-write
+                STATUS      current
+                DESCRIPTION
+                        ""
+                ::= { sysUserEntry 6 }
+
+      sysAdmin          OBJECT IDENTIFIER::= { rg600system 3 } 
+         sysRestart    OBJECT-TYPE
+             SYNTAX  INTEGER {
+                         true(1),
+                         false(2)
+                     }
+             MAX-ACCESS  read-write
+             STATUS      current
+             DESCRIPTION
+                     "If true, force CPE restart."
+             ::= { sysAdmin 1 }
+
+         sysConfigSave OBJECT-TYPE
+             SYNTAX  INTEGER {
+                         true(1),
+                         false(2)
+                     }
+             MAX-ACCESS  read-write
+             STATUS      current
+             DESCRIPTION
+                     "If true, save current CPE configuration."
+             ::= { sysAdmin 2 }
+
+         sysPowerBackupSystem OBJECT-TYPE
+             SYNTAX  INTEGER {
+                         present(1),
+                         notPresent(2)
+                     }
+             MAX-ACCESS  read-only
+             STATUS      current
+             DESCRIPTION
+                     "Power backup status."
+             ::= { sysAdmin 3 }
+
+         sysPowerBackupBatteryStatus OBJECT-TYPE
+             SYNTAX  INTEGER {
+                         present(1),
+                         lowChargeLevelOrNotPresent(3)
+                     }
+             MAX-ACCESS  read-only
+             STATUS      current
+             DESCRIPTION
+                     "Power backup status."
+             ::= { sysAdmin 4 }
+
+
+         sysPowerBackupPrimarySupply OBJECT-TYPE
+             SYNTAX  INTEGER {
+                         present(1),
+                         notPresent(2)
+                     }
+             MAX-ACCESS  read-only
+             STATUS      current
+             DESCRIPTION
+                     "Power backup status."
+             ::= { sysAdmin 5 }
+
+         sysAdminCommandLineInterface          OBJECT IDENTIFIER::= { sysAdmin 6 }
+          
+            sysAdminCLICommandString OBJECT-TYPE
+                SYNTAX      DisplayString (SIZE (0..255))
+                MAX-ACCESS  read-write
+                STATUS      current
+                DESCRIPTION
+                        "Command to be executed."
+                ::= { sysAdminCommandLineInterface 1 }
+
+            sysAdminCLIResultTable OBJECT-TYPE
+                SYNTAX      SEQUENCE OF SysAdminCLIEntry
+                MAX-ACCESS  not-accessible
+                STATUS      current
+                DESCRIPTION
+                        "A list of lines reporting last command result."
+                ::= { sysAdminCommandLineInterface 2}
+         
+            sysAdminCLIEntry OBJECT-TYPE
+                SYNTAX      SysAdminCLIEntry
+                MAX-ACCESS  not-accessible
+                STATUS      current
+                DESCRIPTION
+                        "One line of command result"
+                INDEX   { sysAdminCLIResultIndex }
+                ::= { sysAdminCLIResultTable 1 }
+         
+            SysAdminCLIEntry ::=
+                SEQUENCE {
+                    sysAdminCLIResultIndex           Integer32,
+                    sysAdminCLIResultLine            DisplayString
+                }
+
+               sysAdminCLIResultIndex OBJECT-TYPE
+                   SYNTAX      Integer32
+                   MAX-ACCESS  read-only
+                   STATUS      current
+                   DESCRIPTION
+                           "Commnad result line number"
+                   ::= { sysAdminCLIEntry 1 }
+
+               sysAdminCLIResultLine OBJECT-TYPE
+                   SYNTAX      DisplayString (SIZE (0..255))
+                   MAX-ACCESS  read-only
+                   STATUS      current
+                   DESCRIPTION
+                           "A generic command result line."
+                   ::= { sysAdminCLIEntry 2 }
+
+   -- The IGMP Group
+   igmp OBJECT IDENTIFIER ::= { rg600 2 }
+   
+      igmpSnooping OBJECT IDENTIFIER ::= { igmp 1 }
+            
+         igmpLeaveTime	OBJECT-TYPE
+         	SYNTAX		Integer32 (0..255)
+         	MAX-ACCESS	read-write
+         	STATUS	current
+         	DESCRIPTION
+         	   ""
+         	::= { igmpSnooping 1 }
+               
+         igmpVlanTable	OBJECT-TYPE
+         	SYNTAX		SEQUENCE OF IgmpVlanEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS		current
+         	DESCRIPTION
+         		"A list of lines reporting last command result."
+         	::= { igmpSnooping 2 }
+         
+         igmpVlanEntry	OBJECT-TYPE
+         	SYNTAX		IgmpVlanEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS  	current
+         	DESCRIPTION
+         	   ""
+             INDEX
+                 { igmpVlanIndex }
+         	::= { igmpVlanTable 1 }
+         
+            IgmpVlanEntry ::= SEQUENCE
+            {
+            	igmpVlanIndex	Integer32,
+            	igmpVlanVID		Integer32,
+            	igmpVlanName	DisplayString,
+            	igmpVlanStatus	INTEGER
+            }
+                  
+            igmpVlanIndex   OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpVlanEntry 1 }
+                  
+            igmpVlanVID     OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpVlanEntry 2 }
+                  
+            igmpVlanName	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpVlanEntry 3 }
+            
+            igmpVlanStatus	OBJECT-TYPE
+               SYNTAX  INTEGER {
+                         enabled(1),
+                         disabled(2)
+                     }
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpVlanEntry 4 }
+         
+         igmpGroupTable	OBJECT-TYPE
+         	SYNTAX		SEQUENCE OF IgmpGroupEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS		current
+         	DESCRIPTION
+         		"A list of lines reporting last command result."
+         	::= { igmpSnooping 3 }
+         
+            igmpGroupEntry	OBJECT-TYPE
+            	SYNTAX		IgmpGroupEntry
+            	MAX-ACCESS	not-accessible
+            	STATUS  	current
+            	DESCRIPTION
+            	   ""
+                INDEX
+                    { igmpGroupIndex }
+            	::= { igmpGroupTable 1 }
+            
+            IgmpGroupEntry ::= SEQUENCE
+            {
+            	igmpGroupIndex		Integer32,
+            	igmpGroupPort     DisplayString,
+            	igmpGroupAddress	DisplayString,
+            	igmpGroupLastHost	DisplayString,
+            	igmpGroupTimeout	Integer32
+            }
+                  
+            igmpGroupIndex  OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpGroupEntry 1 }
+
+            igmpGroupPort  OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpGroupEntry 2 }
+                  
+            igmpGroupAddress  	OBJECT-TYPE
+            	SYNTAX			DisplayString
+            	MAX-ACCESS		read-only
+            	STATUS			current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpGroupEntry 3 }
+            
+            igmpGroupLastHost  	OBJECT-TYPE
+            	SYNTAX			DisplayString
+            	MAX-ACCESS		read-only
+            	STATUS			current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpGroupEntry 4 }
+                        
+            igmpGroupTimeout  	OBJECT-TYPE
+            	SYNTAX			Integer32
+            	MAX-ACCESS		read-only
+            	STATUS			current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpGroupEntry 5 }
+
+
+         igmpServerTable	OBJECT-TYPE
+         	SYNTAX		SEQUENCE OF IgmpServerEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS		current
+         	DESCRIPTION
+         		"A list of igmp servers."
+         	::= { igmpSnooping 4 }
+         
+            igmpServerEntry	OBJECT-TYPE
+            	SYNTAX		IgmpServerEntry
+            	MAX-ACCESS	not-accessible
+            	STATUS  	current
+            	DESCRIPTION
+            	   ""
+                INDEX
+                    { igmpServerIndex }
+            	::= { igmpServerTable 1 }
+            
+            IgmpServerEntry ::= SEQUENCE
+            {
+            	igmpServerIndex      Integer32,
+            	igmpServerPort       DisplayString,
+            	igmpServerAddress    DisplayString,
+            	igmpServerTimeout    Integer32
+            }
+                  
+            igmpServerIndex  OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpServerEntry 1 }
+
+            igmpServerPort  OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpServerEntry 2 }
+                  
+            igmpServerAddress  	OBJECT-TYPE
+            	SYNTAX			DisplayString
+            	MAX-ACCESS		read-only
+            	STATUS			current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpServerEntry 3 }
+            
+            igmpServerTimeout  	OBJECT-TYPE
+            	SYNTAX			Integer32
+            	MAX-ACCESS		read-only
+            	STATUS			current
+            	DESCRIPTION
+            	   ""
+            	::= { igmpServerEntry 4 }
+      
+      
+   -- The voipSystem group
+
+   voip OBJECT IDENTIFIER ::= { rg600 3 }
+
+   voipSystem OBJECT IDENTIFIER ::= { voip 1 }
+   
+      voipAdmin OBJECT IDENTIFIER ::= { voipSystem 1 }
+      
+         voipProfileTable	OBJECT-TYPE
+         	SYNTAX			SEQUENCE OF VoipProfileEntry
+         	MAX-ACCESS		not-accessible
+         	STATUS			current
+         	DESCRIPTION
+         		""
+         	::= { voipAdmin 1 }
+         
+         voipProfileEntry	OBJECT-TYPE
+         	SYNTAX			VoipProfileEntry
+         	MAX-ACCESS		not-accessible
+         	STATUS  		current
+         	DESCRIPTION
+         	   ""
+             INDEX
+                 { voipProfileIndex }
+         	::= { voipProfileTable 1 }
+         
+         VoipProfileEntry ::= SEQUENCE
+         {
+         	voipProfileIndex	Integer32,
+         	voipProfileName		DisplayString,
+         	voipProfileStatus	INTEGER
+         }
+         
+         voipProfileIndex	OBJECT-TYPE
+         	SYNTAX			Integer32
+         	MAX-ACCESS		read-only
+         	STATUS			current
+         	DESCRIPTION
+         	   ""
+         	::= { voipProfileEntry 1 }
+         
+         voipProfileName		OBJECT-TYPE
+         	SYNTAX			DisplayString
+         	MAX-ACCESS		read-only
+         	STATUS			current
+         	DESCRIPTION
+         	   ""
+         	::= { voipProfileEntry 2 }
+         
+         voipProfileStatus	OBJECT-TYPE
+            SYNTAX  INTEGER {
+                      enabled(1),
+                      disabled(2)
+                  }
+         	MAX-ACCESS		read-only
+         	STATUS			current
+         	DESCRIPTION
+         	   ""
+         	::= { voipProfileEntry 3 }
+         
+      voipDtfmRelay	OBJECT IDENTIFIER ::= { voipSystem 2 }
+      
+         voipDtmfRelayStatus	OBJECT-TYPE
+         	SYNTAX		INTEGER {
+         		none (1),
+         		auto (2),
+         		outOfBand (3)
+         	}
+         	MAX-ACCESS	read-write
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipDtfmRelay 1 }
+      
+      voipLifeLine	OBJECT IDENTIFIER ::= { voipSystem 3 }
+      
+         voipLifeLineStatus	OBJECT-TYPE
+         	SYNTAX		INTEGER {
+         		voip(1),
+         		pstn(2)
+         	}
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipLifeLine 1 }
+         
+         voipLifeLineService	OBJECT-TYPE
+         	SYNTAX		INTEGER {
+         		enabled(1),
+         		disabled(2)
+         	}
+         	MAX-ACCESS	read-write
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipLifeLine 2 }
+      
+      voipMedia	OBJECT IDENTIFIER ::= { voipSystem 4 }
+      
+         voipPortRange	OBJECT IDENTIFIER ::= { voipMedia 1 }
+         
+         voipStartPort	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipPortRange 1 }
+         
+         voipNumPort		OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipPortRange 2 }
+         
+         voipRtcpStatus	OBJECT-TYPE
+         	SYNTAX		INTEGER {
+         		enabled(1),
+         		disabled(2)
+         	}
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipMedia 2 }
+         
+         voipSessionTimeout	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipMedia 3 }
+
+         voipPacketLenght	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipMedia 4 }
+      
+      voipQoS	OBJECT IDENTIFIER ::= { voipSystem 5 }
+      
+         voipQoSDSCP		OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipQoS 1 }
+         
+         voipQoSTOS		OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipQoS 2 }
+   
+   
+   -- The voipEndpoint group
+   
+   voipEnpoint OBJECT IDENTIFIER ::= { voip 2 }
+   
+      voipEpAnalog OBJECT IDENTIFIER ::= { voipEnpoint 1 }
+      
+      voipEpAnalogAdmin OBJECT IDENTIFIER ::= { voipEpAnalog 1 }
+      voipEpAnalogAdminTable	OBJECT-TYPE
+      	SYNTAX			SEQUENCE OF VoipEpAnalogAdminEntry
+      	MAX-ACCESS		not-accessible
+      	STATUS			current
+      	DESCRIPTION
+      		""
+      	::= { voipEpAnalogAdmin 1 }
+      
+      voipEpAnalogAdminEntry	OBJECT-TYPE
+      	SYNTAX			VoipEpAnalogAdminEntry
+      	MAX-ACCESS		not-accessible
+      	STATUS  		current
+      	DESCRIPTION
+      	   ""
+          INDEX
+              { voipEpAnalogAdminIndex }
+      	::= { voipEpAnalogAdminTable 1 }
+      
+      VoipEpAnalogAdminEntry ::= SEQUENCE
+      {
+      	voipEpAnalogAdminIndex	Integer32,
+      	voipEpAnalogAdminName	DisplayString,
+      	voipEpAnalogAdminType	INTEGER,
+      	voipEpAnalogAdminPort	INTEGER,
+      	voipEpAnalogAdminStatus	INTEGER,
+      	voipEpAnalogAdminUsers	DisplayString
+      }
+      
+      voipEpAnalogAdminIndex	OBJECT-TYPE
+      	SYNTAX		Integer32
+      	MAX-ACCESS	read-only
+      	STATUS		current
+      	DESCRIPTION
+      	   ""
+      	::= { voipEpAnalogAdminEntry 1 }  
+            
+      voipEpAnalogAdminName	OBJECT-TYPE
+      	SYNTAX		DisplayString
+      	MAX-ACCESS	read-only
+      	STATUS		current
+      	DESCRIPTION
+      	   ""
+      	::= { voipEpAnalogAdminEntry 2 }  
+      
+      voipEpAnalogAdminType	OBJECT-TYPE
+      	SYNTAX	INTEGER {
+      		al-fxs-del (1),
+      		al-fxo-del (2)
+      	}
+      	MAX-ACCESS	read-only
+      	STATUS		current
+      	DESCRIPTION
+      	   ""
+      	::= { voipEpAnalogAdminEntry 3 }  
+      
+      voipEpAnalogAdminPort	OBJECT-TYPE
+      	SYNTAX	INTEGER {
+      		tel1 (1),
+      		tel2 (2),
+      		tel3 (3),
+      		line (4)
+      	}
+      	MAX-ACCESS	read-only
+      	STATUS		current
+      	DESCRIPTION
+      	   ""
+      	::= { voipEpAnalogAdminEntry 4 }  
+      
+      voipEpAnalogAdminStatus	OBJECT-TYPE
+      	SYNTAX	INTEGER {
+      		enable (1),
+      		disable (2),
+      		restart (3)
+      	}
+      	MAX-ACCESS	read-only
+      	STATUS		current
+      	DESCRIPTION
+      	   ""
+      	::= { voipEpAnalogAdminEntry 5 }  
+      
+      voipEpAnalogAdminUsers	OBJECT-TYPE
+      	SYNTAX		DisplayString
+      	MAX-ACCESS	read-only
+      	STATUS		current
+      	DESCRIPTION
+      	   ""
+      	::= { voipEpAnalogAdminEntry 6 }
+      
+
+      voipEpAnalogDial OBJECT IDENTIFIER ::= { voipEpAnalog 2 }
+
+      voipEpAnalogDialTable	OBJECT-TYPE
+      	SYNTAX			SEQUENCE OF VoipEpAnalogDialEntry
+      	MAX-ACCESS		not-accessible
+      	STATUS			current
+      	DESCRIPTION
+      		""
+      	::= { voipEpAnalogDial 1 }
+      
+         voipEpAnalogDialEntry	OBJECT-TYPE
+         	SYNTAX			VoipEpAnalogDialEntry
+         	MAX-ACCESS		not-accessible
+         	STATUS  		current
+         	DESCRIPTION
+         	   ""
+             INDEX
+                 { voipEpAnalogDialIndex }
+         	::= { voipEpAnalogDialTable 1 }
+         
+         VoipEpAnalogDialEntry ::= SEQUENCE
+         {
+         	voipEpAnalogDialIndex				Integer32,
+         	voipEpAnalogDialName				   DisplayString,
+         	voipEpAnalogDialMode				   INTEGER,
+         	voipEpAnalogOffHookTime				Integer32,
+         	voipEpAnalogOnHookTime				Integer32,
+         	voipEpAnalogMinCriticalDdgtTime	Integer32,	
+         	voipEpAnalogMaxCriticalDdgtTime	Integer32,	
+         	voipEpAnalogMinInterDdgtTime		Integer32,	
+         	voipEpAnalogMaxInterDdgtTime		Integer32,	
+         	voipEpAnalogDialMask				   Integer32,	
+         	voipEpAnalogDigitMap				   DisplayString,
+         	voipEpAnalogDialCountry		      DisplayString
+         }
+         
+         voipEpAnalogDialIndex	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 1 }  
+               
+         voipEpAnalogDialName	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 2 }  
+         
+         voipEpAnalogDialMode	OBJECT-TYPE
+         	SYNTAX		INTEGER {
+         		auto (1),
+         		dtmf (2),
+         		pulse10pps (3),
+         		pulse20pps (4)
+         	}
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 3 }  
+         
+         voipEpAnalogOffHookTime	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 4 }  
+         
+         voipEpAnalogOnHookTime	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 5 }  
+         
+         voipEpAnalogMinCriticalDdgtTime	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 6 }  
+         
+         voipEpAnalogMaxCriticalDdgtTime	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 7 }  
+         
+         voipEpAnalogMinInterDdgtTime	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 8 }  
+         
+         voipEpAnalogMaxInterDdgtTime	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 9 }  	
+         
+         voipEpAnalogDialMask	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 10 }  	
+         
+         voipEpAnalogDigitMap	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 11 }  
+         
+         voipEpAnalogDialCountry	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogDialEntry 12 }  
+      
+         
+      voipEpAnalogCfw OBJECT IDENTIFIER ::= { voipEpAnalog 3 }
+
+         voipEpAnalogCfwTable	OBJECT-TYPE
+         	SYNTAX			SEQUENCE OF VoipEpAnalogCfwEntry
+         	MAX-ACCESS		not-accessible
+         	STATUS			current
+         	DESCRIPTION
+         		""
+         	::= { voipEpAnalogCfw 1 }
+         
+         voipEpAnalogCfwEntry	OBJECT-TYPE
+         	SYNTAX			VoipEpAnalogCfwEntry
+         	MAX-ACCESS		not-accessible
+         	STATUS  		current
+         	DESCRIPTION
+         	   ""
+             INDEX
+                 { voipEpAnalogCfwIndex }
+         	::= { voipEpAnalogCfwTable 1 }
+         
+         VoipEpAnalogCfwEntry ::= SEQUENCE
+         {
+         	voipEpAnalogCfwIndex             Integer32,
+         	voipEpAnalogCfwName              DisplayString,
+         	voipEpAnalogCfwNoAnswerTimeout   Integer32,
+         	voipEpAnalogCfwNoAnswerOnPrefix  DisplayString,
+         	voipEpAnalogCfwNoAnswerOnSuffix  DisplayString,
+         	voipEpAnalogCfwNoAnswerOffPrefix DisplayString,
+         	voipEpAnalogCfwNoAnswerStatus    INTEGER,
+         	voipEpAnalogCfwNoAnswerActiveStatus    INTEGER,
+         	voipEpAnalogCfwBusyTimeout       Integer32,
+         	voipEpAnalogCfwBusyOnPrefix      DisplayString,
+         	voipEpAnalogCfwBusyOnSuffix      DisplayString,
+         	voipEpAnalogCfwBusyOffPrefix     DisplayString,
+         	voipEpAnalogCfwBusyStatus        INTEGER,
+         	voipEpAnalogCfwBusyActiveStatus  INTEGER,
+         	voipEpAnalogCfwAllTimeout        Integer32,
+         	voipEpAnalogCfwAllOnPrefix       DisplayString,
+         	voipEpAnalogCfwAllOnSuffix       DisplayString,
+         	voipEpAnalogCfwAllOffPrefix      DisplayString,
+         	voipEpAnalogCfwAllStatus         INTEGER,
+         	voipEpAnalogCfwAllActiveStatus   INTEGER
+         }
+         
+            voipEpAnalogCfwIndex	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 1 }  
+                  
+            voipEpAnalogCfwName	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 2 }  
+            
+            voipEpAnalogCfwNoAnswerTimeout	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 3 }
+            
+            voipEpAnalogCfwNoAnswerOnPrefix	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 4 }
+            
+            voipEpAnalogCfwNoAnswerOnSuffix	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 5 }
+            
+            voipEpAnalogCfwNoAnswerOffPrefix	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 6 }
+            
+            voipEpAnalogCfwNoAnswerStatus	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2)
+            	}
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 7 }
+
+            voipEpAnalogCfwNoAnswerActiveStatus	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2)
+            	}
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 8 }
+
+            voipEpAnalogCfwBusyTimeout	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 9 }
+                 	
+            voipEpAnalogCfwBusyOnPrefix	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 10 }
+            
+            voipEpAnalogCfwBusyOnSuffix	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 11 }
+            
+            voipEpAnalogCfwBusyOffPrefix	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 12 }
+            
+            voipEpAnalogCfwBusyStatus	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2)
+            	}
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 13 }	
+
+            voipEpAnalogCfwBusyActiveStatus	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2)
+            	}
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 14 }
+
+            voipEpAnalogCfwAllTimeout	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 15 }
+            	
+            voipEpAnalogCfwAllOnPrefix	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 16 }
+            
+            voipEpAnalogCfwAllOnSuffix	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 17 }
+            
+            voipEpAnalogCfwAllOffPrefix	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 18 }
+            
+            voipEpAnalogCfwAllStatus	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2)
+            	}
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 19 }		
+            	
+            voipEpAnalogCfwAllActiveStatus	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2)
+            	}
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogCfwEntry 20 }
+            	
+      
+      voipEpAnalogCLI OBJECT IDENTIFIER ::= { voipEpAnalog 4 }
+      
+         voipEpAnalogCLITable	OBJECT-TYPE
+         	SYNTAX			SEQUENCE OF VoipEpAnalogCLIEntry
+         	MAX-ACCESS		not-accessible
+         	STATUS			current
+         	DESCRIPTION
+         		""
+         	::= { voipEpAnalogCLI 1 }
+         
+         voipEpAnalogCLIEntry	OBJECT-TYPE
+         	SYNTAX			VoipEpAnalogCLIEntry
+         	MAX-ACCESS		not-accessible
+         	STATUS  		current
+         	DESCRIPTION
+         	   ""
+             INDEX
+                 { voipEpAnalogCLIIndex }
+         	::= { voipEpAnalogCLITable 1 }
+         
+         VoipEpAnalogCLIEntry ::= SEQUENCE
+         {
+         	voipEpAnalogCLIIndex			Integer32,
+         	voipEpAnalogCLIName				DisplayString,
+         	voipEpAnalogCLIPresentation		INTEGER,
+         	voipEpAnalogCLIOnPrefix			DisplayString,
+         	voipEpAnalogCLIOffPrefix 		DisplayString
+         }
+         
+         voipEpAnalogCLIIndex	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogCLIEntry 1 }  
+               
+         voipEpAnalogCLIName	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogCLIEntry 2 }  
+         
+         voipEpAnalogCLIPresentation	OBJECT-TYPE
+         	SYNTAX		INTEGER {
+         		none (1),
+         		bell (2),
+         		bt (3),
+         		ntt (4)
+         	}
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogCLIEntry 3 }  
+         
+         voipEpAnalogCLIOnPrefix	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogCLIEntry 4 }  
+         
+         voipEpAnalogCLIOffPrefix	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogCLIEntry 5 }  
+         
+      
+      voipEpAnalogQuality OBJECT IDENTIFIER ::= { voipEpAnalog 5 }
+      
+         voipEpAnalogQualityTable	OBJECT-TYPE
+         	SYNTAX			SEQUENCE OF VoipEpAnalogQualityEntry
+         	MAX-ACCESS		not-accessible
+         	STATUS			current
+         	DESCRIPTION
+         		""
+         	::= { voipEpAnalogQuality 1 }
+         
+         voipEpAnalogQualityEntry	OBJECT-TYPE
+         	SYNTAX			VoipEpAnalogQualityEntry
+         	MAX-ACCESS		not-accessible
+         	STATUS  		current
+         	DESCRIPTION
+         	   ""
+             INDEX
+                 { voipEpAnalogQualityIndex }
+         	::= { voipEpAnalogQualityTable 1 }
+         
+         VoipEpAnalogQualityEntry ::= SEQUENCE
+         {
+         	voipEpAnalogQualityIndex	Integer32,
+         	voipEpAnalogQualityName		DisplayString,
+         	voipEpAnalogQualityRxGain	Integer32,
+         	voipEpAnalogQualityTxGain	Integer32,
+         	voipEpAnalogQualityLec		Integer32,
+         	voipEpAnalogQualityJitter	Integer32,
+         	voipEpAnalogQualityVad		INTEGER,
+         	voipEpAnalogQualityCng		INTEGER	
+         }
+         
+         voipEpAnalogQualityIndex	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogQualityEntry 1 }  
+         
+         voipEpAnalogQualityName	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogQualityEntry 2 }  
+         
+         voipEpAnalogQualityRxGain	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogQualityEntry 3 }  
+         
+         voipEpAnalogQualityTxGain	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogQualityEntry 4 }  
+         
+         voipEpAnalogQualityLec	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogQualityEntry 5 }  
+         
+         voipEpAnalogQualityJitter	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogQualityEntry 6 }  
+         
+         voipEpAnalogQualityVad	OBJECT-TYPE
+         	SYNTAX		INTEGER {
+         		enable (1),
+         		disable (2)
+         	}
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogQualityEntry 7 }  
+         
+         voipEpAnalogQualityCng	OBJECT-TYPE
+         	SYNTAX		INTEGER {
+         		enable (1),
+         		disable (2)
+         	}
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         	   ""
+         	::= { voipEpAnalogQualityEntry 8 }  
+      
+      
+      voipEpAnalogStats OBJECT IDENTIFIER ::= { voipEpAnalog 6 }
+
+         voipEpAnalogStatTable	OBJECT-TYPE
+         	SYNTAX			SEQUENCE OF VoipEpAnalogStatEntry
+         	MAX-ACCESS		not-accessible
+         	STATUS			current
+         	DESCRIPTION
+         		""
+         	::= { voipEpAnalogStats 1 }
+         
+         voipEpAnalogStatEntry	OBJECT-TYPE
+         	SYNTAX			VoipEpAnalogStatEntry
+         	MAX-ACCESS		not-accessible
+         	STATUS  		current
+         	DESCRIPTION
+         	   ""
+             INDEX
+                 { voipEpAnalogStatIndex }
+         	::= { voipEpAnalogStatTable 1 }
+         
+         VoipEpAnalogStatEntry ::= SEQUENCE
+         {
+         	voipEpAnalogStatIndex      Integer32,
+         	voipEpAnalogStatName       DisplayString,
+         	voipEpAnalogStatOnHook     Integer32,
+         	voipEpAnalogStatOffHook    Integer32,
+         	voipEpAnalogStatRing       Integer32,
+         	voipEpAnalogAdminOnHook    INTEGER,
+         	voipEpAnalogAdminOffHook   INTEGER,
+         	voipEpAnalogAdminRing      INTEGER
+         }
+         
+            voipEpAnalogStatIndex	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogStatEntry 1 }  
+            
+            voipEpAnalogStatName	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogStatEntry 2 }  
+            
+            voipEpAnalogStatOnHook	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogStatEntry 3 }  
+            
+            voipEpAnalogStatOffHook	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogStatEntry 4 }  
+            
+            voipEpAnalogStatRing	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogStatEntry 5 }  
+            	
+            voipEpAnalogAdminOnHook	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2),
+            		reset (3)
+            	}
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogStatEntry 6 }  
+            
+            voipEpAnalogAdminOffHook	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2),
+            		reset (3)
+            	}
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogStatEntry 7 }  
+            
+            voipEpAnalogAdminRing	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2),
+            		reset (3)
+            	}
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            	   ""
+            	::= { voipEpAnalogStatEntry 8 }  
+      
+      
+   
+   -- The Voip MGCP Group
+   
+   voipMgcp OBJECT IDENTIFIER ::= { voip 3 } 
+      
+      voipMgcpProtocol	OBJECT IDENTIFIER ::= { voipMgcp 1 }
+      
+         voipMgcpProtocolStatus	OBJECT-TYPE
+         	SYNTAX		INTEGER {
+         		enable (1),
+         		disable (2),
+         		restart (3)
+         	}
+         	MAX-ACCESS	read-write
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipMgcpProtocol 1 }
+         
+         voipMgcpProtocolInterface	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-write
+         	STATUS		current
+         	DESCRIPTION
+         		""
+            ::= { voipMgcpProtocol 2 }         
+            
+         voipMgcpProtocolNatIpAddress	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-write
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipMgcpProtocol 3 }
+         
+         voipMgcpProtocolDefaultPort	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-write
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipMgcpProtocol 4 }
+         
+         voipMgcpProtocolMaxRetransmitTime	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-write
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipMgcpProtocol 5 }
+         	
+         voipMgcpProtocolRoundtripTime	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-write
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipMgcpProtocol 6 }
+         	
+         voipMgcpProtocolProfile	OBJECT-TYPE
+         	SYNTAX		INTEGER {
+         		none (1),
+         		ags (2),
+         		gb (3),
+         		marconi (4),
+         		ncs (5),
+         		sphere (6)
+         	}
+         	MAX-ACCESS	read-write
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipMgcpProtocol 7 }
+         
+         voipMgcpProtocolPackages	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipMgcpProtocol 8 }
+         
+         voipMgcpProtocolNetworkLoss	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { voipMgcpProtocol 9 }
+      	
+      
+      voipMgcpCallAgents	OBJECT IDENTIFIER ::= { voipMgcp 2 }
+      
+         voipMgcpCallAgentTable	OBJECT-TYPE
+         	SYNTAX		SEQUENCE OF VoipMgcpCallAgentEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS		current
+         	DESCRIPTION
+             	""
+         	::= { voipMgcpCallAgents 1 }
+         
+         voipMgcpCallAgentEntry	OBJECT-TYPE
+         	SYNTAX    	VoipMgcpCallAgentEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS      current
+         	DESCRIPTION
+         	     ""
+         	INDEX
+         		{ voipMgcpCallAgentIndex }
+         	::= { voipMgcpCallAgentTable 1 }
+               
+         VoipMgcpCallAgentEntry ::= SEQUENCE
+         {
+         	voipMgcpCallAgentIndex		Integer32,
+         	voipMgcpCallAgentName		DisplayString,
+         	voipMgcpCallAgentIpAddress	DisplayString,
+         	voipMgcpCallAgentIpPort		Integer32
+         }
+         
+            voipMgcpCallAgentIndex	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { voipMgcpCallAgentEntry 1 }
+            
+            voipMgcpCallAgentName	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { voipMgcpCallAgentEntry 2 }
+            	
+            voipMgcpCallAgentIpAddress	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { voipMgcpCallAgentEntry 3 }
+            	
+            voipMgcpCallAgentIpPort	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { voipMgcpCallAgentEntry 4 }
+   	
+   
+   -- The Switch Group
+   
+   rg600switch	OBJECT IDENTIFIER ::= { rg600 4 }
+      
+      switchLearningStatus	OBJECT-TYPE
+      	SYNTAX		INTEGER {
+      		enable (1),
+      		disable (2)
+      	}
+      	MAX-ACCESS	read-write
+      	STATUS		current
+      	DESCRIPTION
+      		""
+      	::= { rg600switch 1 }
+
+      switchAgeingTimeStatus	OBJECT-TYPE
+      	SYNTAX		INTEGER {
+      		enable (1),
+      		disable (2)
+      	}
+      	MAX-ACCESS	read-write
+      	STATUS		current
+      	DESCRIPTION
+      		""
+      	::= { rg600switch 2 }
+      	
+      switchAgeingTimeMode	OBJECT-TYPE
+      	SYNTAX		INTEGER {
+      		normal (1),
+      		fast (2)
+      	}
+      	MAX-ACCESS	read-write
+      	STATUS		current
+      	DESCRIPTION
+      		""
+      	::= { rg600switch 3 }
+
+      switchAgeingTimeValue	OBJECT-TYPE
+      	SYNTAX		Integer32
+      	MAX-ACCESS	read-write
+      	STATUS		current
+      	DESCRIPTION
+      		""
+      	::= { rg600switch 4 }
+      	
+      switchBasePriority	OBJECT-TYPE
+      	SYNTAX		Integer32
+      	MAX-ACCESS	read-write
+      	STATUS		current
+      	DESCRIPTION
+      		""
+      	::= { rg600switch 5 }
+      	
+      switchRoutingLimit	OBJECT-TYPE
+      	SYNTAX		INTEGER {
+            none (1),
+      		oneKfps (2),
+      		oneAndHalfKfps (3),
+      		twoKfps (4),
+      		twoAndHalfKfps (5),
+      		threeKfps (6),
+      		threeAndHalfKfps (7),
+      		fourKfps (8),
+      		fourAndHalfKfps (9),
+      		fiveKfps (10),
+      		fiveAndHalfKfps (11),
+      		sixKfps (12)
+      	}
+      	MAX-ACCESS	read-write
+      	STATUS		current
+      	DESCRIPTION
+      		""
+      	::= { rg600switch 6 }
+   	
+   
+      switchQoS	OBJECT IDENTIFIER ::= { rg600switch 7 }
+      	
+         switchQoSTable	OBJECT-TYPE
+         	SYNTAX		SEQUENCE OF SwitchQoSEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS		current
+         	DESCRIPTION
+             	""
+         	::= { switchQoS 1 }
+         
+         switchQoSEntry	OBJECT-TYPE
+         	SYNTAX    	SwitchQoSEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS      current
+         	DESCRIPTION
+         	     ""
+         	INDEX
+         		{ switchQoSValue }
+         	::= { switchQoSTable 1 }
+               
+         SwitchQoSEntry ::= SEQUENCE
+         {
+         	switchQoSValue		Integer32,
+         	switchQoSPriority	Integer32
+         }
+         
+            switchQoSValue	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchQoSEntry 1 }
+            	
+            switchQoSPriority	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		low (1),
+            		high (2)
+            	}
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchQoSEntry 2 }
+   
+      switchPorts	OBJECT IDENTIFIER ::= { rg600switch 8 }
+      
+         switchPortTable	OBJECT-TYPE
+         	SYNTAX		SEQUENCE OF SwitchPortEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS		current
+         	DESCRIPTION
+             	""
+         	::= { switchPorts 1 }
+         
+         switchPortEntry	OBJECT-TYPE
+         	SYNTAX    	SwitchPortEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS      current
+         	DESCRIPTION
+         	     ""
+         	INDEX
+         		{ switchPortIndex }
+         	::= { switchPortTable 1 }
+               
+         SwitchPortEntry ::= SEQUENCE
+         {
+         	switchPortIndex            Integer32,
+         	switchPortName             DisplayString,
+         	switchPortAdminStatus	   INTEGER,
+         	switchPortLinkStatus       INTEGER,
+         	switchPortUpTime           Integer32,
+         	switchPortMediaType        DisplayString,
+         	switchPortAdminSpeed       INTEGER,
+         	switchPortMaxRxFrame       Integer32,
+         	switchPortRxLimit          Integer32,
+         	switchPortTxLimit          Integer32,
+         	switchPortFlowControl      INTEGER,
+         	switchPortTaggedVlan       DisplayString,
+         	switchPortInfiltering      INTEGER,
+         	switchPortQoSStatus        INTEGER,
+         	switchPortDefaultPriority  Integer32
+         }
+         
+            switchPortIndex	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 1 }
+
+            switchPortName	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 2 }
+            
+            switchPortAdminStatus	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2),
+            		restart (3)
+            	}
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 3 }
+            
+            switchPortLinkStatus	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		up (1),
+            		down (2)
+            	}
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 4 }
+            
+            switchPortUpTime	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 5 }
+            
+            switchPortMediaType	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 6 }
+            
+            switchPortAdminSpeed	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		half-10M (1),
+            		full-10M (2),
+            		half-100M (3),
+            		full-100M (4),
+            		autonegotiate (5)
+            	}
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 7 }
+            
+            switchPortMaxRxFrame	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 8 }
+            
+            switchPortRxLimit	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 9 }
+            
+            switchPortTxLimit	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 10 }
+            
+            switchPortFlowControl	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		none (1),
+            		flow (2)
+            	}
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 11 }
+            
+            switchPortTaggedVlan	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 12 }
+            
+            switchPortInfiltering	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2)
+            	}
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 13 }
+            
+            switchPortQoSStatus	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		enable (1),
+            		disable (2)
+            	}
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 14 }
+            
+            switchPortDefaultPriority	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-write
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchPortEntry 15 }
+   
+      switchFDBs	OBJECT IDENTIFIER ::= { rg600switch 9 }
+      
+         switchFDBTable	OBJECT-TYPE
+         	SYNTAX		SEQUENCE OF SwitchFDBEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS		current
+         	DESCRIPTION
+             	""
+         	::= { switchFDBs 1 }
+         
+         switchFDBEntry	OBJECT-TYPE
+         	SYNTAX    	SwitchFDBEntry
+         	MAX-ACCESS	not-accessible
+         	STATUS      current
+         	DESCRIPTION
+         	     ""
+         	INDEX
+         		{ switchFDBIndex }
+         	::= { switchFDBTable 1 }
+               
+         SwitchFDBEntry ::= SEQUENCE
+         {
+         	switchFDBIndex	   Integer32,
+         	switchFDBVlan	   Integer32,
+         	switchFDBMac	   DisplayString,
+         	switchFDBPort	   DisplayString,
+         	switchFDBStatus   INTEGER
+         }
+         
+            switchFDBIndex	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchFDBEntry 1 }
+            
+            switchFDBVlan	OBJECT-TYPE
+            	SYNTAX		Integer32
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchFDBEntry 2 }
+            	
+            switchFDBMac	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchFDBEntry 3 }
+            	
+            switchFDBPort	OBJECT-TYPE
+            	SYNTAX		DisplayString
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchFDBEntry 4 }
+
+            switchFDBStatus	OBJECT-TYPE
+            	SYNTAX		INTEGER {
+            		static (1),
+            		dynamic (2)
+            	}
+            	MAX-ACCESS	read-only
+            	STATUS		current
+            	DESCRIPTION
+            		""
+            	::= { switchFDBEntry 5 }
+   	
+   -- The VLAN Group
+   
+   vLan	OBJECT IDENTIFIER ::= { rg600 5 }
+   
+      vLanTable	OBJECT-TYPE
+      	SYNTAX		SEQUENCE OF VLanEntry
+      	MAX-ACCESS	not-accessible
+      	STATUS		current
+      	DESCRIPTION
+          	""
+      	::= { vLan 1 }
+      
+      vLanEntry	OBJECT-TYPE
+      	SYNTAX    	VLanEntry
+      	MAX-ACCESS	not-accessible
+      	STATUS      current
+      	DESCRIPTION
+      	     ""
+      	INDEX
+      		{ vLanIndex }
+      	::= { vLanTable 1 }
+            
+      VLanEntry ::= SEQUENCE
+      {
+      	vLanIndex		Integer32,
+      	vLanName		   DisplayString,
+      	vLanVID			Integer32,
+      	vLanPriority	Integer32,
+      	vLanPortBased	DisplayString,
+      	vLanTaggedPort	DisplayString
+      }
+      
+         vLanIndex	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { vLanEntry 1 }
+         
+         vLanName	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { vLanEntry 2 }
+         
+         vLanVID	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { vLanEntry 3 }
+         
+         vLanPriority	OBJECT-TYPE
+         	SYNTAX		Integer32
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { vLanEntry 4 }
+         
+         vLanPortBased	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { vLanEntry 5 }
+         
+         vLanTaggedPort	OBJECT-TYPE
+         	SYNTAX		DisplayString
+         	MAX-ACCESS	read-only
+         	STATUS		current
+         	DESCRIPTION
+         		""
+         	::= { vLanEntry 6 }
+   
+      --
+      -- 
+      -- Traps Definition .
+      --
+      --
+
+rg600Traps OBJECT IDENTIFIER ::= { rg600 100 }
+
+powerBackpupTraps OBJECT IDENTIFIER ::= { rg600Traps 1 }
+	
+powerBackpupBatteryOn	NOTIFICATION-TYPE
+   OBJECTS { sysPowerBackupPrimarySupply }
+	STATUS  current
+	DESCRIPTION
+		"This trap indicates that the battery is connected and working properly."
+	::= { powerBackpupTraps 1 }
+
+powerBackpupBatteryMissing	NOTIFICATION-TYPE
+   OBJECTS { sysPowerBackupSystem }
+	STATUS  current
+	DESCRIPTION
+		"This trap indicates that the battery is disconnected or damaged."
+	::= { powerBackpupTraps 2 }
+
+powerBackpupBatteryLow	NOTIFICATION-TYPE
+   OBJECTS { sysPowerBackupBatteryStatus }
+	STATUS  current
+	DESCRIPTION
+		"This trap indicates that the battery is low."
+	::= { powerBackpupTraps 3 }
+
+
+voipMgcpProtocolTraps OBJECT IDENTIFIER ::= { rg600Traps 2 }
+
+voipMgcpProtocolEnableTrap	NOTIFICATION-TYPE
+   OBJECTS { voipMgcpProtocolStatus }
+	STATUS  current
+	DESCRIPTION
+		""
+	::= { voipMgcpProtocolTraps 4 }
+
+voipMgcpProtocolDisableTrap	NOTIFICATION-TYPE
+   OBJECTS { voipMgcpProtocolStatus }
+	STATUS  current
+	DESCRIPTION
+		""
+	::= { voipMgcpProtocolTraps 5 }
+
+voipMgcpProtocolRestartTrap	NOTIFICATION-TYPE
+   OBJECTS { voipMgcpProtocolStatus }
+	STATUS  current
+	DESCRIPTION
+		""
+	::= { voipMgcpProtocolTraps 6 }
+
+
+voipMgcpEndpointTraps OBJECT IDENTIFIER ::= { rg600Traps 3 }
+
+voipMgcpEndpointPh0RestartTrap	NOTIFICATION-TYPE
+   OBJECTS { voipEpAnalogAdminStatus }
+	STATUS  current
+	DESCRIPTION
+		""
+	::= { voipMgcpEndpointTraps 7 }
+
+voipMgcpEndpointPh1RestartTrap	NOTIFICATION-TYPE
+   OBJECTS { voipEpAnalogAdminStatus }
+	STATUS  current
+	DESCRIPTION
+		""
+	::= { voipMgcpEndpointTraps 8 }
+
+voipMgcpEndpointPh2RestartTrap	NOTIFICATION-TYPE
+   OBJECTS { voipEpAnalogAdminStatus }
+	STATUS  current
+	DESCRIPTION
+		""
+	::= { voipMgcpEndpointTraps 9 }
+
+igmpSnoopingTraps OBJECT IDENTIFIER ::= { rg600Traps 4 }
+	
+igmpSnoopingVlanEnableTrap	NOTIFICATION-TYPE
+   OBJECTS { vLanVID }
+	STATUS  current
+	DESCRIPTION
+		""
+	::= { igmpSnoopingTraps 10 }
+
+igmpSnoopingVlanDisableTrap	NOTIFICATION-TYPE
+   OBJECTS { vLanVID }
+	STATUS  current
+	DESCRIPTION
+		""
+	::= { igmpSnoopingTraps 11 }
+
+igmpSnoopingGroupJoinTrap	NOTIFICATION-TYPE
+   OBJECTS { igmpGroupAddress }
+	STATUS  current
+	DESCRIPTION
+		""
+	::= { igmpSnoopingTraps 12 }
+
+igmpSnoopingGroupLeaveTrap	NOTIFICATION-TYPE
+   OBJECTS { igmpGroupAddress }
+	STATUS  current
+	DESCRIPTION
+		""
+	::= { igmpSnoopingTraps 13 }
+
+	END

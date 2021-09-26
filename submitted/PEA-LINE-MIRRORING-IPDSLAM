@@ -1,0 +1,178 @@
+PEA-LINE-MIRRORING-IPDSLAM DEFINITIONS ::= BEGIN
+
+
+IMPORTS
+    peaIpDslam
+       FROM DIESEL-SMI
+
+    lineIndex
+       FROM PEA-BRIDGE-IPDSLAM
+       
+    MODULE-IDENTITY, Unsigned32, OBJECT-TYPE
+        FROM SNMPv2-SMI;
+        
+peaLineMirroringIpDslam MODULE-IDENTITY
+    LAST-UPDATED 
+   		 "200602271200Z"  
+    ORGANIZATION
+		 "Ericsson Diax A/S - Denmark"
+    CONTACT-INFO
+		 "
+		 Ericsson Diax A/S
+		 Faelledvej 17
+		 DK-7600 Struer
+		 Denmark
+		 
+		 E-mail: support@dxd.ericsson.se
+		 "       
+   DESCRIPTION
+		 "
+         This MIB is used to configure end-user line mirroring in the IP DSLAM.
+         
+         When upstream and downstream traffic mirroring is enabled, all traffic from
+         an end-user line is replicated, tagged with an operator specified VLAN
+         tag and sent on the IP DSLAM's uplink interface, as illustrated below.
+
+                                  IP DSLAM
+                     _____________________________________
+                    |                                     |
+                    |         Service VLAN                |
+                    | -------------------------->-------->|----------> End-user
+            uplink  |/                            )       |
+          <-------->|                            /        |
+                    |\   Downstream Mirror VLAN /         |
+                    | \<------------------------          |
+                    |_____________________________________|
+
+
+                                  IP DSLAM
+                     _____________________________________
+                    |                                     |
+                    |         Service VLAN                |
+                    | <-----------------------------<-----|<---------- End-user
+            uplink  |/                            /       |
+          <-------->|                            /        |
+                    |\     Upstream Mirror VLAN /         |
+                    | \<------------------------          |
+                    |_____________________________________|
+
+         Different VLANs can be used for upstream and downstream traffic mirroring,
+         but the same VLAN may be used for both traffic directions. It is also
+         possible to only mirror traffic in one direction, or to start mirroring on
+         more than one line.
+
+         The traffic mirroring function will not interfere with the normal services
+         as long as the VLAN used for traffic mirroring is not used for services.
+         If a mirror VLAN collides with a service VLAN, the behavior is undefined.
+		 "                                                           
+    ::= {peaIpDslam 90 }
+
+lineMirroringTable OBJECT-TYPE
+	SYNTAX      SEQUENCE OF LineMirroringEntry
+  	MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "The lineMirroringTable is used to configure traffic mirroring for the
+     end-user lines in the IP DSLAM.
+    "
+    ::= { peaLineMirroringIpDslam 5 }   
+        
+lineMirroringEntry	OBJECT-TYPE
+	SYNTAX      LineMirroringEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "lineMirroringEntry is an entry in the lineMirroringTable.
+
+     A lineMirroringEntry is used to configure line mirroring for one line
+     in the IP DSLAM. The line to configure is identified by lineIndex.
+    "
+    INDEX  {lineIndex}
+    ::= { lineMirroringTable 5 }
+
+LineMirroringEntry ::= 
+	SEQUENCE {
+        upstreamLineMirrorVlanId					Unsigned32,
+        upstreamLineMirrorVlanPriority				Unsigned32,
+        downstreamLineMirrorVlanId					Unsigned32,
+        downstreamLineMirrorVlanPriority			Unsigned32
+        } 
+                
+
+upstreamLineMirrorVlanId OBJECT-TYPE
+	SYNTAX      Unsigned32 ('0000'H..'0FFF'H | 'FFFF'H)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The parameter upstreamLineMirrorVlanId is used to enable/disable mirroring
+     of all upstream traffic on the specific line.
+     When mirroring is enabled, upstream traffic from all PVC's in the line is
+     replicated (before service VLAN tag is added) and tagged with the VLAN
+     specified with upstreamLineMirrorVlanId. The traffic is then forwarded on
+     the uplink interface of the IP DSLAM.
+
+     To enable upstream traffic mirroring for a line, set upstreamLineMirrorVlanId
+     to a value in the range 0x0000..0x0FFF, to disable upstream traffic mirroring
+     set upstreamLineMirrorVlanId to 0xFFFF.
+
+     The value configured with upstreamLineMirrorVlanId will survive a restart of
+     the IP DSLAM.
+    "
+    DEFVAL {'FFFF'H}
+    ::= { lineMirroringEntry 5 } 
+
+upstreamLineMirrorVlanPriority OBJECT-TYPE
+	SYNTAX      Unsigned32 (0..7)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The parameter upstreamLineMirrorVlanPriority is used in conjunction with
+     upstreamLineMirrorVlanId when upstream traffic mirroring is enabled.
+     upstreamLineMirrorVlanPriority specifies the VLAN priority used when
+     sending the mirrored traffic on the IP DSLAM uplink interface.
+     
+     The value configured with upstreamLineMirrorVlanPriority will survive a
+     restart of the IP DSLAM.
+    "
+    DEFVAL {6}
+    ::= { lineMirroringEntry 10 } 
+    
+downstreamLineMirrorVlanId OBJECT-TYPE
+	SYNTAX      Unsigned32 ('0000'H..'0FFF'H | 'FFFF'H)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The parameter downstreamLineMirrorVlanId is used to enable/disable mirroring
+     of all downstream traffic on the specific line.
+     When mirroring is enabled, downstream traffic to all PVC's in the line is
+     replicated (after service VLAN tag is removed) and tagged with the VLAN
+     specified with downstreamLineMirrorVlanId. The traffic is then forwarded on
+     the uplink interface of the IP DSLAM.
+
+     To enable downstream traffic mirroring for a line, set downstreamLineMirrorVlanId
+     to a value in the range 0x0000..0x0FFF, to disable upstream traffic mirroring,
+     set downstreamLineMirrorVlanId to 0xFFFF.
+
+     The value configured with downstreamLineMirrorVlanId will survive a restart of
+     the IP DSLAM.
+    "
+    DEFVAL {'FFFF'H}
+    ::= { lineMirroringEntry 15 } 
+
+downstreamLineMirrorVlanPriority OBJECT-TYPE
+	SYNTAX      Unsigned32 (0..7)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The parameter downstreamLineMirrorVlanPriority is used in conjunction with
+     downstreamLineMirrorVlanId when upstream traffic mirroring is enabled.
+     downstreamLineMirrorVlanPriority specifies the VLAN priority used when
+     sending the mirrored traffic on the IP DSLAM uplink interface.
+     
+     The value configured with downstreamLineMirrorVlanPriority will survive a
+     restart of the IP DSLAM.
+    "
+    DEFVAL {6}
+    ::= { lineMirroringEntry 20 } 
+    
+END

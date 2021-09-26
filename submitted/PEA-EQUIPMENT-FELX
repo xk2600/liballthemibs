@@ -1,0 +1,922 @@
+PEA-EQUIPMENT-FELX DEFINITIONS ::= BEGIN
+
+
+IMPORTS
+
+    peaFelx                FROM PEA-FELX-SMI
+
+	-- standard X.733 header for notifications       
+
+    managedObjectClass, 
+    managedObjectInstance, 
+    sequenceNumber, 
+    perceivedSeverity, 
+    eventTime, 
+    eventTypePem, 
+    probableCause          FROM PEM-STANDARD 
+    
+    pethPsePortGroupIndex,
+    pethPsePortIndex       FROM PEA-POWER-ETHERNET-MIB
+
+    InterfaceIndex         FROM IF-MIB
+
+    TruthValue,
+    DisplayString,  
+    MacAddress             FROM SNMPv2-TC
+ 
+    MODULE-IDENTITY,  
+    NOTIFICATION-TYPE, 
+    OBJECT-TYPE, 
+    Unsigned32             FROM SNMPv2-SMI;
+
+
+peaEquipmentFelx  MODULE-IDENTITY
+
+    LAST-UPDATED "0301201200Z"  
+    ORGANIZATION "Ericsson Diax A/S - Denmark"
+
+    CONTACT-INFO
+		"
+		 Ericsson Diax A/S
+		 Faelledvej 17
+		 DK-7600 Struer
+		 Denmark
+		 
+		 E-mail: support@dxd.ericsson.se
+		"       
+
+    DESCRIPTION
+		"
+		 The public ethernet access software supports a number of standard 
+		 and proprietary MIBs. This MIB module defines objects specific to
+     FELX switch.  		 
+		"                                                           
+	
+    ::= { peaFelx 10 }
+
+    
+felxObjects                        OBJECT IDENTIFIER ::= { peaEquipmentFelx 1  }
+
+  idData                           OBJECT IDENTIFIER ::= { felxObjects 1       }
+
+    supBoardIdData                 OBJECT IDENTIFIER ::= { idData 2            }
+    ddcBoardIdData                 OBJECT IDENTIFIER ::= { idData 3            }
+
+-- reserved for notifications      OBJECT IDENTIFIER ::= { peaEquipmentFelx 2  }
+
+
+  ifObjects                        OBJECT IDENTIFIER ::= { peaEquipmentFelx 3  }
+
+  ifNotifications                  OBJECT IDENTIFIER ::= { peaEquipmentFelx 4  }
+
+    ifNotificationTypes            OBJECT IDENTIFIER ::= { ifNotifications 0   }
+    ifNotificationParameters       OBJECT IDENTIFIER ::= { ifNotifications 1   }
+
+
+  dot1pObjects                     OBJECT IDENTIFIER ::= { peaEquipmentFelx 5  }
+
+-- reserved for notifications      OBJECT IDENTIFIER ::= { peaEquipmentFelx 6  }
+
+
+  tmsCommonObjects                 OBJECT IDENTIFIER ::= { peaEquipmentFelx 9  }
+
+    tmsCommonMisc                  OBJECT IDENTIFIER ::= { tmsCommonObjects 6  }
+    tmsCommonIgmpSnoop             OBJECT IDENTIFIER ::= { tmsCommonObjects 8  }
+
+  -- reserved for notifications    OBJECT IDENTIFIER ::= { peaEquipmentFelx 10 }
+
+  dot3Objects                      OBJECT IDENTIFIER ::= { peaEquipmentFelx 11  }
+
+-- reserved for notifications      OBJECT IDENTIFIER ::= { peaEquipmentFelx 12  }
+
+
+
+DateType ::= TEXTUAL-CONVENTION
+
+    DISPLAY-HINT "1x"
+    STATUS       current
+
+    DESCRIPTION
+    "
+     Represents a date:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C.
+    "
+
+    SYNTAX       OCTET STRING (SIZE (4))
+
+    
+
+--
+-- OBJECTS SECTION
+--
+
+
+-- SUP board ID data
+
+productNumberSup OBJECT-TYPE
+
+	  SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Index number that identifies the device.
+    "
+
+    ::= { supBoardIdData 1 }    
+
+          
+revisionStateSup OBJECT-TYPE
+
+	  SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Revision State or 'R-state' declaring minor versions. 
+     E.g. different types of components or new boot SW.
+    "
+
+    ::= { supBoardIdData 2 }    
+
+    
+functionDesignationSup OBJECT-TYPE
+
+	  SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Number with reference to the handling and use of the product.
+    "
+
+    ::= { supBoardIdData 3 }    
+
+    
+dateOfProductionSup OBJECT-TYPE
+
+  	SYNTAX      DateType
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C.
+    "
+
+    ::= { supBoardIdData 4 }
+
+    
+dateOfRepairSup OBJECT-TYPE
+
+  	SYNTAX      DateType
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C.
+    "
+
+   ::= { supBoardIdData 5 }
+
+   
+productionSerialNumberSup OBJECT-TYPE
+
+	  SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number.
+    "
+
+    ::= { supBoardIdData 6 }
+
+    
+layoutVersionCodeSup OBJECT-TYPE
+
+	  SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     The data layout version that allows the possibility
+     to interpret stored data differently.
+    "
+
+    ::= { supBoardIdData 7 }  
+
+    
+idCheckSumSup OBJECT-TYPE
+
+	  SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     CRC32 Checksum of identification data structure 
+     of the device.
+    "
+
+    ::= { supBoardIdData 8 }         
+
+
+
+-- DDC board ID data
+
+
+productNumberDdc OBJECT-TYPE
+
+	  SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Index number that identifies the device.
+    "
+
+    ::= { ddcBoardIdData 1 }    
+
+          
+revisionStateDdc OBJECT-TYPE
+
+	  SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Revision State or 'R-state' declaring minor versions. 
+     E.g. different types of components or new boot SW.
+    "
+
+    ::= { ddcBoardIdData 2 }    
+    
+
+functionDesignationDdc OBJECT-TYPE
+
+	  SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Number with reference to the handling and use of the product.
+    "
+
+    ::= { ddcBoardIdData 3 }    
+
+    
+dateOfProductionDdc OBJECT-TYPE
+
+ 	  SYNTAX      DateType
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C.
+    "
+
+    ::= { ddcBoardIdData 4 }
+
+    
+dateOfRepairDdc OBJECT-TYPE
+
+	  SYNTAX      DateType
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C.
+    "
+
+   ::= { ddcBoardIdData 5 }
+
+   
+productionSerialNumberDdc OBJECT-TYPE
+
+	  SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number
+    "
+
+    ::= { ddcBoardIdData 6 }
+
+    
+layoutVersionCodeDdc OBJECT-TYPE
+
+	  SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     The data layout version that allows the possibility
+     to interpret stored data differently.
+    "
+
+    ::= { ddcBoardIdData 7 }  
+
+    
+idCheckSumDdc OBJECT-TYPE
+
+	  SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+
+    DESCRIPTION
+    "
+     CRC32 Checksum of identification data structure 
+     of the device.
+    "
+
+    ::= { ddcBoardIdData 8 }         
+    
+
+
+-- Traffic forwarding
+
+
+ifTrafficForwardingTable OBJECT-TYPE
+
+    SYNTAX      SEQUENCE OF IfTrafficForwardingEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This is a symmetrical two-dimentional matrix indexed by the same
+     interface numbers in both directions (ifIndex from IF-MIB). Every
+     element of the matrix is a boolean value (TruthValue) indicating
+     if the traffic from the corresponding ingress interface (the first
+     index, e.g. vertical) can be switched to the corresponding egress
+     interface (the second index, horizontal).  
+    "
+
+    ::= { ifObjects 1 }
+
+    
+ifTrafficForwardingEntry OBJECT-TYPE
+
+    SYNTAX      IfTrafficForwardingEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This is an entry of the ifTrafficForwardingTable.
+    "
+
+    INDEX  { ifIngressIndex, ifEgressIndex  }
+
+    ::= { ifTrafficForwardingTable 1 }
+
+
+IfTrafficForwardingEntry ::=
+
+    SEQUENCE {
+              ifIndexIngress            InterfaceIndex,
+              ifIndexEgress             InterfaceIndex,
+              ifTrafficForwardingEnable TruthValue
+             }
+
+
+ifIndexIngress OBJECT-TYPE
+
+    SYNTAX      InterfaceIndex
+    MAX-ACCESS  not-accessible
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This represents an ingress interface used in ifTrafficForwardingTable
+     as the first index. All values of this index should coincide with the
+     values of the ifIndex in the ifTable of the IF-MIB.
+    "
+
+    ::= { ifTrafficForwardingEntry 1 }
+
+
+ifIndexEgress OBJECT-TYPE
+
+    SYNTAX      InterfaceIndex
+    MAX-ACCESS  not-accessible
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This represents an egress interface used in ifTrafficForwardingTable
+     as the second index. All values of this index should coincide with the
+     values of the ifIndex in the ifTable of the IF-MIB.
+    "
+
+    ::= { ifTrafficForwardingEntry 2 }
+
+
+ifTrafficForwardingEnable OBJECT-TYPE
+
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This defines if traffic forwarding from the corresponding ingress
+     interface to the corresponding egress interface is enabled. The
+     value of true(1) enables traffic forwarding. The value of false(2)
+     disables traffic forwarding. 
+    "
+
+    ::= { ifTrafficForwardingEntry 3 }
+
+
+-- Bandwidth threshold objects
+
+
+ifBandwidthMeasurementPeriod OBJECT-TYPE
+
+    SYNTAX      Integer32 (0..2147483647)
+    MAX-ACCESS  read-write
+    
+    STATUS      current
+
+    DESCRIPTION
+    "
+     The bandwidth threshold function is used to monitor the average
+     bandwidth over the ifBandwidthMeasurementPeriod on each of the
+     device's external interfaces. If the measured average bandwidth
+     (in percents to the maximum possible bandwidth on this particular
+     interface) reaches the ifBandwidthUsageThreshold (given also in
+     percents), the ifBandwidthUsageThresholdNotification is sent.
+     Likewise, when the next measurement period with the average
+     bandwidth lower than the ifBandwidthUsageThreshold is encountered,
+     the ifBandwidthUsageThresholdCeasingNotification is sent.
+
+     This defines the measurement period for the bandwidth threshold
+     function. The period is expressed in minutes. The minimum possible
+     value is 1 minute. The maximum possible value is limited by the
+     size of a 32-bit integer (i.e. virtually unlimited).
+     The value of 0 turns the function off.
+
+     Setting this to a value different from the current value
+     results in all the measurement counters being cleared and all
+     active threshold notifications being ceased.
+    "
+
+    ::= { ifObjects 2 }
+
+
+ifBandwidthUsageThreshold OBJECT-TYPE
+
+    SYNTAX      Gauge32 (1..99)
+    MAX-ACCESS  read-write
+    
+    STATUS      current
+
+    DESCRIPTION
+    "
+     The bandwidth threshold function is used to monitor the average
+     bandwidth over the ifBandwidthMeasurementPeriod on each of the
+     device's external interfaces. If the measured average bandwidth
+     (in percents to the maximum possible bandwidth on this particular
+     interface) reaches the ifBandwidthUsageThreshold (given also in
+     percents), the ifBandwidthUsageThresholdNotification is sent.
+     Likewise, when the next measurement period with the average
+     bandwidth lower than the ifBandwidthUsageThreshold is encountered,
+     the ifBandwidthUsageThresholdCeasingNotification is sent.
+
+     This defines the threshold value for the bandwidth threshold
+     function. The value is given in percents and can lie between 1 and 99
+     (inclusive). 
+
+     Setting this to a value different from the current value
+     results in all the active threshold notifications being revised.
+     The measurement counters are not cleared.
+    "
+
+    ::= { ifObjects 3 }
+
+    
+-- Flow control
+
+
+ifFlowControlTable OBJECT-TYPE
+
+    SYNTAX      SEQUENCE OF IfFlowControlEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+
+    DESCRIPTION
+    "
+    This is to enable/disable the flow control function. The parameter
+    can be changed per interface (hence the table).
+    "
+
+    ::= { ifObjects 5 }
+
+    
+ifFlowControlEntry OBJECT-TYPE
+
+    SYNTAX      IfFlowControlEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This is an entry of the ifFlowContorlTable.
+    "
+
+    INDEX  { ifFlowControlIndex }
+
+    ::= { ifFlowControlTable 1 }
+
+
+IfFlowControlEntry ::=
+
+    SEQUENCE {
+              ifFlowControlIndex  InterfaceIndex,
+              ifFlowControlEnable TruthValue
+             }
+
+
+ifFlowControlIndex OBJECT-TYPE
+
+    SYNTAX      InterfaceIndex
+    MAX-ACCESS  not-accessible
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This is an index to the ifFlowControlTable. All values of this index
+     should coincide with the values of the ifIndex in the ifTable of the
+     IF-MIB.
+    "
+
+    ::= { ifFlowControlEntry 1 }
+
+
+ifFlowControlEnable OBJECT-TYPE
+
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This defines if the flow control function is enabled on the particular
+     interface.The value of true(1) enables flow control. The value of
+     false(2) disables flow control.
+    "
+
+    ::= { ifFlowControlEntry 2 }
+
+
+-- Port info
+
+
+ifManagementInterfaceIndex OBJECT-TYPE
+
+    SYNTAX      InterfaceIndex
+    MAX-ACCESS  read-only
+    
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This is an index of the interface the management traffic is forwarded
+     through. The value is for information only (there are cases, such as
+     when the traffic is split among several interfaces, when the value
+     cannot be relied upon). This parameter can take one of the values of
+     the ifIndex in the ifTable of the IF-MIB.
+    "
+
+    ::= { ifObjects 6 }
+
+
+-- 802.1p related
+
+
+dot1pQueuePriorityBarrier OBJECT-TYPE
+
+    SYNTAX      INTEGER (0..7)
+    MAX-ACCESS  read-write
+    
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This defines the lowest possible priority (802.1p) a packet should have to
+     be placed in the HIGH PRIORITY queue. If the packet's priority is yet lower
+     than this value, the packet is put in the LOW PRIORITY queue.
+
+     A recommended default value of this parameter is 4, meaning that packets
+     with priorities 0 through 3 are placed in the LOW PRIORITY queue and
+     packets with priorities 4 through 7 are placed in the HIGH PRIORITY queue. 
+    "
+
+    ::= { dot1pObjects 1 }
+
+
+dot1pQoSEnable OBJECT-TYPE
+
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+    
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This enables a separate handling of priority packets (802.1p).
+     When enabled, the packets with priority equal or higher than the
+     value of dot1pQueuePriorityBarrier are placed in the HIGH PRIORITY
+     queue.
+
+     The value of true(1) enables the function. The value of false(2)
+     disables it.
+    "
+
+    ::= { dot1pObjects 2 }
+
+    
+-- TMSCOMMON MIB aliases
+
+
+tmsCommonIgmpSnoopEnabled OBJECT-TYPE
+
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-write
+
+    STATUS      current
+
+    DESCRIPTION
+    "
+     THIS IS AN ALIAS FOR THE CORRESPONDING OBJECT FROM THE TMSCOMMON.MIB
+     
+     Setting this object to true(1) enables IGMP Snooping.  Setting
+     it to false(2) disables IGMP Snooping.
+
+     Note that IGMP Snooping can function with or without GVRP and
+     GMRP enabled.
+    "
+
+    ::= { tmsCommonIgmpSnoop 1 }
+
+
+tmsCommonMiscSpanOnOff OBJECT-TYPE
+
+    SYNTAX       INTEGER { enable(1), disable(2) }
+    MAX-ACCESS   read-write
+
+    STATUS       current
+
+    DESCRIPTION
+    "
+     THIS IS AN ALIAS FOR THE CORRESPONDING OBJECT FROM THE TMSCOMMON.MIB
+
+     Enable/Disable Spanning Tree for the bridge.
+     When 'disable(2)', all ports of the device are placed in the
+     forwarding mode, regardless of current Spanning Tree state.
+     When 'enable(1)', the normal STP state transitions take place.
+    "
+
+    ::= { tmsCommonMisc 3 }
+
+--
+-- NOTIFICATIONS SECTION
+--
+
+
+-- Bandwidth threshold notifications
+
+
+
+directionMask OBJECT-TYPE
+
+ 	  SYNTAX      INTEGER { none(0), in(1), out(2), both(3) }
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+
+    DESCRIPTION
+    "
+     A general variable for direction: IN, OUT or BOTH.
+    "
+
+    ::= { ifNotificationParameters 1 }
+
+ifBandwidthUsageThresholdNotification NOTIFICATION-TYPE
+
+    OBJECTS     { managedObjectClass,
+                  managedObjectInstance,
+                  sequenceNumber, 
+    		      perceivedSeverity,
+                  eventTime,
+                  eventTypePem,
+                  probableCause,
+                  directionMask }
+
+    STATUS      current
+
+    DESCRIPTION
+    "The bandwidth threshold function is used to monitor the average
+     bandwidth over the ifBandwidthMeasurementPeriod on each of the
+     device's external interfaces. If the measured average bandwidth
+     (in percents to the maximum possible bandwidth on this particular
+     interface) reaches the ifBandwidthUsageThreshold (given also in
+     percents), the ifBandwidthUsageThresholdNotification is sent.
+     Likewise, when the next measurement period with the average
+     bandwidth lower than the ifBandwidthUsageThreshold is encountered,
+     the ifBandwidthUsageThresholdCeasingNotification is sent.
+
+     This notification is sent when the measured average bandwidth on
+     a particular interface has reached the ifBandwidthUsageThreshold.
+
+     The 'direction' variable shows which counter has triggered the
+     notification: 'in' - incoming traffic counter, 'out' - outgoing
+     traffic counter.
+    
+     Corrective Actions:
+     - None.
+
+     Valid from:                EDA 1.3 R2A
+     
+     Parameters
+      1: Managed object class   ESN108
+      2: Managed object ID      [MAC + PortNo]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Warning
+      5: Event time             [Timestamp is retrieved from an SNTP server]
+      6: Event type             QOS
+      7: Probable cause         Other
+      8: Direction Mask         [Direction of traffic (incoming or outgoing) which triggered the alarm]
+
+     Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+     Ceasing OID:               1.3.6.1.4.1.193.72.800.10.4.0.2 # ifBandwidthUsageThresholdCeasingNotification
+    "
+
+    --Ericsson Diax additional information:
+    --Format: Bandwidth has exceeded threshold from: $2; Probable cause: $7; Direction Mask : $8; Sequence Number: $3;
+    --CeasingId: "agent-addr", 0
+    --CeasingId: "agent-addr", 0
+
+    ::= { ifNotificationTypes 1 }
+
+ifBandwidthUsageThresholdCeasingNotification NOTIFICATION-TYPE
+
+    OBJECTS     { managedObjectClass,
+                  managedObjectInstance,
+                  sequenceNumber, 
+    		      perceivedSeverity,
+                  eventTime,
+                  eventTypePem,
+                  probableCause }
+
+    STATUS      current
+
+    DESCRIPTION
+    "
+     The CEASING counterpart of ifBandwidthUsageThresholdNotification.
+
+     Valid from:                EDA 1.3 R2A
+     
+     Parameters
+      1: Managed object class   ESN108
+      2: Managed object ID      [MAC + PortNo]
+      3: Sequence number        [Alarm sequence number]
+      4: Perceived severity     Ceasing
+      5: Event time             [Timestamp is retrieved from an SNTP server]
+      6: Event type             QOS
+      7: Probable cause         Other
+     
+    "
+    --Ericsson Diax additional information:
+    --Format: Ceasing: Bandwidth usage is normal again from: $2; Probable cause: $7; Sequence Number: $3;
+
+    ::= { ifNotificationTypes 2 }
+    
+dot3PhyModeTable OBJECT-TYPE
+
+    SYNTAX      SEQUENCE OF Dot3PhyModeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This is to modify the duplex mode and speed for each port.
+     This is an extension to RFC2665.
+    "
+
+    ::= { dot3Objects 1 }
+
+    
+dot3PhyModeEntry OBJECT-TYPE
+
+    SYNTAX      Dot3PhyModeEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+
+    DESCRIPTION
+    "
+	 This is an entry in the dot3PhyModeTable
+    "
+
+    INDEX  { dot3PhyModeIndex }
+
+    ::= { dot3PhyModeTable 1 }
+
+
+Dot3PhyModeEntry ::=
+
+    SEQUENCE {
+              dot3PhyModeIndex  InterfaceIndex,
+              dot3PhyMode       INTEGER
+             }
+
+
+dot3PhyModeIndex OBJECT-TYPE
+
+    SYNTAX      InterfaceIndex
+    MAX-ACCESS  not-accessible
+    STATUS      current
+
+    DESCRIPTION
+    "
+	 This is an index to the dot3PhyModeTable. The indices are 1-based.
+    "
+
+    ::= { dot3PhyModeEntry 1 }
+
+
+dot3PhyMode OBJECT-TYPE
+
+    SYNTAX      INTEGER { invalid(0), autoNeg(1), halfDuplex10(2), halfDuplex100(3),
+                          fullDuplex10(4), fullDuplex100(5), fullDuplex1000(6)}
+    MAX-ACCESS  read-write
+    
+    STATUS      current
+
+    DESCRIPTION
+    "
+	 This describes the duplex mode and speed for each port.
+     This is an extension to RFC2665 where the duplex status and interface speed
+     can be modifed for each port.
+     For ports 1-8, allowed values are autoNeg, halfDuplex10, halfDuplex100,
+     fullDuplex10, fullDuplex100.
+     Setting is not allowed for port 9. It can be only read.
+     For port 9, the value retuned indicates the type of SFP module inserted.
+     If no SFP module is inserted, invalid(0) is returned.
+     If 100Mbps SFP module is inserted, fullDuplex100(5) is returned.
+     If 1000Mbs SFP module is inserted, fullDuplex1000(6) is returned.
+    "
+
+    ::= { dot3PhyModeEntry 2 }
+
+    
+
+END
+    

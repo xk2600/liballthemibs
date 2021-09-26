@@ -1,0 +1,1027 @@
+          ADSLATUR-MIB DEFINITIONS ::= BEGIN
+          IMPORTS
+	     MODULE-IDENTITY, OBJECT-TYPE,
+	     NOTIFICATION-TYPE, IpAddress, enterprises 
+	          FROM SNMPv2-SMI
+	     DateAndTime, RowStatus 
+	          FROM SNMPv2-TC
+	     ifIndex 
+	     	  FROM RFC1213-MIB
+	     atmVclVpi, atmVclVci 
+	     	  FROM ATM-MIB;
+
+          adslAtur MODULE-IDENTITY
+          LAST-UPDATED "0307300600Z"
+          ORGANIZATION "Conexant Broadband Communication (Shanghai) Ltd. Co."
+          CONTACT-INFO "Tie Hu Zhang
+                        Postal:  LT Square Building, Suite 3001
+                                 No.500 Chengdu North Road
+                                 Shanghai 200003 CHINA
+                        Tel:     86-21-63612515
+                        Fax:     86-21-63612516
+                        E-mail:  tiehu.zhang@conexant.com"
+          DESCRIPTION  "Adsl Atur Private Mib."
+          ::= { enterprises 4900 1 2 2 }
+
+          adslAturSysInfo		OBJECT IDENTIFIER ::= { adslAtur 1 }
+          adslAturConfig		OBJECT IDENTIFIER ::= { adslAtur 2 }
+          adslAturSysLog		OBJECT IDENTIFIER ::= { adslAtur 3 }
+          adslAturFirmwareUpgrade	OBJECT IDENTIFIER ::= { adslAtur 4 }
+          adslAturDiagnose		OBJECT IDENTIFIER ::= { adslAtur 5 }
+          adslAturTrap			OBJECT IDENTIFIER ::= { adslAtur 6 }
+
+
+          -- SysInfo Module --
+
+          adslAturSysInfoSystemTime OBJECT-TYPE
+	     SYNTAX DateAndTime
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "System time specified by Manager after 
+		      the trap adslAturTrapColdStart has received."
+	     ::= { adslAturSysInfo 1 }
+
+          adslAturSysInfoMagicNumber OBJECT-TYPE
+	     SYNTAX OCTET STRING (SIZE (16))
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "Magic Number. This magic number is generated based on the 
+		      system configuration change, and it will change if system 
+		      configuraiton is changed. It can be used to compare with 
+		      previous known magic number to detect system configuration 
+		      change. 
+
+		      Trap adslAturTrapColdStart will report this information to 
+		      SNMP Manager when RTU coldstarts. After that, Manager can 
+		      get this information any time."
+	     ::= { adslAturSysInfo 2 }
+
+          adslAturSysInfoFirmwareVersion OBJECT-TYPE
+	     SYNTAX OCTET STRING
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "Firmware Version. Trap adslAturTrapColdStart will report 
+		      this information to Manager when RTU coldstarts. 
+		      After that, Manager can get this information any time."
+	     ::= { adslAturSysInfo 3 }
+
+          adslAturSysInfoPID OBJECT-TYPE
+	     SYNTAX OCTET STRING
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "Product ID. Trap adslAturTrapColdStart will report 
+		      this information to Manager when RTU coldstarts. 
+		      After that, Manager can get this information any time."
+	     ::= { adslAturSysInfo 4 }
+
+          adslAturSysInfoVID OBJECT-TYPE
+	     SYNTAX INTEGER
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "Vendor ID. Trap adslAturTrapColdStart will report 
+		      this information to Manager when RTU coldstarts. 
+		      After that, Manager can get this information any time."
+	     ::= { adslAturSysInfo 5 }
+
+          adslAturSysInfoDataPumpVersion OBJECT-TYPE
+	     SYNTAX OCTET STRING
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "DataPump version. It is the firmware version of the ADSL
+		      data pump module. If the firmware of the data pump module 
+		      is not separated from the RTU's firmware, it MIGHT have 
+		      the same version number as the RTU's firmware. 
+		      
+		      Trap adslAturTrapColdStart will report 
+		      this information to Manager when RTU coldstarts. 
+		      After that, Manager can get this information any time."
+	     ::= { adslAturSysInfo 6 }
+          	
+          -- Config Module --
+
+          -- System  
+          adslAturConfigSystem OBJECT IDENTIFIER ::= { adslAturConfig 1 }
+
+          adslAturConfigSystemReboot OBJECT-TYPE
+	     SYNTAX INTEGER { 
+	             reboot(1) 
+	     }
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "RTU reboot. When Manager set this var to reboot(1), 
+		      the RTU will reboot immediately. Other values except 
+		      reboot(1) will be ignored.
+		      
+		      When RTU reboots, any modified and saved configuration 
+                     take effect. "
+	     ::= { adslAturConfigSystem 1 }
+
+          adslAturConfigSystemSave OBJECT-TYPE
+	     SYNTAX INTEGER { 
+	             save(1)
+	     }
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "Save configuration to RTU's non-volatile memory. When 
+		      Manager set this var to save(1), the RTU will save current 
+		      configuration to non-volatile memory such as flash. 
+		      Other values except save(1) will be ignored."
+	     ::= { adslAturConfigSystem 2 }
+
+          adslAturConfigSystemReset OBJECT-TYPE
+	     SYNTAX INTEGER { 
+	             resetToNull(1),
+	             resetToDefault(2)
+	     }
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "Reset to RTU's null configuration or default configuration. When
+		      Manager set this var to resetToNull(1), the RTU will be resetted to null 
+		      configuration; When Manager set this var to resetToDefault(1), the RTU 
+		      will be resetted to default configuration. Other values will be ignored."
+	     ::= { adslAturConfigSystem 3 }
+
+          adslAturConfigSystemTrapEnable OBJECT-TYPE
+	     SYNTAX INTEGER { 
+	             disabled(1),
+	             enabled(2)
+	     }
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "Toggle RTU Trap Send status. 
+		     
+		      The default value is enabled(2).
+		      
+		      When Manager set this var to disabled(1), the RTU will not send trap 
+		      any more until Manager set it back to enabled(2) again; 
+		      
+		      adslAturConfigSystemTrapEnable will always start as enabled 
+		      when RTU boots up, and the modified value of adslAturConfigSystemTrapEnable
+				will not be saved when adslAturConfigSystemSave is set to 1(save).
+		      
+		      Other values will be ignored."
+             DEFVAL { 2 }
+	     ::= { adslAturConfigSystem 4 }
+
+          -- Adsl Line
+          adslAturConfigAdslLine OBJECT IDENTIFIER ::= { adslAturConfig 2 }
+
+          adslAturConfigAdslLineTrellis OBJECT-TYPE
+	     SYNTAX INTEGER {
+		     disabled(1),
+		     enabled(2)
+	     }
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "Adsl trellis coding, disabled or enabled. 
+		      See G.DMT for detail."
+	     ::= { adslAturConfigAdslLine 1 }
+
+          adslAturConfigAdslLineHandshake OBJECT-TYPE
+	     SYNTAX INTEGER {
+		     autosense-g-dmt-first(1),
+		     autosense-t1-413-first(2),
+		     g-dmt-or-g-lite(3),
+		     t1-413(4),
+		     g-dmt(5),
+		     g-lite(6)
+	     }
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "Adsl handshake protocol selection.
+		      See G.DMT for detail."
+	     ::= { adslAturConfigAdslLine 2 }
+
+          adslAturConfigAdslLineBitSwapping OBJECT-TYPE
+	     SYNTAX INTEGER {
+		     disabled(1),
+		     enabled(2)
+	     }
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "Bit swapping, disabled or enabled.
+		      See G.DMT for detail."
+	     ::= { adslAturConfigAdslLine 3 }
+
+          -- Pvc Table --
+          adslAturPvcTable OBJECT-TYPE
+	     SYNTAX SEQUENCE OF AdslAturPvcEntry
+	     MAX-ACCESS not-accessible
+	     STATUS current
+	     DESCRIPTION
+		     "The table includes the following extension items about 
+		      Pvc configuration:
+
+		      1. encapsulation (adslAturPvcEncapsulation)
+		      2. bridge        (adslAturPvcBridge)
+		      3. IGMP          (adslAturPvcIGMP)
+		      4. DHCP Client   (adslAturPvcDHCPClient)
+		      
+		      See AdslAturPvcEntry's definition below for detail."
+	     ::= { adslAturConfig 3 }
+
+          adslAturPvcEntry OBJECT-TYPE
+	     SYNTAX AdslAturPvcEntry
+	     MAX-ACCESS not-accessible
+	     STATUS current
+	     DESCRIPTION
+		     "An entry of adslAturPvcTable.
+		      See AdslAturPvcEntry's definition below for detail."
+	     INDEX  { ifIndex, atmVclVpi, atmVclVci }
+	     ::= { adslAturPvcTable 1 }
+
+          AdslAturPvcEntry ::=
+	     SEQUENCE {
+		     adslAturPvcIndex		INTEGER,
+                     adslAturPvcAdminStatus	INTEGER,
+		     adslAturPvcIfIndex		INTEGER,
+		     adslAturPvcEncapsulation	INTEGER,
+		     adslAturPvcBridge		INTEGER,
+		     adslAturPvcIGMP		INTEGER,
+		     adslAturPvcDHCPClient	INTEGER,
+		     adslAturPvcRowStatus	RowStatus
+                  }
+
+          adslAturPvcIndex OBJECT-TYPE
+	     SYNTAX INTEGER
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "The index of Pvc Table. It equals to the PVC instance Id. 
+		      For example, for a RTU with 8 PVC: PVC1 to PVC8, the index 
+		      PVC5 should be 5."
+	     ::= { adslAturPvcEntry 1 }
+
+          adslAturPvcAdminStatus OBJECT-TYPE
+             SYNTAX INTEGER {
+                     disabled(1),
+                     enabled(2)
+             }
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "This Pvc's admin status, enabled or disabled."
+	     ::= { adslAturPvcEntry 2 }
+
+          adslAturPvcIfIndex OBJECT-TYPE
+	     SYNTAX INTEGER
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "This PVC interface's location in ifTable, will be found  
+		      by walking the entries with PVC types in ifTable and 
+		      a specific instance Id(adslAturPvcIndex). "
+	     ::= { adslAturPvcEntry 3 }
+
+          adslAturPvcEncapsulation OBJECT-TYPE
+	     SYNTAX INTEGER {
+		     encapPPPoA-VC-Mux(1),
+		     encap1483-Bridged-IP-LLC(2),
+		     encap1483-Routed-IP-LLC(3),
+		     encapClassical-IP-over-ATM(4),
+		     encapPPPoE-LLC(5)
+	     }
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "This Pvc's encapsulation."
+	     ::= { adslAturPvcEntry 4 }
+
+          adslAturPvcBridge OBJECT-TYPE
+             SYNTAX INTEGER {
+                     disabled(1),
+                     enabled(2)
+             }
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+	             "This Pvc's bridge mode, disabled or enabled.
+	              If a PVC is bridge enabled, packets from this PVC side are
+	              transparently bridged to the LAN side, and packets from LAN 
+	              side are transparently bridged to this PVC. "
+	   ::= { adslAturPvcEntry 5 }
+
+          adslAturPvcIGMP OBJECT-TYPE
+             SYNTAX INTEGER {
+                     disabled(1),
+                     enabled(2)
+             }
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "This Pvc's IGMP mode, disabled or enabled."
+	     ::= { adslAturPvcEntry 6 }
+
+          adslAturPvcDHCPClient OBJECT-TYPE
+             SYNTAX INTEGER {
+                     disabled(1),
+                     enabled(2)
+             }
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "This Pvc's DHCP Client mode,  disabled or enabled.
+
+                      if a PVC's DHCP client is enabled, A DHCP client 
+                      will be started to get an IP configuration from DHCP servers."
+	     ::= { adslAturPvcEntry 7 }
+	     
+	  adslAturPvcRowStatus OBJECT-TYPE
+             SYNTAX          RowStatus
+             MAX-ACCESS      read-create
+             STATUS          current
+             DESCRIPTION
+                     "This object is used to create a new row or modify or
+                      delete an existing row in this table."
+          ::= { adslAturPvcEntry 8 }
+
+          -- PPP Table --
+          adslAturPPPTable OBJECT-TYPE
+	     SYNTAX SEQUENCE OF AdslAturPPPEntry
+	     MAX-ACCESS not-accessible
+	     STATUS current
+	     DESCRIPTION
+		     "The table extends ppp configuration by including:
+		     
+		      1. Service name        (adslAturPPPoEServiceName)
+		      2. Disconnect Timeout  (adslAturPPPDisconnectTimeout)
+		      3. MSS                 (adslAturPPPMSS)
+		      
+		      See AdslAturPPPEntry's definition below for detail."
+	     ::= { adslAturConfig 4 }
+
+          adslAturPPPEntry OBJECT-TYPE
+	     SYNTAX AdslAturPPPEntry
+	     MAX-ACCESS not-accessible
+	     STATUS current
+	     DESCRIPTION
+		     "An entry of adslAturPPPTable.
+		      See AdslAturPPPEntry's definition below for detail."
+	     INDEX  { ifIndex }
+	     ::= { adslAturPPPTable 1 }
+
+          AdslAturPPPEntry ::=
+	     SEQUENCE {
+		     adslAturPPPIndex			INTEGER,
+                     adslAturPPPAdminStatus      	INTEGER,
+		     adslAturPPPIfIndex			INTEGER,
+		     adslAturPPPPhysicalIfIndex		INTEGER,
+		     adslAturPPPoEServiceName 		OCTET STRING,
+		     adslAturPPPDisconnectTimeout	INTEGER,
+		     adslAturPPPMSS 			INTEGER,
+		     adslAturPPPRowStatus		RowStatus
+                  }
+
+          adslAturPPPIndex OBJECT-TYPE
+	     SYNTAX INTEGER
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "The index of PPP Table. It equals to the PPP instance Id. 
+		      For example, for RTU with a maximum 16 PPP: PPP1 through 
+		      PPP16, the index of PPP2 should be 2."
+	     ::= { adslAturPPPEntry 1 }
+
+          adslAturPPPAdminStatus OBJECT-TYPE
+             SYNTAX INTEGER {
+                     disabled(1),
+                     enabled(2)
+             }
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "This PPP entry's admin status, disabled or enabled."
+	     ::= { adslAturPPPEntry 2 }
+
+          adslAturPPPIfIndex OBJECT-TYPE
+	     SYNTAX INTEGER
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "This PPP entry's location in ifTable, will be found  
+		      by walking the entries with PPP types in ifTable and 
+		      a specific instance Id(adslAturPPPIndex)."
+	     ::= { adslAturPPPEntry 3 }
+
+          adslAturPPPPhysicalIfIndex OBJECT-TYPE
+	     SYNTAX INTEGER(150000..150007)
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "The location of this PPP entry's physical interface
+		      (e.g. the PVC interface)in ifTable."
+	     ::= { adslAturPPPEntry 4 }
+
+          adslAturPPPoEServiceName OBJECT-TYPE
+	     SYNTAX OCTET STRING(SIZE (0..31))
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "PPPOE Service Name of this PPP connection if the underlying 
+		      interface is of PPPOE encapsulation.
+		     
+                      A NULL string can be used to specify ANY service name. "
+	     ::= { adslAturPPPEntry 5 }
+
+          adslAturPPPDisconnectTimeout OBJECT-TYPE
+	     SYNTAX INTEGER(0..32767)
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "PPP Idle Disconnect Timeout. 
+
+                      If a non-zero adslAturPPPDisconnectTimeout is specified, 
+                      the PPP connection will be disconnected if there is no 
+                      outbound traffic on the PPP for the specified period. 
+                     
+                      If adslAturPPPDisconnectTimeout is 0, the PPP connection 
+                      will not be disconnected just because the connection is 
+                      idle. "
+	     DEFVAL {0}
+	     ::= { adslAturPPPEntry 6 }
+
+          adslAturPPPMSS OBJECT-TYPE
+	     SYNTAX INTEGER(0..32767)
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "PPP MSS(Maximum Segment Size).
+		     
+		      To ensure interoperability with other hosts on the Internet,
+		      The MSS of any TCP connection established on this PPP 
+		      connection will be reduced to the specified value if a 
+                      larger value is requested during TCP handshake."
+	     DEFVAL {1432}
+	     ::= { adslAturPPPEntry 7 }
+
+  	  adslAturPPPRowStatus OBJECT-TYPE
+             SYNTAX          RowStatus
+             MAX-ACCESS      read-create
+             STATUS          current
+             DESCRIPTION
+                     "This object is used to create a new row or modify or
+                      delete an existing row in this table."
+             ::= { adslAturPPPEntry 8 }
+
+          -- IP Table --
+          adslAturIPTable OBJECT-TYPE
+	     SYNTAX SEQUENCE OF AdslAturIPEntry
+	     MAX-ACCESS not-accessible
+	     STATUS current
+	     DESCRIPTION
+		     "The table includes the following:
+		     
+		      1. IP Address   (adslAturIPAddress)
+		      2. Subnet Mask  (adslAturSubnetMask)
+		      3. Gateway      (adslAturGateway)
+		      
+		      See AdslAturIPEntry's definition below for detail."
+	     ::= { adslAturConfig 5 }
+
+          adslAturIPEntry OBJECT-TYPE
+	     SYNTAX AdslAturIPEntry
+	     MAX-ACCESS not-accessible
+	     STATUS current
+	     DESCRIPTION
+		     "An entry of adslAturIPTable.
+		      See AdslAturIPEntry's definition below for detail."
+	     INDEX  { adslAturIpIndex }
+	     ::= { adslAturIPTable 1 }
+
+          AdslAturIPEntry ::=
+	     SEQUENCE {
+		     adslAturIpIndex		INTEGER,
+		     adslAturIpAdminStatus	INTEGER,
+		     adslAturIpPhysicalIfIndex	INTEGER,
+		     adslAturIPAddress		IpAddress,
+		     adslAturSubnetMask		IpAddress,
+		     adslAturGateway 		IpAddress,
+		     adslAturIPRowStatus	RowStatus
+                  }
+
+          adslAturIpIndex OBJECT-TYPE
+	     SYNTAX INTEGER
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "The index of IP Table."
+	     ::= { adslAturIPEntry 1 }
+
+          adslAturIpAdminStatus OBJECT-TYPE
+             SYNTAX INTEGER {
+                     disabled(1),
+                     enabled(2)
+             }
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "This IP entry's admin status, disabled or enabled."
+	     ::= { adslAturIPEntry 2 }
+
+          adslAturIpPhysicalIfIndex OBJECT-TYPE
+	     SYNTAX INTEGER
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "The location of this IP entry's physical interface 
+		      (either PVC or PPP)in ifTable."
+	     ::= { adslAturIPEntry 3 }
+
+          adslAturIPAddress OBJECT-TYPE
+	     SYNTAX IpAddress
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "This IP entry's IP address."
+	     ::= { adslAturIPEntry 4 }
+
+          adslAturSubnetMask OBJECT-TYPE
+	     SYNTAX IpAddress
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "This IP entry's Subnet Mask."
+	     ::= { adslAturIPEntry 5 }
+
+          adslAturGateway OBJECT-TYPE
+	     SYNTAX IpAddress
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "This IP entry's Gateway."
+	     ::= { adslAturIPEntry 6 }
+
+  	  adslAturIPRowStatus OBJECT-TYPE
+             SYNTAX          RowStatus
+             MAX-ACCESS      read-create
+             STATUS          current
+             DESCRIPTION
+                     "This object is used to create a new row or modify or
+                      delete an existing row in this table."
+             ::= { adslAturIPEntry 7 }
+
+          -- DHCP ServerTable --
+          adslAturDHCPServerTable OBJECT-TYPE
+	     SYNTAX SEQUENCE OF AdslAturDHCPServerEntry
+	     MAX-ACCESS not-accessible
+	     STATUS current
+	     DESCRIPTION
+		     "The DHCP Server table.
+		      See AdslAturDHCPServerEntry's definition below for detail."
+	     ::= { adslAturConfig 6 }
+
+          adslAturDHCPServerEntry OBJECT-TYPE
+	     SYNTAX AdslAturDHCPServerEntry
+	     MAX-ACCESS not-accessible
+	     STATUS current
+	     DESCRIPTION
+		     "An entry of adslAturDHCPServerTable.
+		      See AdslAturDHCPServerEntry's definition below for detail."
+	     INDEX  { adslAturDHCPServerIndex }
+	     ::= { adslAturDHCPServerTable 1 }
+
+          AdslAturDHCPServerEntry ::=
+	     SEQUENCE {
+		     adslAturDHCPServerIndex			INTEGER,
+		     adslAturDHCPServerAdminStatus		INTEGER,
+		     adslAturDHCPServerLowerIfIndex		INTEGER,
+		     adslAturDHCPServerIpIndex			INTEGER,
+		     adslAturDHCPServerAddressPoolSelection	INTEGER,
+		     adslAturDHCPServerAddressPoolBeginIp	IpAddress,
+		     adslAturDHCPServerAddressPoolEndIp		IpAddress,
+		     adslAturDHCPServerGatewaySelection		INTEGER,
+		     adslAturDHCPServerGatewayIp		IpAddress,
+		     adslAturDHCPServerLeaseTime		INTEGER,
+		     adslAturDHCPServerRowStatus		RowStatus
+                  }
+
+          adslAturDHCPServerIndex OBJECT-TYPE
+	     SYNTAX INTEGER
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "The index of DHCP Server table."
+	     ::= { adslAturDHCPServerEntry 1 }
+
+          adslAturDHCPServerAdminStatus OBJECT-TYPE
+             SYNTAX INTEGER {
+                     disabled(1),
+                     enabled(2)
+             }
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "This DHCP Server entry's admin status, disabled or enabled."
+	     ::= { adslAturDHCPServerEntry 2 }
+
+          adslAturDHCPServerLowerIfIndex OBJECT-TYPE
+	     SYNTAX INTEGER
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "The IfIndex of the interface on top which the DHCP 
+		      server operates. "
+	     ::= { adslAturDHCPServerEntry 3 }
+
+          adslAturDHCPServerIpIndex OBJECT-TYPE
+	     SYNTAX INTEGER
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+                    "the IpIndex of adslAturIPEntry, on top of which 
+                     DHCP server operates." 
+	     ::= { adslAturDHCPServerEntry 4 }
+
+          adslAturDHCPServerAddressPoolSelection OBJECT-TYPE
+             SYNTAX INTEGER {
+                     systemAllocated(1),
+                     userDefined(2)
+             }
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "How the address pool of the DHCP server is allocated.
+		     
+                      If systemAllocated is selected, DHCP server allocates
+                      IP address pool based on RTU LAN and WAN configuration. 
+
+                      If userDefined is selected, DHCP server uses the address
+                      pool as specified by adslAturDHCPServerAddressPoolBeginIp,
+                      adslAturDHCPServerAddressPoolEndIp, 
+                      adslAturDHCPServerGatewaySelection,
+                      adslAturDHCPServerGatewayIp, and
+                      adslAturDHCPServerLeaseTime. "
+	     ::= { adslAturDHCPServerEntry 5 }
+
+          adslAturDHCPServerAddressPoolBeginIp OBJECT-TYPE
+	     SYNTAX IpAddress
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "The begin IP address of DHCP IP Pool."
+	     ::= { adslAturDHCPServerEntry 6 }
+
+          adslAturDHCPServerAddressPoolEndIp OBJECT-TYPE
+	     SYNTAX IpAddress
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "The End IP address of DHCP IP Pool."
+	     ::= { adslAturDHCPServerEntry 7 }
+
+          adslAturDHCPServerGatewaySelection OBJECT-TYPE
+             SYNTAX INTEGER {
+                     automatic(1),
+                     userDefined(2)
+             }
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "How the gateway IP address is determined."
+	     ::= { adslAturDHCPServerEntry 8 }
+
+          adslAturDHCPServerGatewayIp OBJECT-TYPE
+	     SYNTAX IpAddress
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "The user defined gateway IP address of DHCP IP Pool."
+	     ::= { adslAturDHCPServerEntry 9 }
+
+          adslAturDHCPServerLeaseTime OBJECT-TYPE
+	     SYNTAX INTEGER(0..2147483647)
+	     MAX-ACCESS read-create
+	     STATUS current
+	     DESCRIPTION
+		     "The lease time in terms of seconds."
+	     ::= { adslAturDHCPServerEntry 10 }
+
+  	  adslAturDHCPServerRowStatus OBJECT-TYPE
+             SYNTAX RowStatus
+             MAX-ACCESS read-create
+             STATUS current
+             DESCRIPTION
+                     "This object is used to create a new row or modify or
+                      delete an existing row in this table."
+             ::= { adslAturDHCPServerEntry 11 }
+
+          -- NAT
+          adslAturNat OBJECT IDENTIFIER ::= { adslAturConfig 7 }
+
+          adslAturNatAdminStatus OBJECT-TYPE
+	     SYNTAX INTEGER {
+		     disabled(1),
+		     nat(2),
+		     napt(3),
+		     dnapt(4)
+	     }
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "NAT Mode: disabled, NAT, NAPT, or dynamic NAPT.
+
+		      NAT mode provides Network Address Translation service.  
+		      Static NAT sessions are required.
+
+		      NAPT mode provides Network Address and Port Translation.  
+		      Static NAT sessions are required at present for multiple 
+		      WAN configuration, but not for single WAN configuration. 
+
+		      Dynamic NAPT mode provides Network Address and Port 
+	              Translation.  No static NAT sessions are required.
+		     "
+	     ::= { adslAturNat 1 }
+
+
+          -- SysLog Module --
+
+          adslAturSysLogBeginTime OBJECT-TYPE
+	     SYNTAX DateAndTime
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "The start point of SysLog specified by Manager."
+	     ::= { adslAturSysLog 1 }
+	
+          adslAturSysLogEndTime OBJECT-TYPE
+	     SYNTAX DateAndTime
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "The end point of SysLog specified by Manager."
+	     ::= { adslAturSysLog 2 }
+
+          -- SysLog Table --
+          adslAturSysLogTable OBJECT-TYPE
+	     SYNTAX SEQUENCE OF AdslAturSysLogEntry
+	     MAX-ACCESS not-accessible
+	     STATUS current
+	     DESCRIPTION
+		     "SysLog table confined by adslAturSysLogBeginTime 
+		     and adslAturSysLogEndTime. It is a subset of the 
+		     actual SysLog table in RTU."
+	     ::= { adslAturSysLog 3 }
+
+          adslAturSysLogEntry OBJECT-TYPE
+	     SYNTAX AdslAturSysLogEntry
+	     MAX-ACCESS not-accessible
+	     STATUS current
+	     DESCRIPTION
+		     "An entry of adslAturSysLogTable."
+	     INDEX { adslAturSysLogIndex }
+	     ::= { adslAturSysLogTable 1 }
+
+          AdslAturSysLogEntry ::=
+	     SEQUENCE {
+		     adslAturSysLogIndex	INTEGER,
+		     adslAturSysLogContent	OCTET STRING
+                  }
+
+          adslAturSysLogIndex OBJECT-TYPE
+	     SYNTAX INTEGER
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "The index of adslAturSysLogEntry."
+	     ::= { adslAturSysLogEntry 1 }
+
+          adslAturSysLogContent OBJECT-TYPE
+	     SYNTAX OCTET STRING
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "The content of adslAturSysLogEntry."
+	     ::= { adslAturSysLogEntry 2 }
+
+          adslAturSysLogTrigger OBJECT-TYPE
+	     SYNTAX INTEGER { 
+	             start(1) 
+	     }
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "This is the trigger to start syslog fetch.
+		      When Manager set this var to start(1), 
+		      the Manager will begin to fetch all the entries
+		      in adslAturSysLogTable. Other values except 
+		      start(1) will be ignored."
+	     ::= { adslAturSysLog 4 }
+
+
+          -- Firmware Upgrade Module --
+
+          adslAturUpgradeIP OBJECT-TYPE
+	     SYNTAX IpAddress
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "The IP Address where to upgrade."
+	     ::= { adslAturFirmwareUpgrade 1 }
+
+--          adslAturUpgradePORT OBJECT-TYPE
+--	     SYNTAX INTEGER
+--	     MAX-ACCESS read-write
+--	     STATUS current
+--	     DESCRIPTION
+--		     "The PORT where to upgrade."
+--	     DEFVAL { 21 }
+--	     ::= { adslAturFirmwareUpgrade 2 }
+
+          adslAturUpgradeUSER OBJECT-TYPE
+	     SYNTAX OCTET STRING (SIZE (0..127))
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "The Username required when upgrade."
+	     ::= { adslAturFirmwareUpgrade 3 }
+
+          adslAturUpgradePASSWD OBJECT-TYPE
+	     SYNTAX OCTET STRING (SIZE (0..127))
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "The Password required when upgrade."
+	     ::= { adslAturFirmwareUpgrade 4 }
+
+          adslAturUpgradePATH OBJECT-TYPE
+	     SYNTAX OCTET STRING (SIZE (4..255))
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "The PATH(and FILENAME) of the file to be upgraded."
+	     ::= { adslAturFirmwareUpgrade 5 }
+
+          adslAturUpgradeStatus OBJECT-TYPE
+	     SYNTAX INTEGER {
+                     notUpgrade(1), -- never upgraded after power-on
+		     connectOK(2),
+		     connectFailed(3),
+		     downloading(4),
+		     downloadOK(5),
+		     downloadFailed(6),
+		     saving(7),
+		     saveFailed(8),
+		     upgradeOK(9),
+		     upgradeFailed(10)
+	     }
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "This is the state indication when upgrading firmware.
+		      After having finished saving firmware to non-volatile
+		      memory, RTU agent will send a trap
+		      (adslAturTrapUpgradeSuccess) to Manager to 
+		      indicate upgrade status."
+	     ::= { adslAturFirmwareUpgrade 6 }
+
+          adslAturFTPOperCode OBJECT-TYPE
+	     SYNTAX INTEGER {
+	             firmwareUpgrade(1),
+		     throughputTest(2),
+		     dataBackup(3)
+	     }
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "The FTP operation code. When Manager set this var to 
+		      firmwareUpgrade(1), the RTU will begin to upgrade firmware. 
+		      Other values, say, throughputTest(2) and dataBackup(3) 
+		      are not supported yet."
+	     ::= { adslAturFirmwareUpgrade 7 }
+
+
+          --  Diagnose Module --
+
+          adslAturDiagnosePing OBJECT IDENTIFIER ::= { adslAturDiagnose 1 }
+
+          adslAturPingAddr OBJECT-TYPE
+	     SYNTAX OCTET STRING (SIZE (4..255))
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "The aim address to be pinged."
+	     DEFVAL { "www.conexant.com" }
+	     ::= { adslAturDiagnosePing 1 }
+
+          adslAturPingPkgSize OBJECT-TYPE
+	     SYNTAX INTEGER(32..4096)
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "The size(bytes) of a packet to be pinged."
+	     DEFVAL { 32 }
+	     ::= { adslAturDiagnosePing 2 }
+
+          adslAturPingCount OBJECT-TYPE
+	     SYNTAX INTEGER(0..32767)
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "The count of packets to be pinged."
+	     DEFVAL { 4 }
+	     ::= { adslAturDiagnosePing 3 }
+
+          adslAturPingResult OBJECT-TYPE
+	     SYNTAX OCTET STRING (SIZE (0..255))
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "The result of ping. 
+		      The format is following:
+		        Aim IP Address=xxx.xxx.xxx.xxx 
+		        Sent=xx 
+		        Received=xx 
+		        Lost=xx 
+		        Min=xxms 
+		        Max=xxms 
+		        Average=xxms"
+	     ::= { adslAturDiagnosePing 4 }
+
+          adslAturPingStatus OBJECT-TYPE
+	     SYNTAX INTEGER {
+	             notStarted(1),
+	             started(2),
+	             over(3)
+	     }
+	     MAX-ACCESS read-only
+	     STATUS current
+	     DESCRIPTION
+		     "The status of ping. 
+		      NotStarted(1) means the ping is not started;
+		      Started(2) means the ping is in progress;
+		      Over(3) means the ping is over."
+	     ::= { adslAturDiagnosePing 5 }
+
+          adslAturPingTrigger OBJECT-TYPE
+	     SYNTAX INTEGER { 
+   		     start(1) 
+	     }
+	     MAX-ACCESS read-write
+	     STATUS current
+	     DESCRIPTION
+		     "This is the trigger to start PING. When Manager set this var to start(1), 
+		      the RTU will start to ping immediately. Other values except 
+		      start(1) will be ignored."
+	     ::= { adslAturDiagnosePing 6 }
+
+
+          -- TRAP --
+
+          adslAturTrapColdStart NOTIFICATION-TYPE
+	     OBJECTS	{ adslAturSysInfoMagicNumber,
+	                  adslAturSysInfoFirmwareVersion,
+	                  adslAturSysInfoPID,
+	                  adslAturSysInfoVID,
+	                  adslAturSysInfoDataPumpVersion }
+	     STATUS 	current
+	     DESCRIPTION
+		     "The TRAP is to report RTU coldstart to Manager. RTU agent 
+		      will send this trap once every minute until Manager got it. 
+		      Manager will specify RTU system time(adslAturSysInfoSystemTime)
+		      right after having got the trap.
+		      Parameters:		                  
+		                  Magic Number     = 00112233445566778899AABBCCDDEEFF
+		                  Version Number   = 110502_REL4_S
+		                  Product ID       = 0x1234 
+		                  Vendor ID        = 0x0572
+		                  DataPump Version = 3.25 "
+	     ::= { adslAturTrap 0 1 }
+
+          adslAturTrapUpgradeDone NOTIFICATION-TYPE
+	     OBJECTS	{ adslAturUpgradeStatus }
+	     STATUS 	current
+	     DESCRIPTION
+		     "The TRAP is to report RTU upgrade status to Manager."
+	     ::= { adslAturTrap 0 2 }
+
+          END
+--****************************************************************************
+--
+--   Name:           CnxtMibDb.c
+--
+--   Description:    Conexant Private MIB
+--
+--   Copyright:      (c) 2003 Conexant Systems Inc.
+--
+--   Revision:   Date:       Author:             Description:
+--
+--   00.00.0000  07/10/03    Haibo Xu    			 Created.
+--
+--
+--   $Author:   xuh  $
+--   $Revision:   1.2  $
+--   $Modtime:   13 Aug 2003 17:57:00  $
+--****************************************************************************

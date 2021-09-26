@@ -1,0 +1,1365 @@
+
+
+-- Mera SNMP parameters
+
+
+MERA-MIB DEFINITIONS ::= BEGIN
+
+    IMPORTS
+        OBJECT-TYPE          FROM RFC-1212
+        enterprises          FROM RFC1155-SMI
+        DisplayString        FROM SNMPv2-TC
+        TRAP-TYPE            FROM RFC-1215;
+
+
+mera    OBJECT IDENTIFIER ::= { enterprises 999 }
+
+    mvts    OBJECT IDENTIFIER ::= { mera 10 }
+
+    -- Simple SNMP items 
+
+        active_calls       OBJECT-TYPE
+            SYNTAX         INTEGER
+            ACCESS         read-only
+            STATUS         mandatory
+            DESCRIPTION    
+                           ""
+        ::= { mvts 1 }
+        avg5_calls         OBJECT-TYPE
+            SYNTAX         INTEGER
+            ACCESS         read-only
+            STATUS         mandatory
+            DESCRIPTION
+                           ""
+        ::= { mvts 2 }
+        max_calls          OBJECT-TYPE
+            SYNTAX         INTEGER
+            ACCESS         read-only
+            STATUS         mandatory
+            DESCRIPTION
+                           ""
+        ::= { mvts 3 }
+        uptime             OBJECT-TYPE
+            SYNTAX         INTEGER
+            ACCESS         read-only
+            STATUS         mandatory
+            DESCRIPTION
+                           ""
+        ::= { mvts 4 }
+        stat_time          OBJECT-TYPE
+            SYNTAX         INTEGER
+            ACCESS         read-only
+            STATUS         mandatory
+            DESCRIPTION
+                           ""
+        ::= { mvts 5 }
+        call_duration      OBJECT-TYPE
+            SYNTAX         INTEGER
+            ACCESS         read-only
+            STATUS         mandatory
+            DESCRIPTION
+                           ""
+        ::= { mvts 6 }
+        received_calls     OBJECT-TYPE
+            SYNTAX         INTEGER
+            ACCESS         read-only
+            STATUS         mandatory
+            DESCRIPTION
+                           ""
+        ::= { mvts 7 }
+        normal_calls       OBJECT-TYPE
+            SYNTAX         INTEGER
+            ACCESS         read-only
+            STATUS         mandatory
+            DESCRIPTION
+                           ""
+        ::= { mvts 8 }
+        failed_calls       OBJECT-TYPE
+            SYNTAX         INTEGER
+            ACCESS         read-only
+            STATUS         mandatory
+            DESCRIPTION
+                           ""
+        ::= { mvts 9 }
+        rejected_calls     OBJECT-TYPE
+            SYNTAX         INTEGER
+            ACCESS         read-only
+            STATUS         mandatory
+            DESCRIPTION
+                           ""
+        ::= { mvts 10 }
+
+
+	-- the Originators Table
+
+        srcTable OBJECT-TYPE
+           SYNTAX  SEQUENCE OF SrcEntry
+           ACCESS  not-accessible
+           STATUS  mandatory
+           DESCRIPTION
+                     ""
+        ::= { mvts 101 }
+
+        srcEntry    OBJECT-TYPE
+            SYNTAX  SrcEntry
+            ACCESS  not-accessible
+            STATUS  mandatory
+            DESCRIPTION
+                      ""
+            INDEX   { src_index }
+        ::= { srcTable 1 }
+
+
+        SrcEntry ::=                                  	
+            SEQUENCE {
+                src_index
+                      INTEGER,
+                src_name
+                      DisplayString,
+                src_stat_uptime
+                      DisplayString,
+                src_lastupdate
+                      DisplayString,
+                src_asr
+                      INTEGER,
+                src_asr_std
+                      INTEGER,
+                src_acd
+                      DisplayString,
+                src_average_qos
+                      INTEGER,
+                src_maxload
+                      INTEGER,
+                src_active_calls
+                      INTEGER,
+                src_totaltime
+                      DisplayString,
+                src_calls_received
+                      INTEGER,
+                src_calls_normal
+                      INTEGER,
+                src_calls_zero_normal
+                      INTEGER,
+                src_calls_failed
+                      INTEGER,
+                src_calls_zero_failed
+                      INTEGER,
+                src_kb_received
+                      INTEGER,
+                src_kb_sent
+                      INTEGER
+               }
+          
+          src_index   OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+              ::= { srcEntry 1 }
+          src_name OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 2 }
+          src_stat_uptime OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 3 }
+          src_lastupdate OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 4 }
+          src_asr OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 5 }
+          src_asr_std OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 6 }
+          src_acd OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 7 }
+          src_average_qos OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 8 }
+          src_maxload OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 9 }
+          src_active_calls OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 10 }
+          src_totaltime OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 11 }
+          src_calls_received OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 12 }
+          src_calls_normal OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 13 }
+          src_calls_zero_normal OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 14 }
+          src_calls_failed OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 15 }
+          src_calls_zero_failed OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 16 }
+          src_kb_received OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 17 }
+          src_kb_sent OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcEntry 18 }
+          
+          srcLdcTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF SrcLdcEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                     ""
+          ::= { mvts 102 }
+          
+          srcLdcEntry OBJECT-TYPE
+              SYNTAX  SrcLdcEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                    ""
+              INDEX   { src_object_index, src_ldc_code, src_q931_code }
+          ::= { srcLdcTable 1 }
+
+          SrcLdcEntry ::=                                  	
+              SEQUENCE {
+                  src_object_index
+                        INTEGER,
+                  src_ldc_code
+                        INTEGER,
+                  src_q931_code
+                        INTEGER,
+                  src_ldc_q931_amount
+                        INTEGER,
+                  src_ldc_objname
+                        DisplayString
+              }
+          src_object_index OBJECT-TYPE
+              SYNTAX	INTEGER
+              ACCESS    read-only
+              STATUS    mandatory
+              DESCRIPTION
+                      ""
+              ::= { srcLdcEntry 1 }
+
+          src_ldc_code OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { srcLdcEntry 2 }
+
+          src_q931_code OBJECT-TYPE
+              SYNTAX     INTEGER
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { srcLdcEntry 3 }
+
+          src_ldc_q931_amount OBJECT-TYPE
+              SYNTAX     INTEGER
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { srcLdcEntry 4 }
+
+          src_ldc_objname OBJECT-TYPE
+              SYNTAX     DisplayString
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { srcLdcEntry 5 }
+
+----------------------------------------------------------------------------------
+
+	-- the Dialpeers Table
+
+        dpTable OBJECT-TYPE
+           SYNTAX  SEQUENCE OF DpEntry
+           ACCESS  not-accessible
+           STATUS  mandatory
+           DESCRIPTION
+                     ""
+        ::= { mvts 103 }
+
+        dpEntry   OBJECT-TYPE
+            SYNTAX  DpEntry
+            ACCESS  not-accessible
+            STATUS  mandatory
+            DESCRIPTION
+                      ""
+            INDEX   { dp_index }
+        ::= { dpTable 1 }
+
+        DpEntry ::=                                  	
+            SEQUENCE {
+                dp_index
+                      INTEGER,
+                dp_name
+                      DisplayString,
+                dp_stat_uptime
+                      DisplayString,
+                dp_lastupdate
+                      DisplayString,
+                dp_asr
+                      INTEGER,
+                dp_asr_std
+                      INTEGER,
+                dp_acd
+                      DisplayString,
+                dp_average_qos
+                      INTEGER,
+                dp_maxload
+                      INTEGER,
+                dp_active_calls
+                      INTEGER,
+                dp_totaltime
+                      DisplayString,
+                dp_calls_received
+                      INTEGER,
+                dp_calls_normal
+                      INTEGER,
+                dp_calls_zero_normal
+                      INTEGER,
+                dp_calls_failed
+                      INTEGER,
+                dp_calls_zero_failed
+                      INTEGER,
+                dp_kb_received
+                      INTEGER,
+                dp_kb_sent
+                      INTEGER
+              }
+          dp_index OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+              ::= { dpEntry 1 }
+          dp_name OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 2 }
+          dp_stat_uptime OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 3 }
+          dp_lastupdate OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 4 }
+          dp_asr OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 5 }
+          dp_asr_std OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 6 }
+          dp_acd OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 7 }
+          dp_average_qos OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 8 }
+          dp_maxload OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 9 }
+          dp_active_calls OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 10 }
+          dp_totaltime OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 11 }
+          dp_calls_received OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 12 }
+          dp_calls_normal OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 13 }
+          dp_calls_zero_normal OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 14 }
+          dp_calls_failed OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 15 }
+          dp_calls_zero_failed OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 16 }
+          dp_kb_received OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 17 }
+          dp_kb_sent OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpEntry 18 }
+
+          dpLdcTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF DpLdcEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                     ""
+          ::= { mvts 104 }
+          
+          dpLdcEntry OBJECT-TYPE
+              SYNTAX  DpLdcEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                    ""
+              INDEX   { dp_object_index, dp_ldc_code, dp_q931_code }
+          ::= { dpLdcTable 1 }
+
+          DpLdcEntry ::=                                  	
+              SEQUENCE {
+                  dp_object_index
+                        INTEGER,
+                  dp_ldc_code
+                        INTEGER,
+                  dp_q931_code
+                        INTEGER,
+                  dp_ldc_q931_amount
+                        INTEGER,
+                  dp_ldc_objname
+                        DisplayString
+              }
+          dp_object_index OBJECT-TYPE
+              SYNTAX	INTEGER
+              ACCESS    read-only
+              STATUS    mandatory
+              DESCRIPTION
+                      ""
+              ::= { dpLdcEntry 1 }
+
+          dp_ldc_code OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dpLdcEntry 2 }
+
+          dp_q931_code OBJECT-TYPE
+              SYNTAX     INTEGER
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { dpLdcEntry 3 }
+
+          dp_ldc_q931_amount OBJECT-TYPE
+              SYNTAX     INTEGER
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { dpLdcEntry 4 }
+
+          dp_ldc_objname OBJECT-TYPE
+              SYNTAX     DisplayString
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { dpLdcEntry 5 }
+
+----------------------------------------------------------------------------------
+
+	-- the Destination Table
+
+        dstTable OBJECT-TYPE
+           SYNTAX  SEQUENCE OF DstEntry
+           ACCESS  not-accessible
+           STATUS  mandatory
+           DESCRIPTION
+                     ""
+        ::= { mvts 105 }
+
+        dstEntry   OBJECT-TYPE
+            SYNTAX  DstEntry
+            ACCESS  not-accessible
+            STATUS  mandatory
+            DESCRIPTION
+                      ""
+            INDEX   { dst_index }
+        ::= { dstTable 1 }
+
+        DstEntry ::=                                  	
+            SEQUENCE {
+                dst_index
+                      INTEGER,
+                dst_name
+                      DisplayString,
+                dst_stat_uptime
+                      DisplayString,
+                dst_lastupdate
+                      DisplayString,
+                dst_asr
+                      INTEGER,
+                dst_asr_std
+                      INTEGER,
+                dst_acd
+                      DisplayString,
+                dst_average_qos
+                      INTEGER,
+                dst_maxload
+                      INTEGER,
+                dst_active_calls
+                      INTEGER,
+                dst_totaltime
+                      DisplayString,
+                dst_calls_received
+                      INTEGER,
+                dst_calls_normal
+                      INTEGER,
+                dst_calls_zero_normal
+                      INTEGER,
+                dst_calls_failed
+                      INTEGER,
+                dst_calls_zero_failed
+                      INTEGER,
+                dst_kb_received
+                      INTEGER,
+                dst_kb_sent
+                      INTEGER
+              }
+          dst_index OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+              ::= { dstEntry 1 }
+          dst_name OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 2 }
+          dst_stat_uptime OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 3 }
+          dst_lastupdate OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 4 }
+          dst_asr OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 5 }
+          dst_asr_std OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 6 }
+          dst_acd OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 7 }
+          dst_average_qos OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 8 }
+          dst_maxload OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 9 }
+          dst_active_calls OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 10 }
+          dst_totaltime OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 11 }
+          dst_calls_received OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 12 }
+          dst_calls_normal OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 13 }
+          dst_calls_zero_normal OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 14 }
+          dst_calls_failed OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 15 }
+          dst_calls_zero_failed OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 16 }
+          dst_kb_received OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 17 }
+          dst_kb_sent OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstEntry 18 }
+
+          dstLdcTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF DstLdcEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                     ""
+          ::= { mvts 106 }
+          
+          dstLdcEntry OBJECT-TYPE
+              SYNTAX  DstLdcEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                    ""
+              INDEX   { dst_object_index, dst_ldc_code, dst_q931_code }
+          ::= { dstLdcTable 1 }
+
+          DstLdcEntry ::=                                  	
+              SEQUENCE {
+                  dst_object_index
+                        INTEGER,
+                  dst_ldc_code
+                        INTEGER,
+                  dst_q931_code
+                        INTEGER,
+                  dst_ldc_q931_amount
+                        INTEGER,
+                  dst_ldc_objname
+                        DisplayString
+              }
+          dst_object_index OBJECT-TYPE
+              SYNTAX	INTEGER
+              ACCESS    read-only
+              STATUS    mandatory
+              DESCRIPTION
+                      ""
+              ::= { dstLdcEntry 1 }
+
+          dst_ldc_code OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { dstLdcEntry 2 }
+
+          dst_q931_code OBJECT-TYPE
+              SYNTAX     INTEGER
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { dstLdcEntry 3 }
+
+          dst_ldc_q931_amount OBJECT-TYPE
+              SYNTAX     INTEGER
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { dstLdcEntry 4 }
+
+          dst_ldc_objname OBJECT-TYPE
+              SYNTAX     DisplayString
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { dstLdcEntry 5 }
+
+----------------------------------------------------------------------------------
+
+	-- the Gateways Table
+
+        gwTable OBJECT-TYPE
+           SYNTAX  SEQUENCE OF GwEntry
+           ACCESS  not-accessible
+           STATUS  mandatory
+           DESCRIPTION
+                     ""
+        ::= { mvts 107 }
+
+        gwEntry   OBJECT-TYPE
+            SYNTAX  GwEntry
+            ACCESS  not-accessible
+            STATUS  mandatory
+            DESCRIPTION
+                      ""
+            INDEX   { gw_index }
+        ::= { gwTable 1 }
+
+        GwEntry ::=                                  	
+            SEQUENCE {
+                gw_index
+                      INTEGER,
+                gw_name
+                      DisplayString,
+                gw_stat_uptime
+                      DisplayString,
+                gw_lastupdate
+                      DisplayString,
+                gw_asr
+                      INTEGER,
+                gw_asr_std
+                      INTEGER,
+                gw_acd
+                      DisplayString,
+                gw_average_qos
+                      INTEGER,
+                gw_maxload
+                      INTEGER,
+                gw_active_calls
+                      INTEGER,
+                gw_totaltime
+                      DisplayString,
+                gw_calls_received
+                      INTEGER,
+                gw_calls_normal
+                      INTEGER,
+                gw_calls_zero_normal
+                      INTEGER,
+                gw_calls_failed
+                      INTEGER,
+                gw_calls_zero_failed
+                      INTEGER,
+                gw_kb_received
+                      INTEGER,
+                gw_kb_sent
+                      INTEGER
+              }
+          gw_index OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+              ::= { gwEntry 1 }
+          gw_name OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 2 }
+          gw_stat_uptime OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 3 }
+          gw_lastupdate OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 4 }
+          gw_asr OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 5 }
+          gw_asr_std OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 6 }
+          gw_acd OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 7 }
+          gw_average_qos OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 8 }
+          gw_maxload OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 9 }
+          gw_active_calls OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 10 }
+
+          gw_totaltime OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 11 }
+          gw_calls_received OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 12 }
+          gw_calls_normal OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 13 }
+          gw_calls_zero_normal OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 14 }
+          gw_calls_failed OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 15 }
+          gw_calls_zero_failed OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 16 }
+          gw_kb_received OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 17 }
+          gw_kb_sent OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwEntry 18 }
+
+          gwLdcTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF GwLdcEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                     ""
+          ::= { mvts 108 }
+          
+          gwLdcEntry OBJECT-TYPE
+              SYNTAX  GwLdcEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+                    ""
+              INDEX   { gw_object_index, gw_ldc_code, gw_q931_code }
+          ::= { gwLdcTable 1 }
+
+          GwLdcEntry ::=                                  	
+              SEQUENCE {
+                  gw_object_index
+                        INTEGER,
+                  gw_ldc_code
+                        INTEGER,
+                  gw_q931_code
+                        INTEGER,
+                  gw_ldc_q931_amount
+                        INTEGER,
+                  gw_ldc_objname
+                        DisplayString
+              }
+          gw_object_index OBJECT-TYPE
+              SYNTAX	INTEGER
+              ACCESS    read-only
+              STATUS    mandatory
+              DESCRIPTION
+                      ""
+              ::= { gwLdcEntry 1 }
+
+          gw_ldc_code OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { gwLdcEntry 2 }
+
+          gw_q931_code OBJECT-TYPE
+              SYNTAX     INTEGER
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { gwLdcEntry 3 }
+
+          gw_ldc_q931_amount OBJECT-TYPE
+              SYNTAX     INTEGER
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { gwLdcEntry 4 }
+
+          gw_ldc_objname OBJECT-TYPE
+              SYNTAX     DisplayString
+              ACCESS     read-only
+              STATUS     mandatory
+              DESCRIPTION
+                      ""
+              ::= { gwLdcEntry 5 }
+
+----------------------------------------------------------------------------------
+
+	-- the Routes Table
+
+        rtTable OBJECT-TYPE
+           SYNTAX  SEQUENCE OF RtEntry
+           ACCESS  not-accessible
+           STATUS  mandatory
+           DESCRIPTION
+                     ""
+        ::= { mvts 109 }
+
+        rtEntry   OBJECT-TYPE
+            SYNTAX  RtEntry
+            ACCESS  not-accessible
+            STATUS  mandatory
+            DESCRIPTION
+                      ""
+            INDEX   { rt_index }
+        ::= { rtTable 1 }
+
+        RtEntry ::=                                  	
+            SEQUENCE {
+                rt_index
+                      INTEGER,
+                rt_name
+                      DisplayString,
+                rt_stat_uptime
+                      DisplayString,
+                rt_lastupdate
+                      DisplayString,
+                rt_asr
+                      INTEGER,
+                rt_asr_std
+                      INTEGER,
+                rt_acd
+                      DisplayString,
+                rt_average_qos
+                      INTEGER,
+                rt_maxload
+                      INTEGER,
+                rt_active_calls
+                      INTEGER,
+                rt_totaltime
+                      DisplayString,
+                rt_calls_received
+                      INTEGER,
+                rt_calls_normal
+                      INTEGER,
+                rt_calls_zero_normal
+                      INTEGER,
+                rt_calls_failed
+                      INTEGER,
+                rt_calls_zero_failed
+                      INTEGER,
+                rt_kb_received
+                      INTEGER,
+                rt_kb_sent
+                      INTEGER,
+                rt_status
+                      DisplayString,
+                rt_success_calls
+                      INTEGER
+              }
+          rt_index OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+              ::= { rtEntry 1 }
+          rt_name OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 2 }
+          rt_stat_uptime OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 3 }
+          rt_lastupdate OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 4 }
+          rt_asr OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 5 }
+          rt_asr_std OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 6 }
+          rt_acd OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 7 }
+          rt_average_qos OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 8 }
+          rt_maxload OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 9 }
+          rt_active_calls OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 10 }
+          rt_totaltime OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 11 }
+          rt_calls_received OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 12 }
+          rt_calls_normal OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 13 }
+          rt_calls_zero_normal OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 14 }
+          rt_calls_failed OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 15 }
+          rt_calls_zero_failed OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 16 }
+          rt_kb_received OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 17 }
+          rt_kb_sent OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 18 }
+
+          rt_status OBJECT-TYPE
+              SYNTAX  DisplayString
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 19 }
+
+          rt_success_calls OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                      ""
+          ::= { rtEntry 20 }
+
+
+----------------------------------------------------------------------------------
+
+	-- Traps
+
+        meraCriticalErrorTrap TRAP-TYPE
+              ENTERPRISE  enterprises
+              DESCRIPTION
+                      "Mvts critical error trap"
+        ::= 1
+
+        meraErrorTrap TRAP-TYPE
+              ENTERPRISE  enterprises
+              DESCRIPTION
+                      "Mvts error trap"
+        ::= 2
+
+        meraWarningTrap TRAP-TYPE
+              ENTERPRISE  enterprises
+              DESCRIPTION
+                      "Mvts warning trap"
+        ::= 3
+
+        meraInfoTrap TRAP-TYPE
+              ENTERPRISE  enterprises
+              DESCRIPTION
+                      "Mvts info trap"
+        ::= 4
+
+        meraNotifyTrap TRAP-TYPE
+              ENTERPRISE  enterprises
+              DESCRIPTION
+                      "Mvts notify trap"
+        ::= 5
+
+                
+END

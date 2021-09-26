@@ -1,0 +1,638 @@
+PEA-BB-SELT DEFINITIONS ::= BEGIN
+
+IMPORTS
+   lineIndex
+    FROM PEA-BRIDGE-IPDSLAM
+
+   peaLineTest
+	FROM PEA-LINE-TEST-SMI
+   
+   ifIndex, 
+   OwnerString 
+    FROM IF-MIB
+   
+   IANAItuProbableCause 
+    FROM PEM-STANDARD-TC
+
+   managedObjectClass, 
+   managedObjectInstance, 
+   sequenceNumber, 
+   perceivedSeverity, 
+   eventTime, 
+   eventTypePem, 
+   probableCause 
+    FROM PEM-STANDARD 
+   
+   TruthValue, 
+   DisplayString, 
+   PhysAddress, 
+   AutonomousType, 
+   TestAndIncr 
+    FROM SNMPv2-TC
+   
+   MODULE-IDENTITY, 
+   NOTIFICATION-TYPE, 
+   OBJECT-TYPE, 
+   Unsigned32, 
+   Integer32,
+   IpAddress, 
+   TimeTicks, 
+   Gauge32 
+    FROM SNMPv2-SMI;
+
+bbSelt MODULE-IDENTITY
+    LAST-UPDATED 
+         "200503180000Z"   -- March 18, 2005
+    ORGANIZATION
+         "Ericsson Danmark A/S"
+    CONTACT-INFO
+         "
+          Ericsson Diax
+          Faelledvej 17
+          DK-7600 Struer
+          Denmark
+                 
+          E-mail: diax.support@ericsson.com
+         "       
+   DESCRIPTION
+         "
+         In this module are defined the control entries for input 
+         and output data for different types of broadband line tests.
+         "                                                           
+	 ::= { peaLineTest 10 }
+    
+
+bbSeltTestGroup                         OBJECT IDENTIFIER ::= { bbSelt 5 }
+bbSeltEchoGroup		  	 				OBJECT IDENTIFIER ::= { bbSelt 10 }
+bbSeltNoiseGroup	  	 		    	OBJECT IDENTIFIER ::= { bbSelt 15 }
+
+bbSeltNotificationGroup             OBJECT IDENTIFIER ::= { bbSelt 100 }
+bbSeltNotificationTypes             OBJECT IDENTIFIER ::= { bbSeltNotificationGroup 0 }
+bbSeltNotificationParameters        OBJECT IDENTIFIER ::= { bbSeltNotificationGroup 1 }
+
+--************************************************************************  
+-- lineTestTable
+--************************************************************************  
+
+bbSeltTestTable   OBJECT-TYPE
+    SYNTAX      SEQUENCE OF BbSeltTestEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "This table contains one entry per line.  It
+     defines objects which allow a network manager to
+     instruct an agent to test a line for various
+     faults.  Tests for a line are defined in the
+     media-specific MIB for that line.  After invoking
+     a test, the object bbSeltTestResult can be read to
+     determine the outcome.  If an agent can not perform
+     the test, bbSeltTestResult is set to so indicate.  The
+     object bbSeltTestCode can be used to provide further
+     test-specific or line-specific (or even
+     enterprise-specific) information concerning the
+     outcome of the test.  Only one test can be in progress
+     on each line at any one time.  If one test is in
+     progress when another test is invoked, the second test
+     is rejected.  Some agents may reject a test when a
+     prior test is active on another line.
+
+     Before starting a test, a manager-station must first
+     obtain 'ownership' of the entry in the bbSeltTestTable for
+     the line to be tested.  This is accomplished with
+     the bbSeltTestId and bbSeltTestStatus objects as follows:
+
+         try_again:
+                get (bbSeltTestId, bbSeltTestStatus)
+                while (bbSeltTestStatus != notInUse)
+                    /*      
+                     * Loop while a test is running or some other
+                     * manager is configuring a test.
+                     */
+                    short delay
+                    get (bbSeltTestId, bbSeltTestStatus)
+                }
+
+                /*
+                 * Is not being used right now -- let's compete
+                 * to see who gets it.
+                 */
+                lock_value = bbSeltTestId
+
+                if ( set(bbSeltTestId = lock_value, bbSeltTestStatus = inUse,
+                         bbSeltTestOwner = 'my-IP-address') == FAILURE)
+                    /*
+                     * Another manager got the bbSeltTestEntry -- go
+                     * try again
+                     */
+                    goto try_again;
+
+                /*
+                 * I have the lock
+                 */
+                set up any test parameters.
+
+                /*
+                 * This starts the test
+                 */
+                set(bbSeltTestType = test_to_run);
+
+                wait for test completion by polling bbSeltTestResult
+
+                when test completes, agent sets bbSeltTestResult
+                     agent also sets bbSeltTestStatus = 'notInUse'
+
+                retrieve any additional test results, and bbSeltTestId
+
+                if (bbSeltTestId == lock_value+1) results are valid
+
+              A manager station first retrieves the value of the
+              appropriate bbSeltTestId and bbSeltTestStatus objects,
+              periodically repeating the retrieval if necessary,
+              until the value of bbSeltTestStatus is 'notInUse'.  The
+              manager station then tries to set the same bbSeltTestId
+              object to the value it just retrieved, the same
+              bbSeltTestStatus object to 'inUse', and the corresponding
+              bbSeltTestOwner object to a value indicating itself.  If
+              the set operation succeeds then the manager has
+              obtained ownership of the bbSeltTestEntry, and the value of
+              the bbSeltTestId object is incremented by the agent (per
+              the semantics of TestAndIncr).  Failure of the set
+              operation indicates that some other manager has
+              obtained ownership of the bbSeltTestEntry.
+
+              Once ownership is obtained, any test parameters can be
+              setup, and then the test is initiated by setting
+              bbSeltTestType.  On completion of the test, the agent sets
+              bbSeltTestStatus to 'notInUse'.  Once this occurs, the
+              manager can retrieve the results.  In the (rare) event
+              that the invocation of tests by two network managers
+              were to overlap, then there would be a possibility that
+              the first test's results might be overwritten by the
+              second test's results prior to the first results being
+              read.  This unlikely circumstance can be detected by a
+              network manager retrieving bbSeltTestId at the same time as
+              retrieving the test results, and ensuring that the
+              results are for the desired request.
+
+              If bbSeltTestType is not set within an abnormally long
+              period of time after ownership is obtained, the agent
+              should time-out the manager, and reset the value of the
+              bbSeltTestStatus object back to 'notInUse'.  It is
+              suggested that this time-out period be 5 minutes.
+
+              In general, a management station must not retransmit a
+              request to invoke a test for which it does not receive
+              a response; instead, it properly inspects an agent's
+              MIB to determine if the invocation was successful.
+              Only if the invocation was unsuccessful, is the
+              invocation request retransmitted.
+
+              Some tests may require the line to be taken off-
+              line in order to execute them, or may even require the
+              agent to reboot after completion of the test.  In these
+              circumstances, communication with the management
+              station invoking the test may be lost until after
+              completion of the test.  An agent is not required to
+              support such tests.  However, if such tests are
+              supported, then the agent should make every effort to
+              transmit a response to the request which invoked the
+              test prior to losing communication.  When the agent is
+              restored to normal service, the results of the test are
+              properly made available in the appropriate objects.
+              Note that this requires that the lineIndex value assigned
+              to a line must be unchanged even if the test
+              causes a reboot.  An agent must reject any test for
+              which it cannot, perhaps due to resource constraints,
+              make available at least the minimum amount of
+              information after that test completes."
+    ::= { bbSeltTestGroup 1 }
+
+bbSeltTestEntry OBJECT-TYPE
+    SYNTAX       BbSeltTestEntry
+    MAX-ACCESS   not-accessible
+    STATUS       current
+    DESCRIPTION
+    "An entry containing objects for invoking tests on a line."
+    INDEX  { lineIndex }
+    ::= { bbSeltTestTable 1 }
+
+BbSeltTestEntry ::=
+    SEQUENCE {
+      bbSeltTestId                TestAndIncr,
+      bbSeltTestStatus            INTEGER,
+      bbSeltTestType              AutonomousType,
+      bbSeltTestResult            INTEGER,
+      bbSeltTestResultDetails     OCTET STRING,
+      bbSeltTestOwner             OwnerString,
+      bbSeltTestAbort             INTEGER
+    }
+
+bbSeltTestId       OBJECT-TYPE
+    SYNTAX       TestAndIncr
+    MAX-ACCESS   read-write
+    STATUS       current
+    DESCRIPTION
+    "This object identifies the current invocation of the
+     line's test."
+    ::= { bbSeltTestEntry 1 }
+
+bbSeltTestStatus   OBJECT-TYPE
+    SYNTAX       INTEGER { notInUse(1), inUse(2) }
+    MAX-ACCESS   read-write
+    STATUS       current
+    DESCRIPTION
+    "This object indicates whether or not some manager
+     currently has the necessary 'ownership' required to
+     invoke a test on this line.  A write to this
+     object is only successful when it changes its value
+     from 'notInUse(1)' to 'inUse(2)'.  After completion of
+     a test, the agent resets the value back to
+     'notInUse(1)'."
+    ::= { bbSeltTestEntry 2 }
+
+bbSeltTestType     OBJECT-TYPE
+    SYNTAX       AutonomousType
+    MAX-ACCESS   read-write
+    STATUS       current
+    DESCRIPTION
+    "A control variable used to start and stop operator-
+     initiated line tests.  Most OBJECT IDENTIFIER
+     values assigned to tests are defined elsewhere, in
+     association with specific types of line.
+     However, this document assigns a value for a full-
+     duplex loopback test, and defines the special meanings
+     of the subject identifier:
+            noTest  OBJECT IDENTIFIER ::= { 0 0 }
+     When the value noTest is written to this object, no
+     action is taken unless a test is in progress, in which
+     case the test is aborted.  Writing any other value to
+     this object is only valid when no test is currently in
+     progress, in which case the indicated test is
+     initiated.
+
+     When read, this object always returns the most recent
+     value that bbSeltTestType was set to.  If it has not been
+     set since the last initialization of the network
+     management subsystem on the agent, a value of noTest
+     is returned."
+    ::= { bbSeltTestEntry 3 }
+
+bbSeltTestResult   OBJECT-TYPE
+    SYNTAX       INTEGER { none(1),          -- no test yet requested
+                           success(2),
+                           inProgress(3),
+                           notSupported(4),
+                           unAbleToRun(5),   -- due to state of system
+                           aborted(6),
+                           failed(7)
+                         }
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+    "This object contains the result of the most recently
+     requested test, or the value none(1) if no tests have
+     been requested since the last reset.  Note that this
+     facility provides no provision for saving the results
+     of one test when starting another, as could be
+     required if used by multiple managers concurrently."
+    ::= { bbSeltTestEntry 4 }
+
+bbSeltTestResultDetails  OBJECT-TYPE
+    SYNTAX       OCTET STRING --(SIZE (0..255))
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+    "This object contains a comment-string, which gives more
+     specific information about the test result. For instance, after 
+     a failed test a comment will describe the reason of the fault. 
+     
+     The comment that the agent will be able to send towards the manager 
+     is listed below.  
+     1) When the bbSeltTestResult value is 'success(2)', the comment-string
+        will be 'No Errors'.
+     2) Instead, when the bbSeltTestResult value is different from 'success(2)', 
+        then the comment-string will be one of these slogans: 'Off-Hook Detected',
+        'Stop-test Forced','Line Busy','Ownership Error - Line notInUse',
+        'Operational Status already in-testing','Test Type not supported',
+        'Surveillance Timer Expired','DVP Error','Received Unexpected DVP Event'."      
+     ::= { bbSeltTestEntry 5 }
+
+bbSeltTestOwner    OBJECT-TYPE
+    SYNTAX       OwnerString
+    MAX-ACCESS   read-write
+    STATUS       current
+    DESCRIPTION
+    "The entity, which currently has the 'ownership'
+     required to invoke a test on this line. For instance, 
+     it could be the IP address of the manager-station or 
+     the IP line-card (to handle the test only on one line 
+     at the time)."
+    ::= { bbSeltTestEntry 6 }
+                          
+bbSeltTestAbort   OBJECT-TYPE
+    SYNTAX       INTEGER { none(0), abort(1) }
+    MAX-ACCESS   read-write
+    STATUS       current
+    DESCRIPTION
+    "This object indicates whether or not the owner manager
+     requires the 'abort' of the sub-tests current set on  
+     the line where the test is running. A writing to this
+     object is only successful when it changes its value
+     from 'none(0)' to 'abort(2)'. After completion of
+     abort request, the agent resets the value back to
+     'none(0)'."
+    DEFVAL    { none }
+    ::= { bbSeltTestEntry 7 }
+
+
+--************************************************************************  
+-- bbSeltEchoInputTable
+--************************************************************************
+
+bbSeltEchoInputTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF BbSeltEchoInputEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+     "This table provides the input parameters for the Extended NB SELT test"
+     ::= { bbSeltEchoGroup 1 }   
+    
+bbSeltEchoInputEntry OBJECT-TYPE
+     SYNTAX      BbSeltEchoInputEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+     "An entry contains input parameters for the SELT test for the subscriber line 
+      identified by ifIndex."
+     INDEX  { ifIndex }
+     ::= { bbSeltEchoInputTable 1 }
+
+BbSeltEchoInputEntry ::= 
+      SEQUENCE {
+      	bbSeltEchoMeasLength		INTEGER
+       }  	
+
+bbSeltEchoMeasLength OBJECT-TYPE
+    SYNTAX       INTEGER (0..15)
+    MAX-ACCESS   read-write
+    STATUS       current
+    DESCRIPTION
+	"This parameter controls the duration of the echo measurement. 
+	 The measurment is performed over a period equal to 2^measurmentLength DMT 
+	 signals (without the cyclic prefix, i.e. with a duration equal to 
+	 1/4321.5 seconds = 231.4 microseconds). 
+	 A value of 12 corresponds approximately to one second."
+    ::= { bbSeltEchoInputEntry 1 }
+
+
+--************************************************************************  
+-- bbSeltEchoOutputTable
+--************************************************************************
+
+bbSeltEchoOutputTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF BbSeltEchoOutputEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+     "This table provides the output parameters for the Extended NB SELT test"
+     ::= { bbSeltEchoGroup 2 }   
+    
+bbSeltEchoOutputEntry OBJECT-TYPE
+     SYNTAX      BbSeltEchoOutputEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+     "An entry contains Output parameters for 
+      the SELT test for the subscriber line 
+      identified by ifIndex."
+     INDEX  { ifIndex }
+     ::= { bbSeltEchoOutputTable 1 }
+
+BbSeltEchoOutputEntry ::= 
+     SEQUENCE {
+       bbSeltEchoVec0		OCTET STRING,
+       bbSeltEchoVec1		OCTET STRING,
+       bbSeltEchoVec2		OCTET STRING,
+       bbSeltEchoVec3		OCTET STRING,
+       bbSeltEchoVec4		OCTET STRING,
+       bbSeltEchoVec5		OCTET STRING,
+       bbSeltEchoVec6		OCTET STRING,
+       bbSeltEchoVec7		OCTET STRING,
+       bbSeltAgcValue		INTEGER
+     }  	
+
+bbSeltEchoVec0 OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE (0..255))
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+        "Part 0 (0-63) of BB-SELT echo vector."
+    ::= { bbSeltEchoOutputEntry 1 }
+
+bbSeltEchoVec1 OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE (0..255))
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+	"Part 1 (64-127) of BB-SELT echo vector."
+    ::= { bbSeltEchoOutputEntry 2 }
+
+bbSeltEchoVec2 OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE (0..255))
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+	"Part 2 (128..191) of BB-SELT echo vector."
+    ::= { bbSeltEchoOutputEntry 3 }
+
+bbSeltEchoVec3 OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE (0..255))
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+	"Part 3 (192..255) of BB-SELT echo vector."
+    ::= { bbSeltEchoOutputEntry 4 }
+
+bbSeltEchoVec4 OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE (0..255))
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+	"Part 4 (256-319) of BB-SELT echo vector."
+    ::= { bbSeltEchoOutputEntry 5 }
+
+bbSeltEchoVec5 OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE (0..255))
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+	"Part 5 (320-383) of BB-SELT echo vector."
+    ::= { bbSeltEchoOutputEntry 6 }
+
+bbSeltEchoVec6 OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE (0..255))
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+	"Part 6 (384-447) of BB-SELT echo vector."
+    ::= { bbSeltEchoOutputEntry 7 }
+
+bbSeltEchoVec7 OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE (0..255))
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+	"Part 7 (448-512) of BB-SELT echo vector."
+    ::= { bbSeltEchoOutputEntry 8 }
+
+bbSeltAgcValue OBJECT-TYPE
+    SYNTAX       INTEGER (-32768..32767)
+    UNITS		 "1/256 dB"
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+	"Receiver gain used during last BB-SELT echo measurement."
+    ::= { bbSeltEchoOutputEntry 9 }
+
+
+--************************************************************************  
+-- bbSeltNoiseInputTable
+--************************************************************************
+
+bbSeltNoiseInputTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF BbSeltNoiseInputEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+     "This table provides the input parameters for the BB SELT Noise test"
+     ::= { bbSeltNoiseGroup 1 }   
+    
+bbSeltNoiseInputEntry OBJECT-TYPE
+     SYNTAX      BbSeltNoiseInputEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+     "An entry contains input parameters for the SELT for the 
+      subscriber line identified by ifIndex."
+     INDEX  { ifIndex }
+     ::= { bbSeltNoiseInputTable 1 }
+
+BbSeltNoiseInputEntry ::= 
+     SEQUENCE {
+       bbSeltNoiseMeasLength		INTEGER
+     }  	
+
+bbSeltNoiseMeasLength OBJECT-TYPE
+    SYNTAX       INTEGER (0..15)
+    MAX-ACCESS   read-write
+    STATUS       current
+    DESCRIPTION
+	"This parameter controls the duration of the noise measurement. 
+	 The measurment is performed over a period equal to 2^measurmentLength DMT 
+	 signals (without the cyclic prefix, i.e. with a duration equal to 
+	 1/4321.5 seconds = 231.4 microseconds). 
+	 A value of 12 corresponds approximately to one second."
+    ::= { bbSeltNoiseInputEntry 1 }
+
+
+--************************************************************************  
+-- bbSeltNoiseOutputTable
+--************************************************************************
+
+bbSeltNoiseOutputTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF BbSeltNoiseOutputEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+     "This table provides the output parameters for the BB SELT Noise test"
+     ::= { bbSeltNoiseGroup 2 }   
+    
+bbSeltNoiseOutputEntry OBJECT-TYPE
+     SYNTAX      BbSeltNoiseOutputEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+     "An entry contains output parameters for the SELT for the 
+      subscriber line identified by ifIndex."
+     INDEX  { ifIndex }
+     ::= { bbSeltNoiseOutputTable 1 }
+
+BbSeltNoiseOutputEntry ::= 
+     SEQUENCE {
+       bbSeltPeakNoise			OCTET STRING,
+       bbSeltTotalNoise			OCTET STRING,
+       bbSeltSignalNoise		OCTET STRING
+     }  	
+
+bbSeltPeakNoise OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE (0..128))
+    UNITS	 "1/256 dBm/tone"
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+        "Peak PSD from tone [0-63] observed over the testDuration. 
+	 Unit is 1/256 dBm/tonebin and is referred to 100 ohm line."
+    ::= { bbSeltNoiseOutputEntry 1 }
+
+bbSeltTotalNoise OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE (0..128))
+    UNITS	 "1/256 dBm/tone"
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+	"Total PSD from tone [0-63] observed over the testDuration. 
+	 Unit is 1/256 dBm/tonebin and is referred to 100 ohm line."
+    ::= { bbSeltNoiseOutputEntry 2 }
+
+bbSeltSignalNoise OBJECT-TYPE
+    SYNTAX       OCTET STRING (SIZE (0..128))
+    UNITS	 "1/256 dBm/tone"
+    MAX-ACCESS   read-only
+    STATUS       current
+    DESCRIPTION
+        "Signal PSD from tone [0-63] observed over the testDuration. 
+	 Unit is 1/256 dBm/tonebin and is referred to 100 ohm line."
+    ::= { bbSeltNoiseOutputEntry 3 }
+
+
+--************************************************************************
+-- bbSeltCompletion
+--************************************************************************    
+bbSeltCompletion      NOTIFICATION-TYPE     
+    OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+              perceivedSeverity, eventTime, eventTypePem, probableCause,  
+              bbSeltTestResult, bbSeltTestType }
+    STATUS  current
+    DESCRIPTION
+    "When a test is ready an ifTestCompletion trap is sent to 
+     the Manager / Trap Receiver.
+    
+     Parameters:
+      1: Managed object class   MSAN Port
+      2: Managed object ID      MAC + PortNo
+      3: Sequence number        alarm sequence number
+      4: Perceived severity     warning
+      5: Event time             timestamp retrieved from SNTP server
+      6: Event type             equipment  
+      7: Probable cause         other(255)
+                                timeoutExpired(165)
+                                softwareError(164)
+                                unexpectedInformation(303)
+                                corruptedData(153)
+      8: Result of most recent test
+                                success(2)
+                                notSupported(4)
+                                unAbleToRun(5)
+                                aborted(6)
+                                failed(7)
+      9: Type of test performed              
+                                bbSeltEchoTest
+                                bbSeltNoiseTest
+    "
+    ::= { bbSeltNotificationTypes 1 }
+
+END
+
+
+
+

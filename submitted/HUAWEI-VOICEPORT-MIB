@@ -1,0 +1,1266 @@
+-- ============================================================================
+-- Copyright (C) 2003 by  HUAWEI TECHNOLOGIES. All rights reserved.
+--
+-- Description:  
+-- Reference:  
+-- Version: V1.00
+-- History:
+-- ============================================================================
+
+ HUAWEI-VOICEPORT-MIB DEFINITIONS ::= BEGIN
+      IMPORTS
+        	MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE, private
+        		FROM SNMPv2-SMI
+        	MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+        		FROM SNMPv2-CONF
+        	TEXTUAL-CONVENTION
+        		FROM SNMPv2-TC
+        	IpAddress,TimeTicks,Counter32
+        		FROM SNMPv2-SMI
+        	RowStatus,DisplayString
+        		FROM SNMPv2-TC;
+        
+      hwIASVoicePort MODULE-IDENTITY
+                LAST-UPDATED "200609190900Z"
+                ORGANIZATION "Fix-Net Dept, Huawei Technologies Co.,Ltd."
+                CONTACT-INFO 
+                             "Floor 4, Block 4, R&D Building,
+                	             Huawei Longgang Production Base,
+                	             Shenzhen,  P.R.C.
+                	             http://www.huawei.com
+                	             Zip: 518057
+                	            "
+                DESCRIPTION 
+                	            "
+                	            huawei VSPPORT  mib.
+                	            "
+                        ::= { huaweiUtility 113 }
+               
+hwIASVoicePortObjects OBJECT IDENTIFIER ::= { hwIASVoicePort 1 }
+ 
+ enterprises OBJECT IDENTIFIER ::= { private 1 }
+ 
+ huawei OBJECT IDENTIFIER ::= { enterprises 2011 }
+ 
+ huaweiUtility OBJECT IDENTIFIER ::= { huawei 6 }
+ 
+                   
+ 
+----------------------------------/*hwPstnPTPConfigTable*/-------------------------------------------
+   hwPstnPTPConfigTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF HwPstnPTPConfigEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       "
+       A list of hwPstnPTPConfigEntry objects.
+       "
+     ::= { hwIASVoicePortObjects 1 }
+ 
+   hwPstnPTPConfigEntry OBJECT-TYPE
+     SYNTAX      HwPstnPTPConfigEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       ""
+     INDEX    {  
+               hwPstnPTPIndex
+              }
+     ::= { hwPstnPTPConfigTable 1 }
+ 
+   HwPstnPTPConfigEntry ::=
+     SEQUENCE
+     {
+       hwPstnPTPIndex	              INTEGER,
+       hwPstnPTPSendVoiceGain	      INTEGER,
+       hwPstnPTPRecvVoiceGain 	      INTEGER,
+       hwPstnPTPDialMode              INTEGER,
+       hwPstnPTPReversePoleEnable     INTEGER,
+       hwPstnPTPReversePoleLevel      INTEGER,
+       hwPstnPTPPolarityReverseMode   INTEGER, 
+       hwPstnPTPImpedance	      INTEGER,
+       hwPstnPTPCurrent	              INTEGER,
+       hwPstnPTPHighLevel             INTEGER,
+       hwPstnPTPLowLevel              INTEGER,
+       hwPstnPTPKCType                INTEGER,
+       hwPstnPTPVoltage               INTEGER,
+       hwPstnPTPActualSendGain        INTEGER,
+       hwPstnPTPActualRecvGain        INTEGER,
+       hwPstnPTPConfigState	      INTEGER
+     }
+ 
+   hwPstnPTPIndex OBJECT-TYPE
+     SYNTAX      INTEGER
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "
+         框槽端口
+         "
+     ::= { hwPstnPTPConfigEntry 1 }
+ 
+   hwPstnPTPSendVoiceGain OBJECT-TYPE
+     SYNTAX      INTEGER(1..255)
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         发送增益(dB)
+           1 :-4 db 
+           2 :-3 db
+           3 :-2.5 db
+           4 :-2 db
+           5 :-1 db
+           6 :0 db
+           7 :1 db
+           8 :1.5 db
+           9 :2 db
+          10 :3 db
+          11 :4 db
+         255 :agc
+         "
+         DEFVAL      { 6 }
+     ::= { hwPstnPTPConfigEntry 2 }
+         
+   hwPstnPTPRecvVoiceGain OBJECT-TYPE
+     SYNTAX      INTEGER(1..255)
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+           接收增益(dB)
+           1 :-10 db
+           2 :-9 db
+           3 :-8.5 db
+           4 :-8 db
+           5 :-7.5 db 
+           6 :-7 db  
+           7 :-6 db
+           8 :-5 db
+           9 :-4 db
+          10 :-3.5 db
+          11 :-3 db
+          12 :-2 db
+          13 :-1 db
+          14 :0 db
+         255 :agc
+         "
+         DEFVAL      { 1 }
+     ::= { hwPstnPTPConfigEntry 3 }
+          
+   hwPstnPTPDialMode OBJECT-TYPE
+     SYNTAX      INTEGER{mode-DTMF-pulse-both(1),mode-DTMF-only(2),mode-pulse-only(3)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         拨号模式:
+         mode-DTMF-pulse-both(1)
+         mode-DTMF-only(2)
+         mode-pulse-only(3)
+         "
+         DEFVAL      { mode-DTMF-pulse-both }
+     ::= { hwPstnPTPConfigEntry 4 }
+     
+   hwPstnPTPReversePoleEnable OBJECT-TYPE
+     SYNTAX      INTEGER{reversePoleDisable(1),reversePoleEnable(2)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         是否支持反极脉冲:
+         reversePoleDisable(1)
+         reversePoleEnable(2)
+         "
+         DEFVAL      { reversePoleDisable }
+     ::= { hwPstnPTPConfigEntry 5 }
+     
+   hwPstnPTPReversePoleLevel OBJECT-TYPE
+     SYNTAX      INTEGER(20..2560)
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         反极脉冲电平宽度(单位：ms)
+         "
+         DEFVAL      { 300 }
+     ::= { hwPstnPTPConfigEntry 6 }
+     
+   hwPstnPTPPolarityReverseMode OBJECT-TYPE
+     SYNTAX      INTEGER{hardReversePole(1),softReversePole(2)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         reversePoleMode：
+         hardReversePole(1)
+         softReversePole(2)
+         
+         反极模式:
+         硬反极(1)
+         软反极(2)
+         "
+         DEFVAL      { hardReversePole }
+     ::= { hwPstnPTPConfigEntry 7 }     
+ 
+   hwPstnPTPImpedance OBJECT-TYPE
+     SYNTAX      INTEGER(1..15)
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+        Port impedance of the port. The following values indicates different impedance with 
+ 	different application circumstances.
+ 	1  -- Bureau machine in China(200+680|| 100nf)
+ 	2  -- User Machine in China(200+560|| 100nf)
+ 	3  -- 600ΩInterface
+ 	4  -- Interface of russian(150+510|| 47nf)
+ 	5  -- (220+820|| 115nf )
+ 	6  -- (220+820|| 120nf )
+ 	7  -- 900Ω Interface
+ 	8  -- Interface of Brazil(800|| 50nf)
+ 	9  -- BT0(Zin=87+1052||228nF+229||28.4nF, Zload=93+615||471nF+179||495nF+244||32nF)
+ 	10 -- HK_BT3(Zin=370+620|| 310nf,Zload=600)
+ 	11 -- HK_BT5(Zin=270+264|| 357nf+1434|| 265nf,Zload=600)
+ 	12 -- BT1(BT0 without AGC)
+ 	13 -- BT2(Zin=(87 +1052 //228nF+229 //28.4nF),Zload=(270 +264 //357nF+1434 //265nF))
+ 	14 -- BT3(Zin=(87 +1052 //228nF+229 //28.4nF),Zload=(164 +162 //363nF+1227 //350nF))
+ 	15 -- KPN(Zin= 270+750|| 150nf)     	
+ 	
+ 	单板中端口的阻抗。不同的值对应不同应用场合中的阻抗要求
+ 	1  -- 中国局用机(200+680|| 100nf)
+ 	2  -- 中国用户机(200+560|| 100nf)
+ 	3  -- 600Ω接口
+ 	4  -- 俄罗斯接口(150+510|| 47nf)
+ 	5  -- (220+820|| 115nf )
+ 	6  -- (220+820|| 120nf )
+ 	7  -- 900Ω接口
+ 	8  -- 巴西接口(800|| 50nf)
+ 	9  -- BT0(Zin=87+1052||228nF+229||28.4nF, Zload=93+615||471nF+179||495nF+244||32nF)
+ 	10 -- HK_BT3(Zin=370+620|| 310nf,Zload=600)
+ 	11 -- HK_BT5(Zin=270+264|| 357nf+1434|| 265nf,Zload=600)
+ 	12 -- BT1(BT0 without AGC)
+ 	13 -- BT2(Zin=(87 +1052 //228nF+229 //28.4nF),Zload=(270 +264 //357nF+1434 //265nF))
+ 	14 -- BT3(Zin=(87 +1052 //228nF+229 //28.4nF),Zload=(164 +162 //363nF+1227 //350nF))	                      
+ 	15 -- KPN(Zin= 270+750|| 150nf)	                      
+         "
+         DEFVAL { 3 }
+         ::= { hwPstnPTPConfigEntry 8 }
+ 
+   hwPstnPTPCurrent OBJECT-TYPE
+     SYNTAX      INTEGER(1..19)
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+        Port current supported by the board. The value ranges from 1 to 19, 
+ 	which indicates the port current value supported under certain loopline impedence.
+ 	1  -- 25mA steady current
+ 	2  -- 16mA steady current
+ 	3  -- 32mA steady current
+ 	4  -- 40mA steady current
+ 	5  -- 35mA 2*200Ω
+ 	6  -- 35mA 2*250Ω
+ 	7  -- 35mA 2*400Ω
+ 	8  -- 47mA 2*200Ω
+ 	9  -- 47mA 2*250Ω
+ 	10 -- 47mA 2*400Ω
+ 	11 -- 20mA 2*200Ω
+ 	12 -- 20mA 2*250Ω
+ 	13 -- 20mA 2*400Ω
+ 	14 -- 30mA 2*200Ω
+ 	15 -- 30mA 2*250Ω
+ 	16 -- 30mA 2*400Ω
+ 	17 -- 40mA 2*200Ω
+ 	18 -- 40mA 2*250Ω
+ 	19 -- 40mA 2*400Ω
+ 	
+ 	单板中给用户端口提供的电流值。
+ 	取值如下,分别表示在不同外线环阻情况下(如2*400欧)提供的电流值。
+ 	1  -- 25mA 恒流
+ 	2  -- 16mA 恒流
+ 	3  -- 32mA 恒流
+ 	4  -- 40mA 恒流
+ 	5  -- 35mA 2*200欧
+ 	6  -- 35mA 2*250欧
+ 	7  -- 35mA 2*400欧
+ 	8  -- 47mA 2*200欧
+ 	9  -- 47mA 2*250欧
+ 	10 -- 47mA 2*400欧
+ 	11 -- 20mA 2*200欧
+ 	12 -- 20mA 2*250欧
+ 	13 -- 20mA 2*400欧
+ 	14 -- 30mA 2*200欧
+ 	15 -- 30mA 2*250欧
+ 	16 -- 30mA 2*400欧
+ 	17 -- 40mA 2*200欧
+ 	18 -- 40mA 2*250欧
+ 	19 -- 40mA 2*400欧
+         "             
+     DEFVAL { 10 }      
+     ::= { hwPstnPTPConfigEntry 9 }  
+
+   hwPstnPTPHighLevel OBJECT-TYPE
+     SYNTAX      INTEGER(20..500)
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         16KC高电平宽度(单位：ms)
+         "
+         DEFVAL { 100 }
+     ::= { hwPstnPTPConfigEntry 10 }
+     
+   hwPstnPTPLowLevel OBJECT-TYPE
+     SYNTAX      INTEGER(20..500)
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         16KC低电平宽度(单位：ms)
+         "
+         DEFVAL { 300 }
+     ::= { hwPstnPTPConfigEntry 11 }
+     
+   hwPstnPTPKCType OBJECT-TYPE
+     SYNTAX      INTEGER{port1216kcselector16kc(1),port1216kcselector12kc(2)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         12KC/16KC类型:
+         port1216kcselector16kc(1)
+         port1216kcselector12kc(2)
+         "
+         DEFVAL { port1216kcselector16kc }
+     ::= { hwPstnPTPConfigEntry 12 }
+     
+   hwPstnPTPVoltage OBJECT-TYPE
+     SYNTAX      INTEGER{port1216kcvalidvoltage0(1),
+                         port1216kcvalidvoltage1(2),
+                         port1216kcvalidvoltage2(3),
+                         port1216kcvalidvoltage3(4),
+                         port1216kcvalidvoltage4(5),
+                         port1216kcvalidvoltage5(6),
+                         port1216kcvalidvoltage6(7),
+                         port1216kcvalidvoltage7(8),
+                         port1216kcvalidvoltage8(9),
+                         port1216kcvalidvoltage9(10)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+        12KC/16KC电平有效值:
+        port1216kcvalidvoltage0(1):  0.45 Vrms   
+		port1216kcvalidvoltage1(2):  0.775 Vrms  
+		port1216kcvalidvoltage2(3):  1.0 Vrms    
+		port1216kcvalidvoltage3(4):  1.5 Vrms    
+		port1216kcvalidvoltage4(5):  2.0 Vrms    
+		port1216kcvalidvoltage5(6):  2.5 Vrms    
+		port1216kcvalidvoltage6(7):  3.0 Vrms    
+		port1216kcvalidvoltage7(8):  3.5 Vrms    
+		port1216kcvalidvoltage8(9):  4.0 Vrms    
+		port1216kcvalidvoltage9(10): 4.5 Vrms    
+         "
+         DEFVAL { 1 }
+     ::= { hwPstnPTPConfigEntry 13 }     
+             
+   hwPstnPTPActualSendGain OBJECT-TYPE
+     SYNTAX      INTEGER(1..11)
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         端口实际发送增益
+         1 :-4 db 
+         2 :-3 db
+         3 :-2.5 db
+         4 :-2 db
+         5 :-1 db
+         6 :0 db
+         7 :1 db
+         8 :1.5 db
+         9 :2 db
+        10 :3 db
+        11 :4 db   
+         "
+     ::= { hwPstnPTPConfigEntry 14 }
+         
+  hwPstnPTPActualRecvGain OBJECT-TYPE
+     SYNTAX      INTEGER(1..14)
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         端口实际接收增益
+         1 :-10 db
+         2 :-9 db
+         3 :-8.5 db
+         4 :-8 db
+         5 :-7.5 db 
+         6 :-7 db  
+         7 :-6 db
+         8 :-5 db
+         9 :-4 db
+        10 :-3.5 db
+        11 :-3 db
+        12 :-2 db
+        13 :-1 db
+        14 :0 db  
+         "
+     ::= { hwPstnPTPConfigEntry 15 }
+  hwPstnPTPConfigState OBJECT-TYPE
+     SYNTAX      INTEGER{notconfigUserType(1),ConfigUserType(2)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         配置用户类型:1:没有配置; 2:已经配置
+         "
+     ::= { hwPstnPTPConfigEntry 16 }      
+ 
+ ---------------------------------/*hwPstnPTPOperTable*/----------------------------------------
+   hwPstnPTPOperTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF HwPstnPTPOperEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       "
+       PSTN PTP层的管理维护操作和状态查询
+       "
+     ::= { hwIASVoicePortObjects 2 }
+ 
+   hwPstnPTPOperEntry OBJECT-TYPE
+     SYNTAX      HwPstnPTPOperEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       ""
+     INDEX    {  
+               hwPstnPTPOperIndex
+              }
+     ::= { hwPstnPTPOperTable 1 }
+ 
+   HwPstnPTPOperEntry ::=
+     SEQUENCE
+     {
+       hwPstnPTPOperIndex                   INTEGER,
+       hwPstnPTPSrvState	            INTEGER,
+       hwPstnPTPLoopBackState           INTEGER,
+       hwPstnPTPTestState	            INTEGER,
+       hwPstnPTPAdminOper 	            INTEGER,
+       hwPstnPTPSrvStateChange	        TimeTicks,
+       hwPstnPTPLoopBackStateChange     TimeTicks,
+       hwPstnPTPTestStateChange	        TimeTicks
+       
+     }
+ 
+   hwPstnPTPOperIndex OBJECT-TYPE
+     SYNTAX      INTEGER
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "
+         框槽端口
+         "
+     ::= { hwPstnPTPOperEntry 1 }
+ 
+   hwPstnPTPSrvState OBJECT-TYPE
+     SYNTAX      INTEGER{normal(1),fault(2),deactive(3),powerDenny(4)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         PSTN端口物理运行状态:1:正常; 2:故障; 3:去激活; 4:低功耗;
+         "
+     ::= { hwPstnPTPOperEntry 2 }
+ 
+   hwPstnPTPLoopBackState OBJECT-TYPE
+     SYNTAX      INTEGER{noLoop(1),remoteLoop(2),localLoop(3)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "                      
+         PSTN端口物理环回状态:1－未环回; 2:远环; 3:近环;
+         "
+     ::= { hwPstnPTPOperEntry 3 }
+ 
+   hwPstnPTPTestState OBJECT-TYPE
+     SYNTAX      INTEGER{noTest(1),test(2)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         PSTN端口物理测试状态:1－未测试 2－测试;
+         "
+     ::= { hwPstnPTPOperEntry 4 }
+     
+   hwPstnPTPAdminOper OBJECT-TYPE
+     SYNTAX      INTEGER{reset(1),localLoop(2),remoteLoop(3),cancelLoop(4)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         PSTN端口物理层维护操作:1:复位; 2:近端环回;3:远端环回;4:取消环回;
+         "
+     ::= { hwPstnPTPOperEntry 5 }
+ 
+   hwPstnPTPSrvStateChange OBJECT-TYPE
+     SYNTAX      TimeTicks
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         PSTN端口物理运行状态变化时间
+         "
+     ::= { hwPstnPTPOperEntry 6 }
+ 
+   hwPstnPTPLoopBackStateChange OBJECT-TYPE
+     SYNTAX      TimeTicks
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         PSTN端口物理环回状态变化时间
+         "
+     ::= { hwPstnPTPOperEntry 7 }
+     
+    hwPstnPTPTestStateChange OBJECT-TYPE
+     SYNTAX      TimeTicks
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         PSTN端口物理测试状态变化时间
+         "
+     ::= { hwPstnPTPOperEntry 8 }       
+  
+ ---------------------------------------/*hwBraPTPConfigTable*/------------------------------------
+   hwBraPTPConfigTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF HwBraPTPConfigEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       "
+       BRA 端口物理属性配置表
+       "
+     ::= { hwIASVoicePortObjects 3 }
+ 
+   hwBraPTPConfigEntry OBJECT-TYPE
+     SYNTAX      HwBraPTPConfigEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       ""
+     INDEX    {  
+               hwBraPTPIndex
+              }
+     ::= { hwBraPTPConfigTable 1 }
+ 
+   HwBraPTPConfigEntry ::=
+     SEQUENCE
+     {
+       hwBraPTPIndex	                INTEGER,
+       hwBraPTPRPower	                INTEGER,
+       hwBraPTPAutoDeactive	        INTEGER,
+       hwBraPTPAutoDeactiveDelay	INTEGER,
+       hwBraPTPWorkMode	                INTEGER,
+       hwBraPTPPowerState	        INTEGER,
+       hwBraPTPConfigState	        INTEGER 
+     }
+ 
+   hwBraPTPIndex OBJECT-TYPE
+     SYNTAX      INTEGER
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "
+         框槽端口
+         "
+     ::= { hwBraPTPConfigEntry 1 }
+ 
+   hwBraPTPRPower OBJECT-TYPE
+     SYNTAX      INTEGER{disable(1), enable(2)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         是否支持远供 1:不支持;2:支持 
+         "
+         DEFVAL      { disable }
+     ::= { hwBraPTPConfigEntry 2 }
+ 
+   hwBraPTPAutoDeactive OBJECT-TYPE
+     SYNTAX      INTEGER{disable(1), enable(2)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         是否支持自动去激活功能 1:不支持;2:支持
+         "
+         DEFVAL      { disable }
+     ::= { hwBraPTPConfigEntry 3 }
+ 
+   hwBraPTPAutoDeactiveDelay OBJECT-TYPE
+     SYNTAX      INTEGER(10..360) 
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         BRA去激活延时(单位：秒)
+         "
+         DEFVAL      { 10 }
+     ::= { hwBraPTPConfigEntry 4 }
+     
+  hwBraPTPWorkMode OBJECT-TYPE
+     SYNTAX      INTEGER{p2mp(1), p2p(2)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         BRA端口工作模式: 1:p2mp(点到多点);2:p2p(点到点)
+         "
+         DEFVAL      { p2mp }
+     ::= { hwBraPTPConfigEntry 5 }
+ 
+   hwBraPTPPowerState OBJECT-TYPE
+     SYNTAX      INTEGER{state1(1),state2(2),state3(3),state4(4)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         " 
+         NT1电源：1：主供电源(PS1)，2：备用电源(PS2)
+         State1: PS1正常;PS2正常
+         State2: PS1正常;PS2异常
+         State3: PS1异常;PS2正常
+         State4: PS1异常;PS2异常
+         "
+     ::= { hwBraPTPConfigEntry 6 }
+  hwBraPTPConfigState OBJECT-TYPE
+     SYNTAX      INTEGER{NotconfigUserType(1),ConfigUserType(2)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         配置用户类型:1:没有配置; 2:已经配置
+         "
+     ::= { hwBraPTPConfigEntry 7}
+
+-----------------------------------/*hwBraPTPOperTable*/----------------------------------------------
+
+   hwBraPTPOperTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF HwBraPTPOperEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       "
+       BRA PTP层的管理维护操作和状态查询表
+       "
+     ::= { hwIASVoicePortObjects 4 }
+     
+   hwBraPTPOperEntry OBJECT-TYPE
+     SYNTAX      HwBraPTPOperEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       ""
+     INDEX    {  
+              hwBraPTPOperIndex
+              }
+     ::= { hwBraPTPOperTable 1 }
+ 
+   HwBraPTPOperEntry ::=
+     SEQUENCE
+     {
+       hwBraPTPOperIndex	              INTEGER,
+       hwBraPTPSrvState	              INTEGER,
+       hwBraPTPLoopBackState          INTEGER,
+       hwBraPTPTestState	          INTEGER,
+       hwBraPTPAdminOper	          INTEGER,
+       hwBraPTPSrvStateChange	      TimeTicks,
+       hwBraPTPLoopBackStateChange    TimeTicks,
+       hwBraPTPTestStateChange	      TimeTicks      
+     }
+ 
+   hwBraPTPOperIndex OBJECT-TYPE
+     SYNTAX      INTEGER
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "
+         框槽端口
+         "
+     ::= { hwBraPTPOperEntry 1 }
+ 
+   hwBraPTPSrvState OBJECT-TYPE
+     SYNTAX      INTEGER{Normal(1),Fault(2),Deactive(3)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         BRA端口物理运行状态：1:正常; 2:故障; 3:去激活;
+         "
+     ::= { hwBraPTPOperEntry 2 }
+ 
+   hwBraPTPLoopBackState OBJECT-TYPE
+     SYNTAX      INTEGER{Noloop(1),Remoteloop(2),Localloop(3)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "  
+         BRA端口物理管理状态：1:未环回; 2:远环; 3:近环;
+         "
+     ::= { hwBraPTPOperEntry 3 }
+     
+   hwBraPTPTestState OBJECT-TYPE
+     SYNTAX      INTEGER{Notest(1),Test(2)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         BRA端口物理管理状态：1:未测试;2:测试; 
+         "
+     ::= { hwBraPTPOperEntry 4 }
+ 
+   hwBraPTPAdminOper OBJECT-TYPE
+     SYNTAX      INTEGER{Reset(1),Localloop(2),Remoteloop(3),Cancelloop(4),Active(5),Deactive(6)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         BRA端口物理层维护操作：1:复位; 2:近端环回;3:远端环回;4:取消环回;5:激活; 6:去激活;
+         "
+     ::= { hwBraPTPOperEntry 5 }
+ 
+   hwBraPTPSrvStateChange OBJECT-TYPE
+     SYNTAX      TimeTicks
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         BRA端口物理运行状态变化时间
+         "
+     ::= { hwBraPTPOperEntry 6 }
+ 
+   hwBraPTPLoopBackStateChange OBJECT-TYPE
+     SYNTAX      TimeTicks
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         BRA端口环回状态变化时间
+         "
+     ::= { hwBraPTPOperEntry 7 }
+     
+   hwBraPTPTestStateChange OBJECT-TYPE
+     SYNTAX      TimeTicks
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         BRA端口测试状态变化时间
+         "
+     ::= { hwBraPTPOperEntry 8 }
+ 
+ 
+   ------------------------/*hwBRAPTPPerformanceStatTable*/----------------------------
+ 
+   hwBRAPTPPerformanceStatTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF HwBRAPTPPerformanceStatEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       "
+       BRA PTP层统计表
+       "
+     ::= { hwIASVoicePortObjects 5 }
+ 
+   hwBRAPTPPerformanceStatEntry OBJECT-TYPE
+     SYNTAX      HwBRAPTPPerformanceStatEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       ""
+     INDEX    {  
+               hwBraPTPPerforIndex
+              }
+     ::= { hwBRAPTPPerformanceStatTable 1 }
+ 
+   HwBRAPTPPerformanceStatEntry ::=
+     SEQUENCE
+     {
+       hwBraPTPPerforIndex	        INTEGER,
+       hwBraPTPPerformanceStatOprType	INTEGER,
+       hwBraPTPPerformanceStatPeri	    INTEGER,
+       hwBraPTPErrorcode	            INTEGER,
+       hwBraPTPNebeUas                  INTEGER,
+       hwBraPTPFebeUas                  INTEGER,
+       hwBraPTPNebeEs                   INTEGER,
+       hwBraPTPFebeEs                   INTEGER,
+       hwBraPTPNebeSes                  INTEGER,
+       hwBraPTPFebeSes                  INTEGER
+     }
+ 
+   hwBraPTPPerforIndex OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        " 
+        框槽端口 
+        "
+    ::= { hwBRAPTPPerformanceStatEntry 1 }    
+    
+    hwBraPTPPerformanceStatOprType OBJECT-TYPE
+    SYNTAX      INTEGER{stop(1), start(2)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        启动性能统计 1:停止;2:启动 
+        "
+    ::= { hwBRAPTPPerformanceStatEntry 2 }   
+    
+    hwBraPTPPerformanceStatPeri OBJECT-TYPE
+    SYNTAX      INTEGER(1..5)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        启动周期（分钟）
+        "
+    ::= { hwBRAPTPPerformanceStatEntry 3 }   
+    
+    hwBraPTPErrorcode OBJECT-TYPE
+    SYNTAX      INTEGER(50..84)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+        " 
+        误码门限设置（个）
+        "
+    ::= { hwBRAPTPPerformanceStatEntry 4 }
+    
+    hwBraPTPNebeUas OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "
+        NEBE(Near End Block Error) 不用时间（s） 
+        "
+    ::= { hwBRAPTPPerformanceStatEntry 5 }   
+    
+    hwBraPTPFebeUas OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "
+        FEBE(Far End Block Error) 不用时间（s） 
+        "
+    ::= { hwBRAPTPPerformanceStatEntry 6 }
+    
+    hwBraPTPNebeEs OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "
+        NEBE(Near End Block Error) 误码秒（s） 
+        "
+    ::= { hwBRAPTPPerformanceStatEntry 7 }
+    
+    hwBraPTPFebeEs OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "
+        FEBE(Far End Block Error) 误码秒（s） 
+        "
+    ::= { hwBRAPTPPerformanceStatEntry 8 }
+    
+    hwBraPTPNebeSes OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "
+        NEBE(Near End Block Error) 严重误码秒（s） 
+        "
+    ::= { hwBRAPTPPerformanceStatEntry 9 }
+    
+    hwBraPTPFebeSes OBJECT-TYPE
+    SYNTAX      INTEGER
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "
+        FEBE(Far End Block Error) 严重误码秒（s） 
+        "
+    ::= { hwBRAPTPPerformanceStatEntry 10 } 
+    
+   ---------------------------/*hwE1PTPConfigTable*/-------------------------- 
+   hwE1PTPConfigTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF HwE1PTPConfigEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       "
+       E1 PTP层属性配置和查询表
+       "
+     ::= { hwIASVoicePortObjects 6 }
+   
+   hwE1PTPConfigEntry OBJECT-TYPE
+     SYNTAX      HwE1PTPConfigEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       ""
+     INDEX    {  
+               hwE1PTPIndex
+              }
+     ::= { hwE1PTPConfigTable 1 }
+ 
+   HwE1PTPConfigEntry ::=
+     SEQUENCE
+     {
+       hwE1PTPIndex  	        INTEGER,
+       hwE1PTPFrameVerifyMode	INTEGER,
+       hwE1PTPImpedance  	INTEGER,
+       hwE1PTPSignalType	INTEGER,
+       hwE1PTPConfigState       INTEGER
+     }
+ 
+   hwE1PTPIndex OBJECT-TYPE
+     SYNTAX      INTEGER
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "
+         框槽端口
+         "
+     ::= { hwE1PTPConfigEntry 1 }
+ 
+   hwE1PTPFrameVerifyMode OBJECT-TYPE
+     SYNTAX      INTEGER{disable(1),enable(2)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         CRC4帧校验
+         "
+         DEFVAL      { disable }
+     ::= { hwE1PTPConfigEntry 2 }
+ 
+   hwE1PTPImpedance OBJECT-TYPE
+     SYNTAX      INTEGER{ohm_75(1),ohm_120(2)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         端口阻抗
+         "
+         DEFVAL      { ohm_75 }
+     ::= { hwE1PTPConfigEntry 3 }
+ 
+   hwE1PTPSignalType OBJECT-TYPE
+     SYNTAX      INTEGER{ccs(1),cas(2)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         信令类型
+         "
+         DEFVAL      { ccs }
+     ::= { hwE1PTPConfigEntry 4 }
+     
+   hwE1PTPConfigState OBJECT-TYPE
+     SYNTAX      INTEGER{NotconfigUserType(1),ConfigUserType(2)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         配置用户类型:1:没有配置; 2:已经配置MG PRA用户
+         "
+     ::= { hwE1PTPConfigEntry 5}
+     
+ ------------------------------/*hwE1PTPOperTable*/------------------------------------------   
+   hwE1PTPOperTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF HwE1PTPOperEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       "
+       E1 PTP层的管理维护操作和状态查询表
+       "
+     ::= { hwIASVoicePortObjects 7 }
+ 
+   hwE1PTPOperEntry OBJECT-TYPE
+     SYNTAX      HwE1PTPOperEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       ""
+     INDEX    {  
+               hwE1PTPOperIndex
+              }
+     ::= { hwE1PTPOperTable 1 }
+ 
+   HwE1PTPOperEntry ::=
+     SEQUENCE
+     {
+       hwE1PTPOperIndex	          INTEGER,
+       hwE1PTPSrvState	          INTEGER,
+       hwE1PTPLoopBackState       INTEGER,
+       hwE1PTPAdminOper	          INTEGER,
+       hwE1PTPWarningState	  INTEGER
+     }
+ 
+   hwE1PTPOperIndex OBJECT-TYPE
+     SYNTAX      INTEGER
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "
+         框/槽/端口
+         "
+     ::= { hwE1PTPOperEntry 1 }
+ 
+   hwE1PTPSrvState OBJECT-TYPE
+     SYNTAX      INTEGER{normal(1),fault(2),lineAbnormal(3)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         E1端口物理运行状态：1:正常; 2:故障; 3:线路异常;
+         "
+     ::= { hwE1PTPOperEntry 2 }
+ 
+   hwE1PTPLoopBackState OBJECT-TYPE
+     SYNTAX      INTEGER{noLoop(1),remoteLoop(2),localLoop(3)}
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         E1端口物理环回状态：1－未环回; 2:远环; 3:近环;
+         "
+     ::= { hwE1PTPOperEntry 3 }
+ 
+   hwE1PTPAdminOper OBJECT-TYPE
+     SYNTAX      INTEGER{reset(1),localLoop(2),remoteLoop(3),cancelLoop(4)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         E1端口物理层维护操作
+         reset(1)
+         localLoop(2)
+         remoteLoop(3)
+         cancelLoop(4)
+         "
+     ::= { hwE1PTPOperEntry 4 }
+ 
+   hwE1PTPWarningState OBJECT-TYPE
+     SYNTAX      INTEGER('0'H..'3f'H)
+     MAX-ACCESS  read-only
+     STATUS      current
+     DESCRIPTION
+         "
+         E1线路告警状态:
+        Bit0:LOS  (0:无LOS告警；1: 存在LOS告警  )
+	Bit1:AIS  (0:无AIS告警  1: 存在AIS告警  )
+	Bit2:LFA  (0:无LFA告警  1: 存在LFA告警  )
+	Bit3:LMFA (0:无LMFA告警 1: 存在LMFA告警 )
+	Bit4:RRA  (0:无RRA告警  1: 存在RRA告警  )
+	Bit5:CRCER(0:无CRCER告警1: 存在CRCER告警)
+         "
+     ::= { hwE1PTPOperEntry 5 }
+     
+  --------------------------/*hwGTCOperateTable*/---------------------------------
+ hwGTCOperateTable OBJECT-TYPE
+     SYNTAX      SEQUENCE OF HwGTCOperateEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       "
+       GTC测试控制表
+       "
+     ::= { hwIASVoicePortObjects 8 }
+ 
+   hwGTCOperateEntry OBJECT-TYPE
+     SYNTAX      HwGTCOperateEntry
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+       ""
+     INDEX    {  
+               hwGTCIndex
+              }
+     ::= { hwGTCOperateTable 1 }
+ 
+   HwGTCOperateEntry ::=
+     SEQUENCE
+     {
+       hwGTCIndex  	                  INTEGER,
+       hwGTCTimer       	          INTEGER,
+       hwGTCOperate                       INTEGER,
+     }
+ 
+   hwGTCIndex OBJECT-TYPE
+     SYNTAX      INTEGER
+     MAX-ACCESS  not-accessible
+     STATUS      current
+     DESCRIPTION
+         "
+         GTC测试索引
+         "
+     ::= { hwGTCOperateEntry 1 }
+ 
+   hwGTCTimer OBJECT-TYPE
+     SYNTAX      INTEGER(1..600)
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         GTC测试定时器时长
+         超时自动终止GTC测试(单位：秒)。测试开始命令，必须下发绑定测试定时器时长
+         "
+     ::= { hwGTCOperateEntry 2 }
+ 
+   hwGTCOperate OBJECT-TYPE
+     SYNTAX      INTEGER{undertest(1),finishtest(2)}
+     MAX-ACCESS  read-write
+     STATUS      current
+     DESCRIPTION
+         "
+         1: undertest(1) 
+         2: finishtest(2)
+         使用说明：1表示启动GTC测试；2表示终止GTC测试。
+         "
+     ::= { hwGTCOperateEntry 3 } 
+------------------------------------------------------------------------------ 
+ --  用户自定义振铃类型表 UserDefineRingTypeTable
+     hwUserDefineRingTypeTable     OBJECT-TYPE
+        SYNTAX         SEQUENCE OF HwUserDefineRingTypeEntry
+        MAX-ACCESS     not-accessible
+        STATUS         current
+        DESCRIPTION
+           "
+           自定义振铃配置表
+           "
+    ::= { hwIASVoicePortObjects 9 }
+
+    hwUserDefineRingTypeEntry         OBJECT-TYPE
+       SYNTAX         HwUserDefineRingTypeEntry
+       MAX-ACCESS     not-accessible
+       STATUS         current
+       DESCRIPTION    " "
+          INDEX    { 
+                     hwUserDefineRingType
+                   }
+    ::= { hwUserDefineRingTypeTable  1 }
+
+     HwUserDefineRingTypeEntry ::= SEQUENCE 
+     {
+        hwUserDefineRingType           INTEGER,
+        hwUserDefineRingPara1          INTEGER,
+        hwUserDefineRingPara2          INTEGER,
+        hwUserDefineRingPara3          INTEGER,
+        hwUserDefineRingPara4          INTEGER,
+        hwUserDefineRingPara5          INTEGER,
+        hwUserDefineRingPara6          INTEGER     
+           
+     }
+
+    hwUserDefineRingType         OBJECT-TYPE
+        SYNTAX      INTEGER(1..16) 
+        MAX-ACCESS  not-accessible
+        STATUS      current
+        DESCRIPTION
+         " "
+    ::= { hwUserDefineRingTypeEntry 1 }
+
+    hwUserDefineRingPara1         OBJECT-TYPE
+        SYNTAX      INTEGER(0..65534) 
+        MAX-ACCESS  read-write
+        STATUS      current
+        DESCRIPTION
+         " "
+    ::= { hwUserDefineRingTypeEntry 2 }
+
+
+    hwUserDefineRingPara2         OBJECT-TYPE
+        SYNTAX      INTEGER(0..65534) 
+        MAX-ACCESS  read-write
+        STATUS      current
+        DESCRIPTION
+         " "
+    ::= { hwUserDefineRingTypeEntry 3 }
+
+    hwUserDefineRingPara3         OBJECT-TYPE
+        SYNTAX      INTEGER(0..65534) 
+        MAX-ACCESS  read-write
+        STATUS      current
+        DESCRIPTION
+         " "
+    ::= { hwUserDefineRingTypeEntry 4 }
+
+    hwUserDefineRingPara4         OBJECT-TYPE
+        SYNTAX      INTEGER(0..65534) 
+        MAX-ACCESS  read-write
+        STATUS      current
+        DESCRIPTION
+         " "
+    ::= { hwUserDefineRingTypeEntry 5 }
+
+    hwUserDefineRingPara5         OBJECT-TYPE
+        SYNTAX      INTEGER(0..65535) 
+        MAX-ACCESS  read-write
+        STATUS      current
+        DESCRIPTION
+         " "
+    ::= { hwUserDefineRingTypeEntry 6 }
+
+    hwUserDefineRingPara6         OBJECT-TYPE
+        SYNTAX      INTEGER(0..65534) 
+        MAX-ACCESS  read-write
+        STATUS      current
+        DESCRIPTION
+         " "
+    ::= { hwUserDefineRingTypeEntry 7 } 
+------------------------------------------------------------------------------ 
+    hwPortDataTrapSequence OBJECT IDENTIFIER ::= { hwIASVoicePortObjects 10 }
+		
+		hwPstnPortDataTrapSequence OBJECT-TYPE
+			SYNTAX INTEGER
+			MAX-ACCESS read-only
+			STATUS current
+			DESCRIPTION
+				"
+				  PSTN端口数据变化后上报TRAP的序列号
+                                "
+			::= { hwPortDataTrapSequence 1 }
+		
+		hwBraPortDataChangeSequence OBJECT-TYPE
+			SYNTAX INTEGER
+			MAX-ACCESS read-only
+			STATUS current
+			DESCRIPTION
+				"
+				  BRA端口数据变化后上报TRAP的序列号
+                                "
+			::= { hwPortDataTrapSequence 2 }
+		
+		hwE1PortDataChangeSequence OBJECT-TYPE
+			SYNTAX INTEGER
+			MAX-ACCESS read-only
+			STATUS current
+			DESCRIPTION
+				"
+				  E1端口数据变化后上报TRAP的序列号
+                                "
+			::= { hwPortDataTrapSequence 3 }
+------------------------------------------------------------------------------ 
+END

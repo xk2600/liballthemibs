@@ -1,0 +1,5333 @@
+--MibName=casunza
+--
+-- ========================================================================
+--
+--               COMPUTER ASSOCIATES INTERNATIONAL, INC.
+--               Proprietary and Confidential Information
+--
+-- This material contains, and is part of a computer software program
+-- which is, proprietary and confidential information owned by COMPUTER
+-- ASSOCIATES INTERNATIONAL, INC.  The program, including this material,
+-- may not be duplicated, disclosed or reproduced in whole or in part for
+-- any purpose without the express written authorization of COMPUTER
+-- ASSOCIATES. All authorized reproductions must be marked with this
+-- legend.
+--                 Computer Associates International, Inc      
+--
+--                          Copyright (c) 2008
+--                       The Software that Manages eBusiness
+--                          All rights reserved
+--
+--
+-- ------------------------------------------------------------------------
+-- Mib name: casunza
+
+EMPIRE-CASUNZA-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+	OBJECT-TYPE
+		FROM RFC-1212
+	TRAP-TYPE
+		FROM RFC-1215
+	DisplayString
+		FROM RFC1213-MIB
+	enterprises, TimeTicks, Counter, Gauge
+		FROM RFC1155-SMI;
+
+empire		OBJECT IDENTIFIER ::= { enterprises 546 }
+unix            OBJECT IDENTIFIER ::= { empire 1 }
+sysmgmt         OBJECT IDENTIFIER ::= { unix 1 }
+traps		OBJECT IDENTIFIER ::= { empire 9 }
+applications	OBJECT IDENTIFIER ::= { empire 16 }
+casunzaim	OBJECT IDENTIFIER ::= { applications 54 }
+
+-- *****************************************************************************
+zoneAimGroup	OBJECT IDENTIFIER ::= { casunzaim 1 }	
+-- *****************************************************************************
+zoneAimInstanceCount OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Number of Zone Agent Instances in zoneAimInstanceTable."
+	::= {zoneAimGroup 1}
+
+zoneAimInstanceTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimInstanceRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"A table containing the Zone Agent Instances."
+	::= { zoneAimGroup 2 }
+
+zoneAimInstanceEntry OBJECT-TYPE
+	SYNTAX ZoneAimInstanceRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The Zone Agent Instances Table entry."
+	INDEX { zoneAimInstanceUID }
+	::= { zoneAimInstanceTable 1 }
+
+ZoneAimInstanceRow ::=
+	SEQUENCE {
+		zoneAimInstanceUID		INTEGER,
+		zoneAimInstanceName		DisplayString,
+		zoneAimInstanceUserName		DisplayString,
+		zoneAimInstancePassword		DisplayString,
+		zoneAimInstanceRowStatus	INTEGER,
+		zoneAimInstanceDataStatus	INTEGER
+		}
+
+zoneAimInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimInstanceEntry  1}
+
+zoneAimInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimInstanceEntry  2}
+
+zoneAimInstanceUserName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"User name for the Zone Instance"
+	::= { zoneAimInstanceEntry  3}
+
+zoneAimInstancePassword OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Password for the Zone Instance"
+	::= { zoneAimInstanceEntry  4}
+
+zoneAimInstanceRowStatus OBJECT-TYPE
+	SYNTAX INTEGER {
+		active(1),
+		notInService(2),
+		notReady(3),
+		createAndGo(4),
+		createAndWait(5),
+		destroy(6)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The status of this monitor entry according to the Textual Conventions for SNMPv2 (see RFC 1443).
+		active(1)        - the row is available for usage
+		notInService(2)  - setting to this value disables usage of the row
+		notReady(3)      - an error occured during usage of the row
+		createAndGo(4)   - setting to this value creates the row with row status set to active(1)
+		createAndWait(5) - setting to this value creates the row with row status set to notInService(2)
+		destroy(6)       - setting to this value deletes the row"
+	DEFVAL { 5 }
+	::= { zoneAimInstanceEntry  5}
+
+zoneAimInstanceDataStatus OBJECT-TYPE
+	SYNTAX INTEGER {
+		ready(1),
+		notReady(2),
+		hostUnreachable(3),
+		authenticationFailed(5),
+		unknownError(6)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The status of data of the Zone Instance, i.e. status of Aim caches for the Instance.
+		ready(1)                - data are ready in Aim cache, caches were populated
+		notReady(2)             - data are Not ready, caches were not populated yet
+		hostUnreachable(3)      - Zone host unreachable, data are kept in Aim caches
+		authenticationFailed(5) - authentication failed for Zone host, data are kept in Aim caches
+		unknownError(6)         - unknow error, data are kept in Aim caches"
+	DEFVAL { 2 }
+	::= { zoneAimInstanceEntry  6}
+
+zoneAimInstanceUnusedIndex OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+                "An SNMP GET of this attribute returns an unused Instance UID. This
+                 is normally used to expedite safe table row creation."
+	::= { zoneAimGroup 3 }
+
+
+-- *****************************************************************************
+-- Configuration Groups
+-- *****************************************************************************
+zoneAimConfigGroup	OBJECT IDENTIFIER ::= { casunzaim 2 }
+zoneAimStatGroup	OBJECT IDENTIFIER ::= { casunzaim 3 }
+zoneAimEventGroup	OBJECT IDENTIFIER ::= { casunzaim 4 }
+
+
+-- *****************************************************************************
+-- zoneAimConfigGroup
+-- *****************************************************************************
+
+
+zoneAimConfigGeneralAgentName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The name of the agent."
+	::= { zoneAimConfigGroup 1 }
+
+zoneAimConfigGeneralAgentVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The currently installed version of the agent."
+	::= { zoneAimConfigGroup 2 }
+
+zoneAimConfigGeneralPollInterval OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The time (in seconds) between polling by the Agent. Valid values are greater than or equal to 120 seconds."
+	DEFVAL { 120 }
+	::= { zoneAimConfigGroup 3 }
+
+zoneAimConfigGeneralLogLevel OBJECT-TYPE
+	SYNTAX INTEGER (0..7)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"This OID was deprecated and is always -1.
+		 Use SystemEDGE Log Level setting instead."
+	DEFVAL { 2 }
+	::= { zoneAimConfigGroup 4 }
+
+zoneAimConfigGeneralTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimConfigGeneralRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"A table containing the Zone Config for all Agent Instances."
+	::= { zoneAimConfigGroup 5 }
+
+zoneAimConfigGeneralEntry OBJECT-TYPE
+	SYNTAX ZoneAimConfigGeneralRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The Zone Config Agent Instances Table entry."
+	INDEX { zoneAimConfigInstanceUID }
+	::= { zoneAimConfigGeneralTable 1 }
+
+ZoneAimConfigGeneralRow ::=
+	SEQUENCE {
+		zoneAimConfigInstanceUID			INTEGER,
+		zoneAimConfigInstanceName			DisplayString,
+		zoneAimConfigGeneralColdStartTime		TimeTicks,
+		zoneAimConfigGeneralAgentHostName		DisplayString,
+		zoneAimConfigGeneralZoneHostID			DisplayString,
+		zoneAimConfigGeneralWRSLastTime			TimeTicks,
+		zoneAimConfigEventCount				INTEGER,
+		zoneAimConfigEventCountMax			INTEGER,
+		zoneAimConfigEventHistory			INTEGER,
+		zoneAimConfigEventClear				INTEGER
+		}
+
+zoneAimConfigInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimConfigGeneralEntry  1}
+
+zoneAimConfigInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimConfigGeneralEntry  2}
+
+zoneAimConfigGeneralColdStartTime OBJECT-TYPE
+	SYNTAX TimeTicks
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The date and time that the agent was last started."
+	::= { zoneAimConfigGeneralEntry 3 }
+
+zoneAimConfigGeneralAgentHostName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The host name on which this agent is running."
+	::= { zoneAimConfigGeneralEntry 4 }
+
+zoneAimConfigGeneralZoneHostID OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The host Index which is being monitored by this instance of the agent."
+	::= { zoneAimConfigGeneralEntry 5 }
+
+zoneAimConfigGeneralWRSLastTime OBJECT-TYPE
+	SYNTAX TimeTicks
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The time, when WRS last fetched the event table."
+	::= { zoneAimConfigGeneralEntry 6 }
+
+zoneAimConfigEventCount OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Number of events in event table."
+	::= {zoneAimConfigGeneralEntry 7}
+
+zoneAimConfigEventCountMax OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The maximum number of events to be stored in the event table, after which the rows start getting overwritten."
+	DEFVAL { 500 }
+	::= {zoneAimConfigGeneralEntry 8}
+
+zoneAimConfigEventHistory OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The number of days the events are maintained. The value is in the number of days."
+	DEFVAL {30}
+	::= {zoneAimConfigGeneralEntry 9}
+	
+zoneAimConfigEventClear OBJECT-TYPE
+	SYNTAX INTEGER {
+			do-not-clear(1),
+           		clear(2)
+			}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Flag indicating whether to clear all the events in the zoneAimEventTable or not. 1)DO_NOT_CLEAR 2)CLEAR."
+	DEFVAL { 1 }	
+	::= {zoneAimConfigGeneralEntry 10}
+
+zoneAimConfigGeneralCIMComputerSystem OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"CIM Computer System Object that is running the AIM."
+	::= { zoneAimConfigGroup 6 }
+
+
+
+-- *****************************************************************************
+-- Status Groups
+-- *****************************************************************************
+zoneAimStatGeneralGroup		OBJECT IDENTIFIER ::= { zoneAimStatGroup 1 }
+zoneAimStatHostGroup		OBJECT IDENTIFIER ::= { zoneAimStatGroup 2 }
+zoneAimStatContainerGroup	OBJECT IDENTIFIER ::= { zoneAimStatGroup 3 }
+zoneAimStatResPoolGroup		OBJECT IDENTIFIER ::= { zoneAimStatGroup 4 }
+zoneAimStatZoneGroup		OBJECT IDENTIFIER ::= { zoneAimStatGroup 5 }
+zoneAimStatProjectGroup		OBJECT IDENTIFIER ::= { zoneAimStatGroup 6 }
+zoneAimStatProcessorSetGroup	OBJECT IDENTIFIER ::= { zoneAimStatGroup 7 }
+zoneAimStatNetworkGroup		OBJECT IDENTIFIER ::= { zoneAimStatGroup 8 }
+zoneAimStatDiskGroup		OBJECT IDENTIFIER ::= { zoneAimStatGroup 9 }
+
+
+
+
+
+-- *****************************************************************************
+-- Status Groups
+-- *****************************************************************************
+
+-- *****************************************************************************
+-- General Status Table
+-- *****************************************************************************
+
+zoneAimStatusGeneralTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimStatusGeneralRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"A table containing the Summary Status for all Agent Instances."
+	::= { zoneAimStatGeneralGroup 1 }
+
+zoneAimStatusGeneralEntry OBJECT-TYPE
+	SYNTAX ZoneAimStatusGeneralRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The Zone Summary Status Agent Instances Table entry."
+	INDEX { zoneAimStatGenInstanceUID }
+	::= { zoneAimStatusGeneralTable 1 }
+
+ZoneAimStatusGeneralRow ::=
+	SEQUENCE {
+		zoneAimStatGenInstanceUID		INTEGER,
+		zoneAimStatGenInstanceName		DisplayString,
+		zoneAimStatGenTotal			INTEGER,
+		zoneAimStatGenTotalWarn			INTEGER,
+		zoneAimStatGenTotalCrit			INTEGER,
+		zoneAimStatGenTotalHost			INTEGER,
+		zoneAimStatGenTotalHostWarn		INTEGER,
+		zoneAimStatGenTotalHostCrit		INTEGER,
+		zoneAimStatGenTotalZone			INTEGER,
+		zoneAimStatGenTotalZoneWarn		INTEGER,
+		zoneAimStatGenTotalZoneCrit		INTEGER,
+		zoneAimStatGenTotalProjects		INTEGER,
+		zoneAimStatGenTotalProjectsWarn		INTEGER,
+		zoneAimStatGenTotalProjectsCrit		INTEGER,
+		zoneAimStatGenTotalHDisk		INTEGER,
+		zoneAimStatGenTotalHDiskWarn		INTEGER,
+		zoneAimStatGenTotalHDiskCrit		INTEGER,
+		zoneAimStatGenTotalPNIC			INTEGER,
+		zoneAimStatGenTotalPNICWarn		INTEGER,
+		zoneAimStatGenTotalPNICCrit		INTEGER,
+		zoneAimStatGenTotalVNIC			INTEGER,
+		zoneAimStatGenTotalVNICWarn		INTEGER,
+		zoneAimStatGenTotalVNICCrit		INTEGER,
+		zoneAimStatGenTotalRPool		INTEGER,
+		zoneAimStatGenTotalRPoolWarn		INTEGER,
+		zoneAimStatGenTotalRPoolCrit		INTEGER,
+		zoneAimStatGenTotalPset			INTEGER,
+		zoneAimStatGenTotalPsetWarn		INTEGER,
+		zoneAimStatGenTotalPsetCrit		INTEGER
+		}
+
+zoneAimStatGenInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimStatusGeneralEntry  1}
+
+zoneAimStatGenInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimStatusGeneralEntry  2}
+
+zoneAimStatGenTotal OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Objects monitored."
+	::= { zoneAimStatusGeneralEntry 3 }
+
+zoneAimStatGenTotalWarn OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Objects in warning state."
+	::= { zoneAimStatusGeneralEntry 4 }
+
+zoneAimStatGenTotalCrit OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Objects in critical state."
+	::= { zoneAimStatusGeneralEntry 5 }
+
+zoneAimStatGenTotalHost OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of hosts monitored."
+	::= { zoneAimStatusGeneralEntry 6 }
+
+zoneAimStatGenTotalHostWarn OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of hosts in warning state."
+	::= { zoneAimStatusGeneralEntry 7 }
+
+zoneAimStatGenTotalHostCrit OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of hosts in critical state."
+	::= { zoneAimStatusGeneralEntry 8 }
+
+zoneAimStatGenTotalZone OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of zones monitored."
+	::= { zoneAimStatusGeneralEntry 9 }
+
+zoneAimStatGenTotalZoneWarn OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of zones in warning state."
+	::= { zoneAimStatusGeneralEntry 10 }
+
+zoneAimStatGenTotalZoneCrit OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of zones in critical state."
+	::= { zoneAimStatusGeneralEntry 11 }
+
+zoneAimStatGenTotalProjects OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of projects monitored."
+	::= { zoneAimStatusGeneralEntry 12 }
+
+zoneAimStatGenTotalProjectsWarn OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of projects in warning state."
+	::= { zoneAimStatusGeneralEntry 13 }
+
+zoneAimStatGenTotalProjectsCrit OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of projects in critical state."
+	::= { zoneAimStatusGeneralEntry 14 }
+
+zoneAimStatGenTotalHDisk OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Host Disks monitored."
+	::= { zoneAimStatusGeneralEntry 15 }
+
+zoneAimStatGenTotalHDiskWarn OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Host Disks in warning state."
+	::= { zoneAimStatusGeneralEntry 16 }
+
+zoneAimStatGenTotalHDiskCrit OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Host Disks in critical state."
+	::= { zoneAimStatusGeneralEntry 17 }
+
+zoneAimStatGenTotalPNIC OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Physical NICs monitored."
+	::= { zoneAimStatusGeneralEntry 18 }
+
+zoneAimStatGenTotalPNICWarn OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Physical NICs in warning state."
+	::= { zoneAimStatusGeneralEntry 19 }
+
+zoneAimStatGenTotalPNICCrit OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Physical NICs in critical state."
+	::= { zoneAimStatusGeneralEntry 20 }
+
+zoneAimStatGenTotalVNIC OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Virtual NICs monitored."
+	::= { zoneAimStatusGeneralEntry 21 }
+
+zoneAimStatGenTotalVNICWarn OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Virtual NICs in warning state."
+	::= { zoneAimStatusGeneralEntry 22 }
+
+zoneAimStatGenTotalVNICCrit OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of Virtual NICs in critical state."
+	::= { zoneAimStatusGeneralEntry 23 }
+
+zoneAimStatGenTotalRPool OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of ResourcePools monitored."
+	::= { zoneAimStatusGeneralEntry 24 }
+
+zoneAimStatGenTotalRPoolWarn OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of ResourcePools in warning state."
+	::= { zoneAimStatusGeneralEntry 25 }
+
+zoneAimStatGenTotalRPoolCrit OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of ResourcePools in critical state."
+	::= { zoneAimStatusGeneralEntry 26 }
+
+zoneAimStatGenTotalPset OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of ProcessorSets monitored."
+	::= { zoneAimStatusGeneralEntry 27 }
+
+zoneAimStatGenTotalPsetWarn OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of ProcessorSets in warning state."
+	::= { zoneAimStatusGeneralEntry 28 }
+
+zoneAimStatGenTotalPsetCrit OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total number of ProcessorSets in critical state."
+	::= { zoneAimStatusGeneralEntry 29 }
+
+
+-- *****************************************************************************
+-- Host Status Table
+-- *****************************************************************************
+
+zoneAimStatusHostTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimStatusHostRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"A table containing the Host Status for all Agent Instances."
+	::= { zoneAimStatHostGroup 1 }
+
+zoneAimStatusHostEntry OBJECT-TYPE
+	SYNTAX ZoneAimStatusHostRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The Host Status Agent Instances Table entry."
+	INDEX { zoneAimStatHostInstanceUID }
+	::= { zoneAimStatusHostTable 1 }
+
+ZoneAimStatusHostRow ::=
+	SEQUENCE {
+		zoneAimStatHostInstanceUID			INTEGER,
+		zoneAimStatHostInstanceName			DisplayString,
+		zoneAimStatHostName				DisplayString,
+		zoneAimStatHostID				DisplayString,
+		zoneAimStatHostOSType				DisplayString,
+		zoneAimStatHostipaddress			DisplayString,
+		zoneAimStatHostProdVer				DisplayString,
+		zoneAimStatHostState				INTEGER,
+		zoneAimStatHostStatus				DisplayString,
+		zoneAimStatHostStatusAlert			INTEGER,
+		zoneAimStatHostMonitor				INTEGER,
+		zoneAimStatHostNumCPU				INTEGER,
+		zoneAimStatHostLogNumCPU			INTEGER,
+		zoneAimStatHostCPUSharesReserved		INTEGER,
+		zoneAimStatHostCPUUsage				INTEGER,
+		zoneAimStatHostCPUUsageWarnThresh		INTEGER,
+		zoneAimStatHostCPUUsageCritThresh		INTEGER,
+		zoneAimStatHostCPUAlert				INTEGER,
+		zoneAimStatHostCPUState				INTEGER,
+		zoneAimStatHostTotalMemory			INTEGER,
+		zoneAimStatHostTotalMemoryAvailable		INTEGER,
+		zoneAimStatHostMemoryUsage			INTEGER,
+		zoneAimStatHostMemoryUsageWarnThreshold		INTEGER,
+		zoneAimStatHostMemoryUsageCritThreshold		INTEGER,
+		zoneAimStatHostMemoryAlert			INTEGER,
+		zoneAimStatHostMemoryState			INTEGER,
+		zoneAimStatHostNetAdapters			DisplayString,
+		zoneAimStatHostTotalZoneCPUusage		INTEGER,
+		zoneAimStatHostTotalZoneCPUWarnThreshold	INTEGER,
+		zoneAimStatHostTotalZoneCPUCritThreshold	INTEGER,
+		zoneAimStatHostTotalZoneCPUState		INTEGER,
+		zoneAimStatHostTotalZoneMemoryusage		INTEGER,
+		zoneAimStatHostTotalZoneMemoryWarnThreshold	INTEGER,
+		zoneAimStatHostTotalZoneMemoryCritThreshold	INTEGER,
+		zoneAimStatHostTotalZoneMemoryState		INTEGER,
+		zoneAimStatHostCPUMonitor			INTEGER,
+		zoneAimStatHostCPULagSetting			INTEGER,
+		zoneAimStatHostCPULagValue			Counter,
+		zoneAimStatHostCPUAggregateStatus		INTEGER,
+		zoneAimStatHostMemoryMonitor			INTEGER,
+		zoneAimStatHostZonecount			INTEGER,
+		zoneAimStatHostResourcepoolcount		INTEGER,
+		zoneAimStatHostProjectcount			INTEGER,
+		zoneAimStatHostCPUIdlesec			INTEGER,
+		zoneAimStatHostCPUSyssec			INTEGER,
+		zoneAimStatHostCPUUsedsec			INTEGER,
+		zoneAimStatHostCpuWaitsec			INTEGER,
+		zoneAimStatHostMemoryUsed			INTEGER,
+		zoneAimStatHostCPUMonPrevConfig			INTEGER,
+		zoneAimStatHostMemoryMonPrevConfig		INTEGER,
+		zoneAimStatHostMACAddresses			DisplayString
+		}
+
+zoneAimStatHostInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimStatusHostEntry  1}
+
+zoneAimStatHostInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimStatusHostEntry  2}
+
+zoneAimStatHostName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of Solaris host that is being monitored."
+	::= { zoneAimStatusHostEntry 3 }
+
+zoneAimStatHostID  OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Unique Index of the Solaris Host"
+	::= { zoneAimStatusHostEntry 4 }
+
+zoneAimStatHostOSType OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Operating System Type in the Host"
+	::= { zoneAimStatusHostEntry 5 }
+
+zoneAimStatHostipaddress OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"IP Address of the Host"
+	::= { zoneAimStatusHostEntry 6 }
+
+zoneAimStatHostProdVer OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Product version of the Host."
+	::= { zoneAimStatusHostEntry 7 }
+
+zoneAimStatHostState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"State of the Global Zone(ok,warning,critical) calculated based on the Alert. This state will only rely on zoneAimStatHostStatus attribute."
+	::= { zoneAimStatusHostEntry 8 }
+
+zoneAimStatHostStatus OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Status of the Global Zone."
+	::= { zoneAimStatusHostEntry 9 }
+
+zoneAimStatHostStatusAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		not-running-warning(1),
+		not-running-critical(2),
+		not-running-normal(3)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The type of alert to be generated for Host Status- not-running-warning(1),not-running-critical(2),not-running-normal(3)"
+	DEFVAL { 2 }
+	::= { zoneAimStatusHostEntry 10 }
+
+zoneAimStatHostMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Flag indicating whether the Host has to be monitored(2) or not(1)"
+	DEFVAL { 2 }
+	::= { zoneAimStatusHostEntry 11 }
+
+zoneAimStatHostNumCPU OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Number of Physical CPU cores."
+	::= { zoneAimStatusHostEntry 12 }
+
+zoneAimStatHostLogNumCPU OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Number of Logical CPU cores."
+	::= { zoneAimStatusHostEntry 13 }
+
+zoneAimStatHostCPUSharesReserved OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Number of CPU Shares Reserved."
+	::= { zoneAimStatusHostEntry 14 }
+
+zoneAimStatHostCPUUsage OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU Usage of the Host (%)."
+	::= { zoneAimStatusHostEntry 15 }
+
+zoneAimStatHostCPUUsageWarnThresh OBJECT-TYPE
+	SYNTAX INTEGER (1..98)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The CPU usage threshold limit after which a warning would be generated (%)"
+	DEFVAL { 60 }
+	::= { zoneAimStatusHostEntry 16 }
+
+zoneAimStatHostCPUUsageCritThresh OBJECT-TYPE
+	SYNTAX INTEGER (2..99)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The CPU usage threshold limit after which a critical signal would be generated (%)"
+	DEFVAL { 80 }
+	::= { zoneAimStatusHostEntry 17 }
+
+zoneAimStatHostCPUAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		warning-only(1),
+		critical-only(2),
+		normal-only(3),
+		warning-and-critical(4)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The type of alert to be generated for CPU usage- warning(1), critical(2), normal-only(3), warning-and-critical(4)"
+	DEFVAL { 4 }
+	::= { zoneAimStatusHostEntry 18 }
+
+zoneAimStatHostCPUState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU State of the Host(ok,warning,critical)."
+	::= { zoneAimStatusHostEntry  19}
+
+zoneAimStatHostTotalMemory OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total Amount of Physical Memory on the Host (MB)."
+	::= { zoneAimStatusHostEntry  20}
+
+zoneAimStatHostTotalMemoryAvailable OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total Amount of Physical Memory currently available (MB)."
+	::= { zoneAimStatusHostEntry  21}
+
+zoneAimStatHostMemoryUsage OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Host Memory Usage (%)."
+	::= { zoneAimStatusHostEntry  22}
+
+zoneAimStatHostMemoryUsageWarnThreshold OBJECT-TYPE
+	SYNTAX INTEGER (1..98)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The Memory usage threshold limit after which a warning would be generated (%)."
+	DEFVAL { 60 }
+	::= { zoneAimStatusHostEntry 23 }
+
+zoneAimStatHostMemoryUsageCritThreshold OBJECT-TYPE
+	SYNTAX INTEGER (2..99)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The Memory usage threshold limit after which a critical signal would be generated (%)."
+	DEFVAL { 80 }
+	::= { zoneAimStatusHostEntry 24 }
+
+zoneAimStatHostMemoryAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		warning-only(1),
+		critical-only(2),
+		normal-only(3),
+		warning-and-critical(4)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The type of alert to be generated for Memory usage- warning(1), critical(2), normal-only(3), warning-and-critical(4)."
+	DEFVAL { 4 }
+	::= { zoneAimStatusHostEntry 25 }
+
+zoneAimStatHostMemoryState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Memory State of host (ok,warning,critical)."
+	::= { zoneAimStatusHostEntry  26 }
+
+zoneAimStatHostNetAdapters OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The Space delimited set of Physical NIC names."
+	::= { zoneAimStatusHostEntry  27 }
+
+zoneAimStatHostTotalZoneCPUusage OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The summation of the CPU usages(%) of each of the individual zones. This will be reflected as a value associated with how each zone is affecting the resources (number of logical CPUs) of the Zone host as a whole. The range will be within 0 - 100%"
+	::= { zoneAimStatusHostEntry  28 }
+
+zoneAimStatHostTotalZoneCPUWarnThreshold OBJECT-TYPE
+	SYNTAX INTEGER (1..98)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Warning threshold  for Total Zone CPU (%)"
+	DEFVAL { 60 }
+	::= { zoneAimStatusHostEntry 29 }
+
+zoneAimStatHostTotalZoneCPUCritThreshold OBJECT-TYPE
+	SYNTAX INTEGER (2..99)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Critical threshold  for Total Zone CPU (%)"
+	DEFVAL { 80 }
+	::= { zoneAimStatusHostEntry 30 }
+
+zoneAimStatHostTotalZoneCPUState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU State of Total Zone (ok,warning,critical)."
+	::= { zoneAimStatusHostEntry  31}
+
+zoneAimStatHostTotalZoneMemoryusage OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Sum of the individual zone memory usages (%)."
+	::= { zoneAimStatusHostEntry 32 }
+
+zoneAimStatHostTotalZoneMemoryWarnThreshold OBJECT-TYPE
+	SYNTAX INTEGER (1..98)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Warning threshold for Total Zone Memory (%)"
+	DEFVAL { 60 }
+	::= { zoneAimStatusHostEntry 33 }
+
+zoneAimStatHostTotalZoneMemoryCritThreshold OBJECT-TYPE
+	SYNTAX INTEGER (2..99)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Critical threshold for Total Zone Memory (%)"
+	DEFVAL { 80 }
+	::= { zoneAimStatusHostEntry 34 }
+
+zoneAimStatHostTotalZoneMemoryState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Memory State of Total Zone (ok,warning,critical)."
+	::= { zoneAimStatusHostEntry  35 }
+
+zoneAimStatHostCPUMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+	 	do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION	
+		"Flag indicating whether the CPU usage for node has to be monitored(2) or not(1)."
+	DEFVAL { 2 }
+	::= { zoneAimStatusHostEntry  36 }
+
+zoneAimStatHostCPULagSetting OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-write
+	STATUS  mandatory
+	DESCRIPTION 
+		"The number of consecutive times the threshold should be breached before the status change occurs."
+	DEFVAL { 3 }
+	::= { zoneAimStatusHostEntry  37 }
+
+zoneAimStatHostCPULagValue OBJECT-TYPE
+	SYNTAX  Counter
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION 
+		"The current running count of the number of consecutive times the status is in the current status."
+	::= { zoneAimStatusHostEntry  38 }
+
+zoneAimStatHostCPUAggregateStatus OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"The current aggregate CPU Status (ok, warning, critical)."
+	::= { zoneAimStatusHostEntry  39 }
+
+zoneAimStatHostMemoryMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+	 	do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION	
+		"Flag indicating whether the Memory usage for host has to be monitored(2) or not(1)."
+	DEFVAL { 2 }
+	::= { zoneAimStatusHostEntry  40 }
+
+zoneAimStatHostZonecount OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Number of Zones in the Host."
+	::= { zoneAimStatusHostEntry  41}
+
+zoneAimStatHostResourcepoolcount OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Number of Resource Pools in the Host."
+	::= { zoneAimStatusHostEntry  42}
+
+zoneAimStatHostProjectcount OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Number of Projects in the Host."
+	::= { zoneAimStatusHostEntry  43}
+
+zoneAimStatHostCPUIdlesec OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU Idle in Seconds(%)."
+	::= { zoneAimStatusHostEntry  44}
+
+zoneAimStatHostCPUSyssec OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU Sys Seconds(%)."
+	::= { zoneAimStatusHostEntry  45}
+
+zoneAimStatHostCPUUsedsec OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU Used Seconds(%)."
+	::= { zoneAimStatusHostEntry  46}
+
+zoneAimStatHostCpuWaitsec OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU Wait Seconds(%)."
+	::= { zoneAimStatusHostEntry  47}
+
+zoneAimStatHostMemoryUsed OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Amount of host memory used in MB."
+	::= { zoneAimStatusHostEntry  48}
+
+zoneAimStatHostCPUMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER {
+	 	do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION	
+		"Attribute to store the previous Host CPU Monitor Value."
+	DEFVAL { 2 }
+	::= { zoneAimStatusHostEntry  49 }
+
+zoneAimStatHostMemoryMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER {
+	 	do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION	
+		"Attribute to store the previous Host Memory Monitor Value."
+	DEFVAL { 2 }
+	::= { zoneAimStatusHostEntry  50 }			
+
+zoneAimStatHostMACAddresses OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Semicolon separated list of the Host MAC Address(es)."
+	::= { zoneAimStatusHostEntry 51 }
+
+
+-- *****************************************************************************
+-- Resource Pool Status Table
+-- *****************************************************************************
+
+zoneAimStatResourcePoolTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimStatusResourcePoolRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"A table containing the ResourcePools."
+	::= { zoneAimStatResPoolGroup 1 }
+
+zoneAimStatResourcePoolEntry OBJECT-TYPE
+	SYNTAX ZoneAimStatusResourcePoolRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The ResourcePool Table entry."
+	INDEX { zoneAimStatResourcePoolInstanceUID, zoneAimStatResourcePoolUID }
+	::= { zoneAimStatResourcePoolTable 1 }
+
+ZoneAimStatusResourcePoolRow ::=
+	SEQUENCE {
+		zoneAimStatResourcePoolInstanceUID		INTEGER,
+		zoneAimStatResourcePoolUID			INTEGER,
+		zoneAimStatResourcePoolInstanceName			DisplayString,
+		zoneAimStatResourcePoolIndex			DisplayString,
+		zoneAimStatResourcePoolName			DisplayString,
+		zoneAimStatResourcePoolType			DisplayString,
+		zoneAimStatResourcePoolActive			DisplayString,
+		zoneAimStatResourcePoolImportance		DisplayString,
+		zoneAimStatResourcePoolFSSenabled		DisplayString,
+		zoneAimStatResourcePoolDefFlag			DisplayString,
+		zoneAimStatResourcePoolPSetIndex		DisplayString,
+		zoneAimStatResourcePoolPSetName			DisplayString,
+	        zoneAimStatResourcePoolCpuShares		INTEGER,
+		zoneAimStatResourcePoolCPUReserveUsed		INTEGER,
+		zoneAimStatResourcePoolCPUReserveUsedForZones	INTEGER,
+		zoneAimStatResourcePoolStatus			DisplayString,
+		zoneAimStatResourcePoolState			INTEGER,
+		zoneAimStatResourcePoolAlert			INTEGER,
+		zoneAimStatResourcePoolMonitor			INTEGER,
+		zoneAimStatResourcePoolContainerList		DisplayString,
+		zoneAimStatResourcePoolMonPrevConfig		INTEGER,
+		zoneAimStatResourcePoolHostName			DisplayString,
+		zoneAimStatResourcePoolHostIndex		DisplayString
+	}
+
+zoneAimStatResourcePoolInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimStatResourcePoolEntry  1}
+
+zoneAimStatResourcePoolUID OBJECT-TYPE
+	SYNTAX INTEGER  (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of ResourcePool"
+	::= { zoneAimStatResourcePoolEntry  2}
+
+zoneAimStatResourcePoolInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimStatResourcePoolEntry  3}
+
+zoneAimStatResourcePoolIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Identifier of the ResourcePool."
+	::= { zoneAimStatResourcePoolEntry 4 }
+
+zoneAimStatResourcePoolName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the ResourcePool."
+	::= { zoneAimStatResourcePoolEntry 5 }
+
+
+zoneAimStatResourcePoolType OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Type of the ResourcePool."
+	::= { zoneAimStatResourcePoolEntry 6 }
+
+zoneAimStatResourcePoolActive  OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Status of the ResourcePool, Either of True or False"
+	::= { zoneAimStatResourcePoolEntry 7 }
+
+zoneAimStatResourcePoolImportance  OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Relative Importance of the ResourcePool"
+	::= { zoneAimStatResourcePoolEntry 8 }
+
+zoneAimStatResourcePoolFSSenabled  OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Type of Scheduler to be used by the ResourcePool"
+	::= { zoneAimStatResourcePoolEntry 9 }
+
+zoneAimStatResourcePoolDefFlag  OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Flag indicating whether this is default ResourcePool or not(true,false)"
+	::= { zoneAimStatResourcePoolEntry 10 }
+
+zoneAimStatResourcePoolPSetIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of the Processor Set contained in resourcepool."
+	::= { zoneAimStatResourcePoolEntry 11 }
+
+zoneAimStatResourcePoolPSetName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Processor Set contained in resourcepool."
+	::= { zoneAimStatResourcePoolEntry 12 }
+
+zoneAimStatResourcePoolCpuShares OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU Shares assigned to the resource pool."
+	::= { zoneAimStatResourcePoolEntry 13 }
+
+zoneAimStatResourcePoolCPUReserveUsed OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total amount of resources that have been used to satisfy the reservation requirements of all descendants of this resource pool (includes both resource pools and zones)in processor units."
+	::= { zoneAimStatResourcePoolEntry 14 }
+
+zoneAimStatResourcePoolCPUReserveUsedForZones OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total amount of resources that have been used to satisfy the reservation requirements of running zones in this resource pool in processor units"
+	::= { zoneAimStatResourcePoolEntry 15 }
+
+
+zoneAimStatResourcePoolStatus  OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Status of the ResourcePool"
+	::= { zoneAimStatResourcePoolEntry 16 }
+
+zoneAimStatResourcePoolState  OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"State of the ResourcePool (ok,warning,critical)"
+	::= { zoneAimStatResourcePoolEntry 17 }
+
+zoneAimStatResourcePoolAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		not-active-warning(1),
+		not-active-critical(2),
+		not-active-normal(3)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Resource Pool Alert whether warning or critical or normal."
+	DEFVAL { 2 }
+	::= { zoneAimStatResourcePoolEntry 18 }
+
+
+
+zoneAimStatResourcePoolMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Flag inidicating whether the Resource Pool has to be monitored(2) or not(1)"
+	DEFVAL { 2 }
+	::= { zoneAimStatResourcePoolEntry 19 }
+
+zoneAimStatResourcePoolContainerList OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"List of Containers using this Resource Pool.
+		 This attribute has been deprecated and will be shown as NA."
+	::= { zoneAimStatResourcePoolEntry 20 }
+
+zoneAimStatResourcePoolMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Attribute to store previous monitor value."
+	DEFVAL { 2 }
+	::= { zoneAimStatResourcePoolEntry 21 }
+
+zoneAimStatResourcePoolHostName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the host containing the ResourcePool."
+	::= { zoneAimStatResourcePoolEntry 22 }
+
+zoneAimStatResourcePoolHostIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of the host containing the ResourcePool."
+	::= { zoneAimStatResourcePoolEntry 23 }
+
+
+
+-- *****************************************************************************
+-- Container Status Table
+-- *****************************************************************************
+
+zoneAimStatContainerTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimStatContainerRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"Container Table."
+	::= { zoneAimStatContainerGroup 1 }
+
+zoneAimStatContainerEntry OBJECT-TYPE
+	SYNTAX ZoneAimStatContainerRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The Container Table entry."
+	INDEX { zoneAimStatContainerInstanceUID, zoneAimStatContainerUID }
+	::= { zoneAimStatContainerTable 1 }
+
+ZoneAimStatContainerRow ::=
+	SEQUENCE {
+		zoneAimStatContainerInstanceUID				INTEGER,
+		zoneAimStatContainerUID					INTEGER,
+		zoneAimStatContainerInstanceName			DisplayString,
+		zoneAimStatContainerId					DisplayString,
+		zoneAimStatContainerName				DisplayString,
+		zoneAimStatContainerZonename				DisplayString,
+		zoneAimStatContainerZoneIndex				DisplayString,
+		zoneAimStatContainerResourcePoolname			DisplayString,
+		zoneAimStatContainerResourcePoolIndex			DisplayString,
+		zoneAimStatContainerPSetName				DisplayString,
+		zoneAimStatContainerPSetIndex				DisplayString,
+		zoneAimStatContainerHostIndex				DisplayString,
+		zoneAimStatContainerZoneServername			DisplayString
+	}
+
+zoneAimStatContainerInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimStatContainerEntry  1}
+
+zoneAimStatContainerUID OBJECT-TYPE
+	SYNTAX INTEGER  (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Container"
+	::= { zoneAimStatContainerEntry  2}
+
+zoneAimStatContainerInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimStatContainerEntry  3}
+
+zoneAimStatContainerId OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Container ID."
+	::= {zoneAimStatContainerEntry 4 }
+
+zoneAimStatContainerName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Container ."
+	::= {zoneAimStatContainerEntry 5 }
+
+zoneAimStatContainerZonename OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone in the Container."
+	::= {zoneAimStatContainerEntry 6 }
+
+zoneAimStatContainerZoneIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of the Zone in the Container ."
+	::= {zoneAimStatContainerEntry 7 }
+
+
+zoneAimStatContainerResourcePoolname OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the ResourcePool in the Container."
+	::= {zoneAimStatContainerEntry 8 }
+
+zoneAimStatContainerResourcePoolIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of the ResourcePool in the Container"
+	::= {zoneAimStatContainerEntry 9 }
+
+zoneAimStatContainerPSetName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of ProcessorSet in the Container."
+	::= {zoneAimStatContainerEntry 10 }
+
+zoneAimStatContainerPSetIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of ProcessorSet in the container."
+	::= {zoneAimStatContainerEntry 11 }
+
+zoneAimStatContainerHostIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of the host containing the Container."
+	::= {zoneAimStatContainerEntry 12 }
+
+zoneAimStatContainerZoneServername OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Host containing the  container."
+	::= {zoneAimStatContainerEntry 13 }
+
+
+
+-- *****************************************************************************
+-- Zone Status Group
+-- *****************************************************************************
+
+zoneAimStatZoneTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimStatZoneRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"Zone Table."
+	::= { zoneAimStatZoneGroup 1 }
+
+zoneAimStatZoneEntry OBJECT-TYPE
+	SYNTAX ZoneAimStatZoneRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The Zone Table entry."
+	INDEX { zoneAimStatZoneInstanceUID, zoneAimStatZoneUID }
+	::= { zoneAimStatZoneTable 1 }
+
+ZoneAimStatZoneRow ::=
+	SEQUENCE {
+		zoneAimStatZoneInstanceUID			INTEGER,
+		zoneAimStatZoneUID				INTEGER,
+		zoneAimStatZoneInstanceName			DisplayString,
+		zoneAimStatZoneIndex				DisplayString,
+		zoneAimStatZoneName				DisplayString,
+		zoneAimStatZonePath				DisplayString,
+		zoneAimStatZoneResourcePoolId			DisplayString,
+	        zoneAimStatZoneResourcePoolName			DisplayString,
+		zoneAimStatZoneHostName				DisplayString,
+		zoneAimStatZoneHostIndex			DisplayString,
+		zoneAimStatZoneContainerId			DisplayString,
+		zoneAimStatZoneIPv4Address			DisplayString,
+		zoneAimStatZoneIPv6Address			DisplayString,
+		zoneAimStatZoneGuestOS				DisplayString,
+		zoneAimStatZoneUpTime				DisplayString,
+		zoneAimStatZoneState				INTEGER,
+		zoneAimStatZoneStatus				DisplayString,
+		zoneAimStatZoneStatusAlert			INTEGER,
+		zoneAimStatZoneAutoBoot				DisplayString,
+		zoneAimStatZoneCPUSharesReserved		INTEGER,
+		zoneAimStatZoneSwapMemory			INTEGER,
+		zoneAimStatZonePhyMemory			INTEGER,
+		zoneAimStatZoneLockedMemory			INTEGER,
+		zoneAimStatZoneFSSType				DisplayString,
+		zoneAimStatZoneProjectCPUShares			INTEGER,
+		zoneAimStatZoneTaskCount			INTEGER,
+		zoneAimStatZoneProjectCount			INTEGER,
+		zoneAimStatZoneFsMountpoint			DisplayString,
+		zoneAimStatZoneFsType				DisplayString,
+		zoneAimStatZoneNetwork				DisplayString,
+		zoneAimStatZoneMemoryUsage			INTEGER,
+		zoneAimStatZoneMemoryWarnThreshold		INTEGER,
+		zoneAimStatZoneMemoryCritThreshold		INTEGER,
+		zoneAimStatZoneMemoryState			INTEGER,
+		zoneAimStatZoneMemoryAlert			INTEGER,
+		zoneAimStatZoneMemoryMonitor			INTEGER,
+		zoneAimStatZoneCPUUsage				INTEGER,
+		zoneAimStatZoneCPUWarnThreshold			INTEGER,
+		zoneAimStatZoneCPUCritThreshold			INTEGER,
+		zoneAimStatZoneCPUAlert				INTEGER,
+		zoneAimStatZoneCPUState				INTEGER,
+		zoneAimStatZoneCPUMonitor			INTEGER,
+		zoneAimStatZoneCPULagSetting			INTEGER,
+		zoneAimStatZoneCPULagValue			Counter,
+		zoneAimStatZoneCPUAggregateStatus		INTEGER,
+		zoneAimStatZoneMonitor				INTEGER,
+		zoneAimStatZoneCpucount				INTEGER,
+		zoneAimStatZoneCpuMax				INTEGER,
+		zoneAimStatZoneCpuMin				INTEGER,
+		zoneAimStatZoneCpuIdleSec			INTEGER,
+		zoneAimStatZoneCpuSysSec			INTEGER,
+		zoneAimStatZoneCpuUsedSec			INTEGER,
+		zoneAimStatZoneCpuWaitSec			INTEGER,
+		zoneAimStatZoneMemoryUsed			INTEGER,
+		zoneAimStatZoneMemoryShared			INTEGER,
+		zoneAimStatZoneMonPrevConfig			INTEGER,
+		zoneAimStatZoneMemoryMonPrevConfig		INTEGER,
+		zoneAimStatZoneCPUMonPrevConfig			INTEGER,
+		zoneAimStatZoneMACAddresses			DisplayString
+	}
+
+zoneAimStatZoneInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimStatZoneEntry  1}
+
+zoneAimStatZoneUID OBJECT-TYPE
+	SYNTAX INTEGER  (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone."
+	::= { zoneAimStatZoneEntry  2}
+
+zoneAimStatZoneInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimStatZoneEntry  3}
+
+zoneAimStatZoneIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of the Zone."
+	::= {zoneAimStatZoneEntry 4 }
+
+zoneAimStatZoneName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone."
+	::= {zoneAimStatZoneEntry 5 }
+
+
+zoneAimStatZonePath OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Zone Installation Path"
+	::= {zoneAimStatZoneEntry 6 }
+
+zoneAimStatZoneResourcePoolId OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of ResourcePool configured for the Zone."
+	::= {zoneAimStatZoneEntry 7 }
+
+zoneAimStatZoneResourcePoolName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the ResourcePool configured for the Zone."
+	::= {zoneAimStatZoneEntry 8 }
+
+zoneAimStatZoneHostName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Host Name on which Zone is running."
+	::= {zoneAimStatZoneEntry 9 }
+
+zoneAimStatZoneHostIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Host Index on which Zone is running."
+	::= {zoneAimStatZoneEntry 10 }
+
+zoneAimStatZoneContainerId OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Container Index  on which Zone is running."
+	::= {zoneAimStatZoneEntry 11 }
+
+
+zoneAimStatZoneIPv4Address OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"IP address of the Zone in IPv4 format."
+	::= {zoneAimStatZoneEntry 12 }
+
+zoneAimStatZoneIPv6Address OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"IP address of the Zone in IPv6 format."
+	::= {zoneAimStatZoneEntry 13 }
+
+zoneAimStatZoneGuestOS OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Operating System of the Zone"
+	::= {zoneAimStatZoneEntry 14 }
+
+zoneAimStatZoneUpTime OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Time since the zone is up and running."
+	::= {zoneAimStatZoneEntry 15 }
+
+zoneAimStatZoneState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Zones State (ok,warning,critical). This attribute will rely only on zoneAimStatZoneStatus attribute."
+	::= {zoneAimStatZoneEntry 16 }
+
+zoneAimStatZoneStatus OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Status of the Zone."
+	::= {zoneAimStatZoneEntry 17 }
+
+zoneAimStatZoneStatusAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		not-runnning-warning(1),
+		not-running-critical(2),
+		not-running-normal(3)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The type of alert to be generated for Zone status- not-running-warning(1), not-running-critical(2), not-running-normal(3)"
+	DEFVAL { 2 }
+	::= { zoneAimStatZoneEntry 18 }
+
+zoneAimStatZoneAutoBoot OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Flag indicating whether Autoboot Congiguration of the Zone is enabled or not"
+	::= {zoneAimStatZoneEntry 19 }
+
+zoneAimStatZoneCPUSharesReserved OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Number of CPU shares allocated to the Zone."
+	::= { zoneAimStatZoneEntry 20 }
+
+
+zoneAimStatZoneSwapMemory OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Swap Memory Configured for the Zone (MB)."
+	::= { zoneAimStatZoneEntry 21 }
+
+zoneAimStatZonePhyMemory OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Physical Memory Configured for the Zone (MB)."
+	::= { zoneAimStatZoneEntry 22 }
+
+zoneAimStatZoneLockedMemory OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Locked Memory Configured for the Zone (MB)."
+	::= { zoneAimStatZoneEntry 23 }
+
+zoneAimStatZoneFSSType OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Scheduler Type."
+	::= { zoneAimStatZoneEntry 24 }
+
+zoneAimStatZoneProjectCPUShares OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Number of CPU shares that is allocated to projects in the zone."
+	::= { zoneAimStatZoneEntry 25 }
+
+
+zoneAimStatZoneTaskCount OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION 
+		"Total number of Tasks in the Zone."
+	::= { zoneAimStatZoneEntry  26 }
+
+zoneAimStatZoneProjectCount OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION 
+		"Total number of projects per Zone."
+	::= { zoneAimStatZoneEntry  27 }
+
+zoneAimStatZoneFsMountpoint OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Specifies the Mount Point for the File System."
+	::= { zoneAimStatZoneEntry 28 }
+
+zoneAimStatZoneFsType OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION 
+		"Specifies the File System type."
+	::= { zoneAimStatZoneEntry  29 }
+
+zoneAimStatZoneNetwork OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The network ( Port group name ) Zone is associated with."
+	::= { zoneAimStatZoneEntry  30 }
+
+zoneAimStatZoneMemoryUsage OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Memory usage for particular zone at global zone level in percentage.
+		 If PhyMemory limit is set for the zone, it is used for calculation of the Memory usage. In that case the usage is given at the local zone level, and can reach 100%."
+	::= { zoneAimStatZoneEntry 31 }
+
+zoneAimStatZoneMemoryWarnThreshold OBJECT-TYPE
+	SYNTAX INTEGER (1..98)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Warning threshold  for Zone Memory (%)."
+	DEFVAL { 60 }
+	::= { zoneAimStatZoneEntry 32 }
+
+zoneAimStatZoneMemoryCritThreshold OBJECT-TYPE
+	SYNTAX INTEGER (2..99)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Critical threshold  for  Zone Memory (%)."
+	DEFVAL { 80 }
+	::= { zoneAimStatZoneEntry 33 }
+
+zoneAimStatZoneMemoryState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Memory State of Zone (ok,warning,critical)."
+	::= { zoneAimStatZoneEntry  34 }
+
+zoneAimStatZoneMemoryAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		warning-only(1),
+		critical-only(2),
+		normal-only(3),
+		warning-and-critical(4)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The type of alert to be generated for Zone Memory usage- warning(1), critical(2), normal-only(3), warning-and-critical(4)"
+	DEFVAL { 4 }
+	::= { zoneAimStatZoneEntry 35 }
+
+zoneAimStatZoneMemoryMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+	 	do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION	
+		"Flag indicating whether the Memory usage for Zone to be monitored(2) or not(1)."
+	DEFVAL { 2 }
+	::= { zoneAimStatZoneEntry  36 }
+
+zoneAimStatZoneCPUUsage OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU utilization of the Zone (%). The CPU utilization will describe the utilization of resources based upon the processors defined for the processor set. Zones that share the same processor set/resource pool may not reach an absolute max of 100% CPU usage. Value will be within a range of 0 - 100%."
+	::= { zoneAimStatZoneEntry 37 }
+
+zoneAimStatZoneCPUWarnThreshold OBJECT-TYPE
+	SYNTAX INTEGER (1..98)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Warning threshold  for Zone CPU (%)."
+	DEFVAL { 60 }
+	::= { zoneAimStatZoneEntry 38 }
+
+zoneAimStatZoneCPUCritThreshold OBJECT-TYPE
+	SYNTAX INTEGER (2..99)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Critical threshold  for  Zone CPU (%)."
+	DEFVAL { 80 }
+	::= { zoneAimStatZoneEntry 39 }
+
+zoneAimStatZoneCPUAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		warning-only(1),
+		critical-only(2),
+		normal-only(3),
+		warning-and-critical(4)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The type of alert to be generated for CPU usage- warning(1), critical(2), normal-only(3), warning-and-critical(4)"
+	DEFVAL { 4 }
+	::= { zoneAimStatZoneEntry 40 }
+
+zoneAimStatZoneCPUState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU State of Zone (ok,warning,critical)."
+	::= { zoneAimStatZoneEntry  41 }
+
+zoneAimStatZoneCPUMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+	 	do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION	
+		"Flag indicating whether the CPU usage for Zone has to be monitored(2) or not(1)."
+	DEFVAL { 2 }
+	::= { zoneAimStatZoneEntry  42 }
+
+zoneAimStatZoneCPULagSetting OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-write
+	STATUS  mandatory
+	DESCRIPTION 
+		"The number of consecutive times the threshold should be breached before the status change occurs."
+	DEFVAL { 3 }
+	::= { zoneAimStatZoneEntry  43 }
+
+zoneAimStatZoneCPULagValue OBJECT-TYPE
+	SYNTAX  Counter
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION 
+		"The current running count of the number of consecutive times the status is in the current status."
+	::= { zoneAimStatZoneEntry  44  }
+
+zoneAimStatZoneCPUAggregateStatus OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"The current aggregate CPU Status of the Zone(ok, warning, critical)."
+	::= { zoneAimStatZoneEntry  45 }
+
+
+zoneAimStatZoneMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Flag inidicating whether the Zone has to be monitored(2) or not(1)"
+	DEFVAL { 2 }
+	::= { zoneAimStatZoneEntry 46 }
+
+zoneAimStatZoneCpucount OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU count for the zone."
+	::= { zoneAimStatZoneEntry 47 }
+
+zoneAimStatZoneCpuMax OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"No. of maximum CPUs configured for the zone in processor units."
+	::= { zoneAimStatZoneEntry 48 }
+
+zoneAimStatZoneCpuMin OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"No. of minimum CPUs configured for the zone in processor units."
+	::= { zoneAimStatZoneEntry 49 }
+
+zoneAimStatZoneCpuIdleSec OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU Idle sec(%)."
+	::= { zoneAimStatZoneEntry 50 }
+
+zoneAimStatZoneCpuSysSec OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU Sys sec(%)."
+	::= { zoneAimStatZoneEntry 51 }
+
+zoneAimStatZoneCpuUsedSec OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU Used sec(%)."
+	::= { zoneAimStatZoneEntry 52 }
+
+zoneAimStatZoneCpuWaitSec OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU Wait sec(%)."
+	::= { zoneAimStatZoneEntry 53 }
+
+zoneAimStatZoneMemoryUsed OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Used memory in KB."
+	::= { zoneAimStatZoneEntry 54 }
+
+zoneAimStatZoneMemoryShared OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Max shared memory in KB."
+	::= { zoneAimStatZoneEntry 55 }
+
+zoneAimStatZoneMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Attribute to store previous monitor value."
+	DEFVAL { 2 }
+	::= { zoneAimStatZoneEntry 56 }
+
+zoneAimStatZoneMemoryMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Attribute to store previous Zone Memory Monitor Value."
+	DEFVAL { 2 }
+	::= { zoneAimStatZoneEntry 57 }
+
+zoneAimStatZoneCPUMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Attribute to store previous Zone CPU Monitor Value."
+	DEFVAL { 2 }
+	::= { zoneAimStatZoneEntry 58 }
+
+zoneAimStatZoneMACAddresses OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Semicolon separated list of the Zone MAC Address(es)."
+	::= { zoneAimStatZoneEntry 59 }
+
+
+-- *****************************************************************************
+-- Project Status Group
+-- *****************************************************************************
+
+zoneAimStatProjectTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimStatProjectRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"Project Table."
+	::= { zoneAimStatProjectGroup 1 }
+
+zoneAimStatProjectEntry OBJECT-TYPE
+	SYNTAX ZoneAimStatProjectRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The Project Table entry."
+	INDEX { zoneAimStatProjectInstanceUID, zoneAimStatProjectUID }
+	::= { zoneAimStatProjectTable 1 }
+
+ZoneAimStatProjectRow ::=
+	SEQUENCE {
+		zoneAimStatProjectInstanceUID				INTEGER,
+		zoneAimStatProjectUID					INTEGER,
+		zoneAimStatProjectInstanceName				DisplayString,
+		zoneAimStatProjectIndex					DisplayString,
+		zoneAimStatProjectName					DisplayString,
+		zoneAimStatProjectDesc					DisplayString,
+		zoneAimStatProjectZonelId				DisplayString,
+		zoneAimStatProjectZoneName				DisplayString,
+		zoneAimStatProjectContainerId				DisplayString,	
+		zoneAimStatProjectState					INTEGER,
+		zoneAimStatProjectStatus				DisplayString,
+		zoneAimStatProjectStatusAlert				INTEGER,
+		zoneAimStatProjectTaskCount				INTEGER,
+		zoneAimStatProjectFSSEnabled				DisplayString,
+		zoneAimStatProjectCryptoMemMax				INTEGER,
+		zoneAimStatProjectTaskMax				INTEGER,
+		zoneAimStatProjectLWPSMax				INTEGER,
+		zoneAimStatProjectSharedMemMax				INTEGER,
+		zoneAimStatProjectMemCap				INTEGER,
+		zoneAimStatProjectCPUCap				INTEGER,
+		zoneAimStatProjectMemoryUsage				INTEGER,
+		zoneAimStatProjectMemoryState				INTEGER,
+		zoneAimStatProjectMemoryAlert				INTEGER,
+		zoneAimStatProjectMemoryWarnThreshold			INTEGER,
+		zoneAimStatProjectMemoryCritThreshold			INTEGER,
+		zoneAimStatProjectCPUUsage				INTEGER,
+		zoneAimStatProjectCPUState				INTEGER,
+		zoneAimStatProjectCPUAlert				INTEGER,
+		zoneAimStatProjectCPUWarnThreshold			INTEGER,
+		zoneAimStatProjectCPUCritThreshold			INTEGER,
+		zoneAimStatProjectCPULagSetting				INTEGER,
+		zoneAimStatProjectCPULagValue				Counter,
+		zoneAimStatProjectCPUAggregateStatus			INTEGER,
+		zoneAimStatProjectCPUMonitor				INTEGER,
+		zoneAimStatProjectMemoryMonitor				INTEGER,
+		zoneAimStatProjectMonitor				INTEGER,
+		zoneAimStatProjectMonPrevConfig				INTEGER,
+		zoneAimStatProjectCPUMonPrevConfig			INTEGER,
+		zoneAimStatProjectMemoryMonPrevConfig			INTEGER,
+		zoneAimStatProjectHostName				DisplayString,
+		zoneAimStatProjectHostIndex				DisplayString
+	}
+
+zoneAimStatProjectInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimStatProjectEntry  1}
+
+zoneAimStatProjectUID OBJECT-TYPE
+	SYNTAX INTEGER  (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Project"
+	::= { zoneAimStatProjectEntry  2}
+
+zoneAimStatProjectInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimStatProjectEntry  3}
+
+zoneAimStatProjectIndex OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Project Index associated with the zone."
+	::= { zoneAimStatProjectEntry  4 }
+
+zoneAimStatProjectName OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Project name associated with the Zone."
+	::= { zoneAimStatProjectEntry  5 }
+
+zoneAimStatProjectDesc OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Project Description associated with the Zone."
+	::= { zoneAimStatProjectEntry  6 }
+
+zoneAimStatProjectZonelId OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Project Zone ID."
+	::= { zoneAimStatProjectEntry  7 }
+
+zoneAimStatProjectZoneName OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Project Zone Name."
+	::= { zoneAimStatProjectEntry  8 }
+
+zoneAimStatProjectContainerId OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Container Id of the Zone containing the Project."
+	::= { zoneAimStatProjectEntry  9 }
+
+zoneAimStatProjectState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"State of the Project. This attribute depends only on zoneAimStatProjectStatus attribute"
+	::= { zoneAimStatProjectEntry  10 }
+
+zoneAimStatProjectStatus OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Project status associated with the Zone."
+	::= { zoneAimStatProjectEntry  11 }
+
+zoneAimStatProjectStatusAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		not-running-warning(1),
+		not-running-critical(2),
+		not-running-normal(3)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The type of alert to be generated for Project Memory usage- not-running-warning(1), not-running-critical(2), not-running-normal(3)"
+	DEFVAL { 2 }
+	::= { zoneAimStatProjectEntry 12 }
+
+
+zoneAimStatProjectTaskCount OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION 
+		"Number of tasks running per project."
+	::= { zoneAimStatProjectEntry  13 }
+
+zoneAimStatProjectFSSEnabled  OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Flag indicating FSS enabled on Project or not, It can be either of 1.True or 2.False"
+	::= { zoneAimStatProjectEntry 14 }
+
+zoneAimStatProjectCryptoMemMax OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Total amount of kernel memory in bytes that can be used by libpkcs11 for hardware crypto acceleration."
+	::= { zoneAimStatProjectEntry 15 }
+
+zoneAimStatProjectTaskMax OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Maximum number of tasks allowable in a project."
+	::= { zoneAimStatProjectEntry  16 }
+
+zoneAimStatProjectLWPSMax OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Maximum number of Light Weight Processes simultaneously available to a project."
+	::= { zoneAimStatProjectEntry  17 }
+
+zoneAimStatProjectSharedMemMax OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Total amount of memory that is allowed to be used by the processes that run with in this project in MB."
+	::= { zoneAimStatProjectEntry  18 }
+
+zoneAimStatProjectMemCap OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Maximum memory limit in (MB)."
+	::= { zoneAimStatProjectEntry  19 }
+
+zoneAimStatProjectCPUCap OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Maximum cpu limit for the project in processor units."
+	::= { zoneAimStatProjectEntry  20 }
+
+zoneAimStatProjectMemoryUsage OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Memory usage of the project associated with the Zone(%)."
+	::= { zoneAimStatProjectEntry 21 }
+
+zoneAimStatProjectMemoryState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Memory State of Project (ok,warning,critical)."
+	::= { zoneAimStatProjectEntry  22 }
+
+zoneAimStatProjectMemoryAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		warning-only(1),
+		critical-only(2),
+		normal-only(3),
+		warning-and-critical(4)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The type of alert to be generated for Project Memory usage- warning(1), critical(2),normal(3), warning-and-critical(4)"
+	DEFVAL { 4 }
+	::= { zoneAimStatProjectEntry 23 }
+
+zoneAimStatProjectMemoryWarnThreshold OBJECT-TYPE
+	SYNTAX INTEGER (1..98)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The Project Memory usage threshold limit after which a warning would be generated (%)."
+	DEFVAL { 60 }
+	::= { zoneAimStatProjectEntry 24 }
+
+zoneAimStatProjectMemoryCritThreshold OBJECT-TYPE
+	SYNTAX INTEGER (2..99)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The Zone Project usage threshold limit after which a critical signal would be generated (%)."
+	DEFVAL { 80 }
+	::= { zoneAimStatProjectEntry 25 }
+
+zoneAimStatProjectCPUUsage OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU Usage of the Project associated with the zone (%)."
+	::= { zoneAimStatProjectEntry 26 }
+
+zoneAimStatProjectCPUState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"CPU State of Project (ok,warning,critical)."
+	::= { zoneAimStatProjectEntry  27 }
+
+zoneAimStatProjectCPUAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		warning-only(1),
+		critical-only(2),
+		normal-only(3),
+		warning-and-critical(4)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The type of alert to be generated for Project Memory usage- warning(1), critical(2),normal(3), warning-and-critical(4)"
+	DEFVAL { 4 }
+	::= { zoneAimStatProjectEntry 28 }
+
+zoneAimStatProjectCPUWarnThreshold OBJECT-TYPE
+	SYNTAX INTEGER (1..98)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The Project Memory usage threshold limit after which a warning would be generated (%)."
+	DEFVAL { 60 }
+	::= { zoneAimStatProjectEntry 29 }
+
+zoneAimStatProjectCPUCritThreshold OBJECT-TYPE
+	SYNTAX INTEGER (2..99)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The Zone Project usage threshold limit after which a critical signal would be generated (%)."
+	DEFVAL { 80 }
+	::= { zoneAimStatProjectEntry 30 }
+
+
+zoneAimStatProjectCPULagSetting OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-write
+	STATUS  mandatory
+	DESCRIPTION 
+		"The number of consecutive times the threshold should be breached before the status change occurs."
+	DEFVAL { 3 }
+	::= { zoneAimStatProjectEntry  31 }
+
+zoneAimStatProjectCPULagValue OBJECT-TYPE
+	SYNTAX  Counter
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION 
+		"The current running count of the number of consecutive times the status is in the current status."
+	::= { zoneAimStatProjectEntry  32 }
+
+zoneAimStatProjectCPUAggregateStatus OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"The current aggregate CPU Status of the Project (ok, warning, critical)."
+	::= { zoneAimStatProjectEntry  33 }
+
+zoneAimStatProjectCPUMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+	 	do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION	
+		"Flag indicating whether the CPU usage for Project to be monitored(2) or not(1)."
+	DEFVAL { 2 }
+	::= { zoneAimStatProjectEntry  34 }
+
+zoneAimStatProjectMemoryMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+	 	do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION	
+		"Flag indicating whether the Project Memory usage for host to be monitored(2) or not(1)."
+	DEFVAL { 2 }
+	::= { zoneAimStatProjectEntry  35 }
+
+zoneAimStatProjectMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+	 	do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION	
+		"Flag indicating whether the Project associated with the Zone to be monitored(2) or not(1)."
+	DEFVAL { 2 }
+	::= { zoneAimStatProjectEntry  36 }
+
+zoneAimStatProjectMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER {
+	 	do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION	
+		"Attribute to store previous monitor value."
+	DEFVAL { 2 }
+	::= { zoneAimStatProjectEntry  37 }
+
+zoneAimStatProjectCPUMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Attribute to store previous Project CPU Monitor Value."
+	DEFVAL { 2 }
+	::= { zoneAimStatProjectEntry 38 }
+
+zoneAimStatProjectMemoryMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Attribute to store previous Project Memory Monitor Value."
+	DEFVAL { 2 }
+	::= { zoneAimStatProjectEntry 39 }
+
+zoneAimStatProjectHostName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the host containing the Project."
+	::= { zoneAimStatProjectEntry 40 }
+
+zoneAimStatProjectHostIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of the host containing the Project."
+	::= { zoneAimStatProjectEntry 41 }
+
+
+-- *****************************************************************************
+-- Disk Status Group
+-- *****************************************************************************
+
+zoneAimStatHostDiskGroup	OBJECT IDENTIFIER ::= { zoneAimStatDiskGroup 1 }
+
+
+-- *****************************************************************************
+-- Host Disk Status Group
+-- *****************************************************************************
+
+zoneAimStatHostDiskTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimStatHostDiskRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"Host Disk Table."
+	::= { zoneAimStatHostDiskGroup 1 }
+
+zoneAimStatHostDiskEntry OBJECT-TYPE
+	SYNTAX ZoneAimStatHostDiskRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The Host Disk Table entry."
+	INDEX { zoneAimStatHostDiskInstanceUID, zoneAimStatHostDiskUID }
+	::= { zoneAimStatHostDiskTable 1 }
+
+ZoneAimStatHostDiskRow ::=
+	SEQUENCE {
+		zoneAimStatHostDiskInstanceUID				INTEGER,
+		zoneAimStatHostDiskUID					INTEGER,
+		zoneAimStatHostDiskInstanceName				DisplayString,
+		zoneAimStatHostDiskDeviceId				DisplayString,
+		zoneAimStatHostDiskName					DisplayString,
+		zoneAimStatHostDiskZoneServerName			DisplayString,
+		zoneAimStatHostDiskLabel				DisplayString,
+		zoneAimStatHostDiskCapacity 				INTEGER,
+		zoneAimStatHostDiskMode					DisplayString,
+		zoneAimStatHostDiskUsedPct				INTEGER,
+		zoneAimStatHostDiskUsed					INTEGER,
+		zoneAimStatHostDiskAvail				INTEGER,
+		zoneAimStatHostDiskMountpoint				DisplayString,
+		zoneAimStatHostDiskRead					Counter,
+		zoneAimStatHostDiskWrite				Counter,
+		zoneAimStatHostDiskKBPSRead				INTEGER,
+		zoneAimStatHostDiskKBPSWrite				INTEGER,
+		zoneAimStatHostDiskWait					INTEGER,
+		zoneAimStatHostDiskActive				INTEGER,
+		zoneAimStatHostDiskWaitPct				INTEGER,
+		zoneAimStatHostDiskBusyPct				INTEGER,
+		zoneAimStatHostDiskWsVc					INTEGER,
+		zoneAimStatHostDiskAsVc					INTEGER,
+		zoneAimStatHostDiskSvc					INTEGER,
+		zoneAimStatHostDiskIdle					INTEGER,
+		zoneAimStatHostDiskMonitor				INTEGER,
+		zoneAimStatHostDiskKBReadAlert				INTEGER,
+		zoneAimStatHostDiskKBReadState				INTEGER,
+		zoneAimStatHostDiskKBWriteAlert				INTEGER,
+		zoneAimStatHostDiskKBWriteState				INTEGER,
+		zoneAimStatHostDiskState				INTEGER,
+		zoneAimStatHostDiskAvailWarnThreshold			INTEGER,
+		zoneAimStatHostDiskAvailCritThreshold			INTEGER,
+		zoneAimStatHostDiskAvailAlert				INTEGER,
+		zoneAimStatHostDiskAvailState				INTEGER,
+		zoneAimStatHostDiskAvailPct				INTEGER,
+		zoneAimStatHostDiskMonPrevConfig			INTEGER,
+		zoneAimStatHostDiskHostIndex				DisplayString
+	}
+
+zoneAimStatHostDiskInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimStatHostDiskEntry  1}
+
+zoneAimStatHostDiskUID OBJECT-TYPE
+	SYNTAX INTEGER  (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Host Disk"
+	::= { zoneAimStatHostDiskEntry  2}
+
+zoneAimStatHostDiskInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimStatHostDiskEntry  3}
+
+zoneAimStatHostDiskDeviceId OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Host Disk Device ID."
+	::= { zoneAimStatHostDiskEntry  4 }
+
+zoneAimStatHostDiskName OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Name of the mount point."
+	::= { zoneAimStatHostDiskEntry  5 }
+
+zoneAimStatHostDiskZoneServerName OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Server Name of the Host Disk."
+	::= { zoneAimStatHostDiskEntry  6 }
+
+zoneAimStatHostDiskLabel OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Label of the Host Disk."
+	::= { zoneAimStatHostDiskEntry  7 }
+
+zoneAimStatHostDiskCapacity OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Capacity of Host Disk (GB)."
+	::= { zoneAimStatHostDiskEntry  8 }
+
+zoneAimStatHostDiskMode OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"The Host Disk Persistence Mode."
+	::= { zoneAimStatHostDiskEntry  9 }
+
+zoneAimStatHostDiskUsedPct OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Host Disk Usage (%)"
+	::= { zoneAimStatHostDiskEntry  10 }
+
+zoneAimStatHostDiskUsed OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Used Disk space in GigaBytes."
+	::= { zoneAimStatHostDiskEntry  11 }
+
+zoneAimStatHostDiskAvail OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Available Disk space in GigaBytes."
+	::= { zoneAimStatHostDiskEntry  12 }
+
+zoneAimStatHostDiskMountpoint OBJECT-TYPE
+	SYNTAX  DisplayString
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Mount point of the Disk."
+	::= { zoneAimStatHostDiskEntry  13 }
+
+zoneAimStatHostDiskRead OBJECT-TYPE
+	SYNTAX  Counter
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Number of KB Reads in the Host Disk."
+	::= { zoneAimStatHostDiskEntry  14 }
+
+zoneAimStatHostDiskWrite OBJECT-TYPE
+	SYNTAX  Counter
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Number of KB Writes in the Host Disk."
+	::= { zoneAimStatHostDiskEntry  15 }
+
+zoneAimStatHostDiskKBPSRead OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Read Rate of the Host Disk (KBPS)"
+	::= { zoneAimStatHostDiskEntry  16 }
+
+zoneAimStatHostDiskKBPSWrite OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Write Rate of the Host Disk (KBPS)"
+	::= { zoneAimStatHostDiskEntry  17 }
+
+zoneAimStatHostDiskWait OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Average number of transactions waiting for service (Q length)."
+	::= { zoneAimStatHostDiskEntry  18 }
+
+zoneAimStatHostDiskActive OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Average number of transactions  actively being serviced ."
+	::= { zoneAimStatHostDiskEntry  19 }
+
+zoneAimStatHostDiskWaitPct OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Percent of time transactions  waiting for service (queue non-empty)."
+	::= { zoneAimStatHostDiskEntry  20 }
+
+zoneAimStatHostDiskBusyPct OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Percent of time disk is busy (transactions in progress)."
+	::= { zoneAimStatHostDiskEntry  21 }
+
+zoneAimStatHostDiskWsVc OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Average service time in wait queue, in milliseconds."
+	::= { zoneAimStatHostDiskEntry  22 }
+
+zoneAimStatHostDiskAsVc OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Average service time of active transactions in milliseconds."
+	::= { zoneAimStatHostDiskEntry  23 }
+
+zoneAimStatHostDiskSvc OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Average response time of transactions in milliseconds."
+	::= { zoneAimStatHostDiskEntry  24 }
+
+zoneAimStatHostDiskIdle OBJECT-TYPE
+	SYNTAX  INTEGER
+	ACCESS  read-only
+	STATUS  mandatory
+	DESCRIPTION
+		"Host Disk Idle state."
+	::= { zoneAimStatHostDiskEntry  25 }
+
+zoneAimStatHostDiskMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Flag indicating whether the Disk to be monitored(2) or not(1)."
+	DEFVAL { 2 }
+	::= { zoneAimStatHostDiskEntry 26 }
+
+zoneAimStatHostDiskKBReadAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		no-read-warning(1),
+		no-read-critical(2),
+		no-read-normal(3)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The level of alert to raise if the Disk is monitored and there is a loss of KB read."
+	DEFVAL { 2 }
+	::= { zoneAimStatHostDiskEntry 27 }
+
+zoneAimStatHostDiskKBReadState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The read state of the Disk (ok,warning,critical)."
+	::= { zoneAimStatHostDiskEntry 28 }
+
+zoneAimStatHostDiskKBWriteAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		no-write-warning(1),
+		no-write-critical(2),
+		no-write-normal(3)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The level of alert to raise if the Disk is monitored and there is a loss of KB read."
+	DEFVAL { 2 }
+	::= { zoneAimStatHostDiskEntry 29 }
+
+zoneAimStatHostDiskKBWriteState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The write state of the Disk (ok,warning,critical)."
+	::= { zoneAimStatHostDiskEntry 30 }
+
+zoneAimStatHostDiskState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The state of the Host Disk (ok,warning,critical). This will rely on zoneAimStatHostDiskKBReadState and zoneAimStatHostDiskKBWriteState attributes."
+	::= { zoneAimStatHostDiskEntry 31 }
+
+zoneAimStatHostDiskAvailWarnThreshold OBJECT-TYPE
+	SYNTAX INTEGER (2..99)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The Disk avail usage threshold limit after which a warn signal would be generated (%)"
+	DEFVAL { 40 }
+	::= { zoneAimStatHostDiskEntry 32 }
+
+zoneAimStatHostDiskAvailCritThreshold OBJECT-TYPE
+	SYNTAX INTEGER (1..98)
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The Disk avail usage threshold limit after which a crit signal would be generated (%)"
+	DEFVAL { 20 }
+	::= { zoneAimStatHostDiskEntry 33 }
+
+zoneAimStatHostDiskAvailAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		warning(1),
+		critical(2),
+		normal(3),
+		warning-and-critical(4)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The level of alert to raise if the Disk is monitored and there is a disk free space value."
+	DEFVAL { 4 }
+	::= { zoneAimStatHostDiskEntry 34 }
+
+zoneAimStatHostDiskAvailState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The Free space state of the Host Disk (ok,warning,critical)."
+	::= { zoneAimStatHostDiskEntry 35 }
+
+
+zoneAimStatHostDiskAvailPct OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The Free Space Percentage of the Host Disk (%)."
+	::= { zoneAimStatHostDiskEntry 36 }
+
+zoneAimStatHostDiskMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Attribute to store previous monitor value."
+	DEFVAL { 2 }
+	::= { zoneAimStatHostDiskEntry 37 }
+
+zoneAimStatHostDiskHostIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of the host containing the Host Disk."
+	::= { zoneAimStatHostDiskEntry 38 }
+
+
+
+
+-- *****************************************************************************
+-- Network Status Groups
+-- *****************************************************************************
+zoneAimStatPNICGroup		OBJECT IDENTIFIER ::= { zoneAimStatNetworkGroup 1 }
+zoneAimStatVNICGroup		OBJECT IDENTIFIER ::= { zoneAimStatNetworkGroup 2 }
+
+-- *****************************************************************************
+--     Agent status PNIC    Group
+-- *****************************************************************************
+
+zoneAimStatPNICTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimStatPNICRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"Physical NIC table."
+	::= { zoneAimStatPNICGroup 1 }
+
+
+zoneAimStatPNICEntry OBJECT-TYPE
+	SYNTAX ZoneAimStatPNICRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The Physical NIC table entry."
+	INDEX { zoneAimStatPNICInstanceUID, zoneAimStatPNICUID }
+	::= { zoneAimStatPNICTable 1 }
+
+ZoneAimStatPNICRow ::=
+	SEQUENCE {
+		zoneAimStatPNICInstanceUID			INTEGER,
+		zoneAimStatPNICUID	 			INTEGER,
+		zoneAimStatPNICInstanceName			DisplayString,
+		zoneAimStatPNICDeviceId	 			DisplayString,
+		zoneAimStatPNICName	 			DisplayString,
+		zoneAimStatPNICMAC	 			DisplayString,
+		zoneAimStatPNICIp	 			DisplayString,
+		zoneAimStatPNICId	 			DisplayString,
+		zoneAimStatParentZone	 			DisplayString,
+		zoneAimStatPNICConnected 			DisplayString,
+		zoneAimStatPNICPktTxt	 			Counter,
+		zoneAimStatPNICPktRcvd	 			Counter,
+		zoneAimStatPNICPktTxtPS	 			INTEGER,
+		zoneAimStatPNICPktRcvdPs 			INTEGER,
+		zoneAimStatPNICKBTxt	 			INTEGER,
+		zoneAimStatPNICKBRcvd	 			INTEGER,
+		zoneAimStatPNICKBPSTxt	 			INTEGER,
+		zoneAimStatPNICKBPSRcvd	 			INTEGER,
+		zoneAimStatPNICIfSpeed	 			INTEGER,
+		zoneAimStatPNICUtilization 			INTEGER,
+		zoneAimStatPNICLinkState	 		INTEGER,
+		zoneAimStatPNICHostName	 			DisplayString,
+		zoneAimStatPNICHostIndex 			DisplayString,
+		zoneAimStatPNICStatus	 			DisplayString,
+		zoneAimStatPNICState	 			INTEGER,
+		zoneAimStatPNICMonitor 				INTEGER,
+		zoneAimStatPNICAlert 				INTEGER,
+		zoneAimStatPNICMonPrevConfig 				INTEGER
+	}
+
+zoneAimStatPNICInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimStatPNICEntry  1}
+
+zoneAimStatPNICUID OBJECT-TYPE
+	SYNTAX INTEGER  (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of PNIC"
+	::= { zoneAimStatPNICEntry  2}
+
+zoneAimStatPNICInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimStatPNICEntry  3}
+
+zoneAimStatPNICDeviceId OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"PNIC Device ID"
+	::= { zoneAimStatPNICEntry  4}
+
+zoneAimStatPNICName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the PNIC"
+	::= { zoneAimStatPNICEntry  5}
+
+zoneAimStatPNICMAC OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The MAC address of the network adapter"
+	::= { zoneAimStatPNICEntry  6}
+
+zoneAimStatPNICIp OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The IP Address currently used by the network adapter"
+	::= { zoneAimStatPNICEntry  7}
+
+zoneAimStatPNICId OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Associated PNIC name"
+	::= { zoneAimStatPNICEntry  8}
+
+zoneAimStatParentZone OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Parent Zone of this PNIC"
+	::= { zoneAimStatPNICEntry  9}
+
+zoneAimStatPNICConnected OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The flag indicating if the device is connected."
+	::= { zoneAimStatPNICEntry 10 }
+
+zoneAimStatPNICPktTxt OBJECT-TYPE
+	SYNTAX Counter
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Packets Transmitted"
+	::= { zoneAimStatPNICEntry  11 }
+
+zoneAimStatPNICPktRcvd OBJECT-TYPE
+	SYNTAX Counter
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Packets Received"
+	::= { zoneAimStatPNICEntry  12 }
+
+zoneAimStatPNICPktTxtPS OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Packets transmitted per second"
+	::= { zoneAimStatPNICEntry  13 }
+
+zoneAimStatPNICPktRcvdPs OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Packets received per second"
+	::= { zoneAimStatPNICEntry  14 }
+
+zoneAimStatPNICKBTxt OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"KB Transmitted"
+	::= { zoneAimStatPNICEntry  15 }
+
+zoneAimStatPNICKBRcvd OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"KB Received"
+	::= { zoneAimStatPNICEntry  16 }
+
+zoneAimStatPNICKBPSTxt OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"KBPS Transmitted"
+	::= { zoneAimStatPNICEntry  17 }
+
+zoneAimStatPNICKBPSRcvd OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"KBPS received"
+	::= { zoneAimStatPNICEntry  18 }
+
+zoneAimStatPNICIfSpeed OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Interface Speed in bits-per-second"
+	::= { zoneAimStatPNICEntry  19 }
+
+zoneAimStatPNICUtilization OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Percentage Utilization of PNIC."
+	::= { zoneAimStatPNICEntry 20 }
+
+zoneAimStatPNICLinkState OBJECT-TYPE
+	SYNTAX INTEGER{
+		link-up(1),
+		link-down(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"PNIC Link State.Can be link-down, link-up."
+	::= { zoneAimStatPNICEntry  21 }
+
+zoneAimStatPNICHostName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"PNIC Host Name"
+	::= { zoneAimStatPNICEntry  22 }
+
+zoneAimStatPNICHostIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"PNIC Host Index"
+	::= { zoneAimStatPNICEntry  23 }
+
+zoneAimStatPNICStatus OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"PNIC Status, 1 for connected, 0 for not connected."
+	::= { zoneAimStatPNICEntry  24 }
+
+zoneAimStatPNICState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"PNIC state (ok,warning,critical)"
+	::= { zoneAimStatPNICEntry  25 }
+
+zoneAimStatPNICMonitor OBJECT-TYPE
+	SYNTAX INTEGER{
+		do-not-monitor(1),
+		monitor(2)
+		}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The flag to indicate whether or not PNIC has to be monitored(2) or not(1)."
+	DEFVAL {2 }
+	::= { zoneAimStatPNICEntry  26 }
+
+zoneAimStatPNICAlert OBJECT-TYPE
+	SYNTAX INTEGER{
+		link-down-warning(1),
+		link-down-critical(2),
+		link-down-normal(3)
+		}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"PNIC Alert if it is warning or critical or normal"
+	DEFVAL {2 }
+	::= { zoneAimStatPNICEntry  27 }
+
+zoneAimStatPNICMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER{
+		do-not-monitor(1),
+		monitor(2)
+		}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Attribute to store previous monitor value."
+	DEFVAL {2 }
+	::= { zoneAimStatPNICEntry  28 }
+
+
+-- *****************************************************************************
+--     Agent status VNIC Group
+-- *****************************************************************************
+
+zoneAimStatVNICTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimStatVNICRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"Virtual NIC table."
+	::= { zoneAimStatVNICGroup 1 }
+
+
+zoneAimStatVNICEntry OBJECT-TYPE
+	SYNTAX ZoneAimStatVNICRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The Virtual NIC table entry."
+	INDEX { zoneAimStatVNICInstanceUID, zoneAimStatVNICUID  }
+	::= { zoneAimStatVNICTable 1 }
+
+ZoneAimStatVNICRow ::=
+	SEQUENCE {
+		zoneAimStatVNICInstanceUID			INTEGER,
+		zoneAimStatVNICUID	 			INTEGER,
+		zoneAimStatVNICInstanceName			DisplayString,
+		zoneAimStatVNICDeviceId	 			DisplayString,
+		zoneAimStatVNICName	 			DisplayString,
+		zoneAimStatVNICMAC	 			DisplayString,
+		zoneAimStatVNICIp	 			DisplayString,
+		zoneAimStatVNICPNICId	 			DisplayString,
+		zoneAimStatVNICParentZone	 		DisplayString,
+		zoneAimStatVNICParentZoneIndex	 		DisplayString,
+		zoneAimStatVNICContainerId	 		DisplayString,
+		zoneAimStatVNICConnected 			INTEGER,
+		zoneAimStatVNICPktTxt	 			Counter,
+		zoneAimStatVNICPktRcvd	 			Counter,
+		zoneAimStatVNICPktTxtPS	 			INTEGER,
+		zoneAimStatVNICPktRcvdPs 			INTEGER,
+		zoneAimStatVNICKBTxt	 			INTEGER,
+		zoneAimStatVNICKBRcvd	 			INTEGER,
+		zoneAimStatVNICKBPSTxt	 			INTEGER,
+		zoneAimStatVNICKBPSRcvd	 			INTEGER,
+		zoneAimStatVNICIfSpeed	 			INTEGER,
+		zoneAimStatVNICUtilization 			INTEGER,
+		zoneAimStatVNICAlert 				INTEGER,
+		zoneAimStatVNICState		 		INTEGER,
+		zoneAimStatVNICStatus		 		DisplayString,
+		zoneAimStatVNICMonitor 				INTEGER,
+		zoneAimStatVNICMonPrevConfig 			INTEGER,
+		zoneAimStatVNICHostName				DisplayString,
+		zoneAimStatVNICHostIndex			DisplayString
+	}
+
+zoneAimStatVNICInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimStatVNICEntry  1}
+
+zoneAimStatVNICUID OBJECT-TYPE
+	SYNTAX INTEGER  (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of VNIC"
+	::= { zoneAimStatVNICEntry  2}
+
+zoneAimStatVNICInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimStatVNICEntry  3}
+
+zoneAimStatVNICDeviceId OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"VNIC Device ID"
+	::= { zoneAimStatVNICEntry  4}
+
+zoneAimStatVNICName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the VNIC"
+	::= { zoneAimStatVNICEntry  5}
+
+zoneAimStatVNICMAC OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The MAC address of the network adapter"
+	::= { zoneAimStatVNICEntry  6}
+
+zoneAimStatVNICIp OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The IP address currently used by the network adapter"
+	::= { zoneAimStatVNICEntry  7}
+
+zoneAimStatVNICPNICId OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Associated VNIC name"
+	::= { zoneAimStatVNICEntry  8}
+
+zoneAimStatVNICParentZone OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Parent Zone of this VNIC"
+	::= { zoneAimStatVNICEntry  9}
+
+zoneAimStatVNICParentZoneIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Parent Zone of this VNIC"
+	::= { zoneAimStatVNICEntry  10}
+
+zoneAimStatVNICContainerId  OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Container Id of vnic"
+	::= { zoneAimStatVNICEntry  11}
+
+zoneAimStatVNICConnected OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The flag indicating if the device is connected. 1 for connected, 0 for not connected."
+	::= { zoneAimStatVNICEntry 12 }
+
+zoneAimStatVNICPktTxt OBJECT-TYPE
+	SYNTAX Counter
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Packets transmitted"
+	::= { zoneAimStatVNICEntry  13 }
+
+zoneAimStatVNICPktRcvd OBJECT-TYPE
+	SYNTAX Counter
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Packets received"
+	::= { zoneAimStatVNICEntry  14 }
+
+zoneAimStatVNICPktTxtPS OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Packets transmitted per sec"
+	::= { zoneAimStatVNICEntry  15 }
+
+zoneAimStatVNICPktRcvdPs OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Packets received per sec"
+	::= { zoneAimStatVNICEntry  16 }
+
+zoneAimStatVNICKBTxt OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"KB transmitted"
+	::= { zoneAimStatVNICEntry  17 }
+
+zoneAimStatVNICKBRcvd OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"KB received"
+	::= { zoneAimStatVNICEntry  18 }
+
+zoneAimStatVNICKBPSTxt OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"KBPS transmitted"
+	::= { zoneAimStatVNICEntry  19 }
+
+zoneAimStatVNICKBPSRcvd OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"KBPS received"
+	::= { zoneAimStatVNICEntry  20 }
+
+zoneAimStatVNICIfSpeed OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Interface speed in bits-per-second."
+	::= { zoneAimStatVNICEntry  21 }
+
+zoneAimStatVNICUtilization OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Percentage Utilization of VNIC."
+	::= { zoneAimStatVNICEntry 22 }
+
+
+zoneAimStatVNICAlert OBJECT-TYPE
+	SYNTAX INTEGER{
+		link-down-warning(1),
+		link-down-critical(2),
+		link-down-normal(3)
+		}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"VNIC Alert if it is warning or critical or normal"
+	DEFVAL {2 }
+	::= { zoneAimStatVNICEntry  23 }
+
+zoneAimStatVNICState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"VNIC State.Can be warning, critical or ok."
+	::= { zoneAimStatVNICEntry  24 }
+
+zoneAimStatVNICStatus OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"VNIC Status, 1 for connected, 0 for not connected."
+	::= { zoneAimStatVNICEntry  25 }
+
+zoneAimStatVNICMonitor OBJECT-TYPE
+	SYNTAX INTEGER{
+		do-not-monitor(1),
+		monitor(2)
+		}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The flag to indicate whether or not VNIC has to be monitored(2) or not(1)."
+	DEFVAL {2 }
+	::= { zoneAimStatVNICEntry  26 }
+
+zoneAimStatVNICMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER{
+		do-not-monitor(1),
+		monitor(2)
+		}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Attribute to store previous monitor value."
+	DEFVAL {2 }
+	::= { zoneAimStatVNICEntry  27 }
+
+zoneAimStatVNICHostName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the host containing the VNIC."
+	::= { zoneAimStatVNICEntry 28 }
+
+zoneAimStatVNICHostIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of the host containing the VNIC."
+	::= { zoneAimStatVNICEntry 29 }
+
+
+-- ******************************************************************************
+-- ProcessorSet Status Group
+-- ******************************************************************************
+
+zoneAimStatProcessorSetTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimStatProcessorSetRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"ProcessorSet table."
+	::= { zoneAimStatProcessorSetGroup 1 }
+
+
+zoneAimStatProcessorSetEntry OBJECT-TYPE
+	SYNTAX ZoneAimStatProcessorSetRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The table entry."
+	INDEX { zoneAimStatProcessorSetInstanceUID, zoneAimStatProcessorSetUID }
+	::= { zoneAimStatProcessorSetTable 1 }
+
+ZoneAimStatProcessorSetRow ::=
+	SEQUENCE {
+		zoneAimStatProcessorSetInstanceUID			INTEGER,
+		zoneAimStatProcessorSetUID	 			INTEGER,
+		zoneAimStatProcessorSetInstanceName			DisplayString,
+		zoneAimStatProcessorSetId	 			DisplayString,
+		zoneAimStatProcessorSetName 				DisplayString,
+		zoneAimStatProcessorSetResourcepoolId			DisplayString,
+		zoneAimStatProcessorSetResourcepoolName			DisplayString,
+		zoneAimStatProcessorSetResourcePoolIdList		DisplayString,
+		zoneAimStatProcessorSetAlert				INTEGER,
+		zoneAimStatProcessorSetState				INTEGER,
+		zoneAimStatProcessorSetStatus				DisplayString,
+		zoneAimStatProcessorSetType 				DisplayString,
+		zoneAimStatProcessorSetUnits 				DisplayString,
+		zoneAimStatProcessorSetSize				INTEGER,
+		zoneAimStatProcessorSetMin				INTEGER,
+		zoneAimStatProcessorSetMax				INTEGER,
+		zoneAimStatProcessorSetLoad 				INTEGER,
+		zoneAimStatProcessorSetEscapable			INTEGER,
+		zoneAimStatProcessorSetDefault				DisplayString,
+		zoneAimStatProcessorSetMonitor				INTEGER,
+		zoneAimStatProcessorSetContainerList			DisplayString,
+		zoneAimStatProcessorSetMonPrevConfig			INTEGER,
+		zoneAimStatProcessorSetHostName				DisplayString,
+		zoneAimStatProcessorSetHostIndex			DisplayString
+	}
+
+zoneAimStatProcessorSetInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimStatProcessorSetEntry  1}
+
+zoneAimStatProcessorSetUID OBJECT-TYPE
+	SYNTAX INTEGER  (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of ProcessorSet"
+	::= { zoneAimStatProcessorSetEntry  2}
+
+zoneAimStatProcessorSetInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimStatProcessorSetEntry  3}
+
+zoneAimStatProcessorSetId OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Processorset ID."
+	::= { zoneAimStatProcessorSetEntry 4 }
+
+zoneAimStatProcessorSetName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the ProcessorSet."
+	::= { zoneAimStatProcessorSetEntry 5 }
+
+zoneAimStatProcessorSetResourcepoolId OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"ResourcePool Id of the ProcessorSet.
+		 This attribute has been deprecated and will be shown as NA."
+	::= { zoneAimStatProcessorSetEntry 6 }
+
+zoneAimStatProcessorSetResourcepoolName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"ResourcePool Name of the ProcessorSet.
+		 This attribute has been deprecated and will be shown as NA."
+	::= { zoneAimStatProcessorSetEntry 7 }
+
+
+zoneAimStatProcessorSetResourcePoolIdList OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Comma separated list of ResourcePools using this ProcessorSet.
+		 This attribute has been deprecated and will be shown as NA."
+	::= { zoneAimStatProcessorSetEntry 8 }
+
+zoneAimStatProcessorSetAlert OBJECT-TYPE
+	SYNTAX INTEGER {
+		not-active-warning(1),
+		not-active-critical(2),
+		not-active-normal(3)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"The type of alert to be generated"
+	DEFVAL { 2 }
+	::= { zoneAimStatProcessorSetEntry 9 }
+
+zoneAimStatProcessorSetState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"State of the ProcessorSet. It can be ok,warning or critical"
+	::= { zoneAimStatProcessorSetEntry 10 }
+
+zoneAimStatProcessorSetStatus OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Status of the ProcessorSet."
+	::= { zoneAimStatProcessorSetEntry 11 }
+
+zoneAimStatProcessorSetType OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"ProcessorSet Type."
+	::= { zoneAimStatProcessorSetEntry 12 }
+
+zoneAimStatProcessorSetUnits OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"This attribute identifies the meaning of size-related properties. The value for all processor sets is population."
+	::= { zoneAimStatProcessorSetEntry 13 }
+
+zoneAimStatProcessorSetSize OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Current number of CPUs in this processor set."
+	::= {zoneAimStatProcessorSetEntry 14 }
+
+zoneAimStatProcessorSetMin OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Minimum number of CPUs that are permitted in this processor set."
+	::= {zoneAimStatProcessorSetEntry 15 }
+
+zoneAimStatProcessorSetMax OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Maximum number of CPUs that are permitted in this processor set."
+	::= {zoneAimStatProcessorSetEntry 16 }
+
+zoneAimStatProcessorSetLoad OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The load for this ProcessorSet."
+	::= {zoneAimStatProcessorSetEntry 17 }
+
+zoneAimStatProcessorSetEscapable OBJECT-TYPE
+	SYNTAX INTEGER
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Represents whether PSET_NOESCAPE is set for this ProcessorSet."
+	::= { zoneAimStatProcessorSetEntry 18 }
+
+zoneAimStatProcessorSetDefault OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Identifies the default ProcessorSet."
+	::= { zoneAimStatProcessorSetEntry 19 }
+
+
+zoneAimStatProcessorSetMonitor OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-write
+	STATUS mandatory
+	DESCRIPTION
+		"Flag indicating whether the ProcessorSet has to be monitored(2) or not(1)."
+	DEFVAL { 2 }
+	::= { zoneAimStatProcessorSetEntry 20 }
+
+zoneAimStatProcessorSetContainerList OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"List of Containers using this pset.
+		 This attribute has been deprecated and will be shown as NA."
+	::= { zoneAimStatProcessorSetEntry 21 }
+
+zoneAimStatProcessorSetMonPrevConfig OBJECT-TYPE
+	SYNTAX INTEGER {
+		do-not-monitor(1),
+		monitor(2)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Attribute to store previous monitor value."
+	DEFVAL { 2 }
+	::= { zoneAimStatProcessorSetEntry 22 }
+
+zoneAimStatProcessorSetHostName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the host containing the ProcessorSet."
+	::= { zoneAimStatProcessorSetEntry 23 }
+
+zoneAimStatProcessorSetHostIndex OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Index of the host containing the ProcessorSet."
+	::= { zoneAimStatProcessorSetEntry 24 }
+
+
+-- *****************************************************************************
+-- zoneAimEventGroup 
+-- *****************************************************************************
+	
+zoneAimEventTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF ZoneAimEventRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"A Event table."
+	::= {zoneAimEventGroup 1}
+	
+zoneAimEventEntry OBJECT-TYPE
+	SYNTAX ZoneAimEventRow
+	ACCESS not-accessible
+	STATUS mandatory
+	DESCRIPTION
+		"The Event table entry."
+	INDEX { zoneAimEventInstanceUID, zoneAimEventUID }
+	::= { zoneAimEventTable 1 }
+
+ZoneAimEventRow ::=
+	SEQUENCE {
+		zoneAimEventInstanceUID			INTEGER,
+		zoneAimEventUID 			INTEGER,
+		zoneAimEventInstanceName		DisplayString,
+		zoneAimEventID 				DisplayString,
+		zoneAimEventplatformType		DisplayString,
+		zoneAimEventplatformName		DisplayString,
+		zoneAimEventObjType			DisplayString,
+		zoneAimEventObjName	                DisplayString,
+		zoneAimEventOldState			INTEGER,
+		zoneAimEventNewState			INTEGER,
+		zoneAimEventOldValue			DisplayString,
+		zoneAimEventNewValue			DisplayString,
+		zoneAimEventDateTime			DisplayString,
+		zoneAimEventDateTimeSec			Gauge,
+		zoneAimEventCfgFile			DisplayString
+	}
+
+zoneAimEventInstanceUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Integer UID of Zone Instance."
+	::= { zoneAimEventEntry  1}
+
+zoneAimEventUID OBJECT-TYPE
+	SYNTAX INTEGER (1..2147483647)
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Unique Integer Event UID."
+	::= { zoneAimEventEntry 2 }
+
+zoneAimEventInstanceName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Zone Instance"
+	::= { zoneAimEventEntry  3}
+
+zoneAimEventID OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Event Identifier"
+	::= { zoneAimEventEntry 4 }
+
+
+zoneAimEventplatformType OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Type of Platform on which this event was raised."
+	::= { zoneAimEventEntry 5 }
+
+zoneAimEventplatformName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Platform on which the event was raised."
+	::= { zoneAimEventEntry 6 }
+
+zoneAimEventObjType OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Type of the Object on which this event was raised"
+	::= { zoneAimEventEntry 7 }
+
+zoneAimEventObjName OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Name of the Object on which this event was raised"
+	::= { zoneAimEventEntry 8 }
+
+zoneAimEventOldState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Old State of the Object"
+	::= { zoneAimEventEntry 9 }
+
+zoneAimEventNewState OBJECT-TYPE
+	SYNTAX INTEGER {
+		ok(1),
+		warning(2),
+		critical(3)
+	}
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"New State of the Object"
+	::= { zoneAimEventEntry 10 }
+
+zoneAimEventOldValue OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Old Value of the Object"
+	::= { zoneAimEventEntry 11 }
+
+zoneAimEventNewValue OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"New Value of the Object"
+	::= { zoneAimEventEntry 12 }
+
+zoneAimEventDateTime OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Time stamp of the Event Occurrence"
+	::= { zoneAimEventEntry 13 }
+
+zoneAimEventDateTimeSec	 OBJECT-TYPE
+	SYNTAX Gauge
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"Time the Event Occurred in seconds"
+	::= { zoneAimEventEntry 14 }
+
+zoneAimEventCfgFile OBJECT-TYPE
+	SYNTAX DisplayString
+	ACCESS read-only
+	STATUS mandatory
+	DESCRIPTION
+		"The name of the configuration file."
+	::= { zoneAimEventEntry 15 }
+
+
+-- *****************************************************************************
+-- Trap Definitions
+-- *****************************************************************************
+
+-- Host Traps *********************************************************
+
+zoneAimHostConfigChangeEvent OBJECT IDENTIFIER ::= { traps 165401 }
+zoneAimHostConfigChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostName,
+		zoneAimStatHostID,
+		zoneAimStatHostStatusAlert,
+		zoneAimStatHostMonitor,
+		zoneAimStatHostCPULagSetting,
+		zoneAimStatHostCPUAlert,
+		zoneAimStatHostCPUMonitor,
+		zoneAimStatHostMemoryAlert,
+		zoneAimStatHostMemoryMonitor,
+		zoneAimStatHostInstanceName
+	}
+	DESCRIPTION
+		"Zone Host Configuration change trap. This trap will be sent when Alerts, Monitor and Lag Setting Values
+		of a Host is changed."
+	::= 165401
+
+zoneAimHostStateChangeEvent OBJECT IDENTIFIER ::= { traps 165402 }
+zoneAimHostStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostName,
+		zoneAimStatHostID,
+		zoneAimStatHostState,
+		zoneAimStatHostStatus,
+		zoneAimStatHostStatusAlert,
+		zoneAimStatHostInstanceName
+	}
+	DESCRIPTION
+		"Zone Host State change trap. This trap will be sent when Host State Changes."
+	::= 165402
+
+zoneAimHostCPUStateChangeEvent OBJECT IDENTIFIER ::= { traps 165403 }
+zoneAimHostCPUStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostName,
+		zoneAimStatHostID,
+		zoneAimStatHostCPUUsage,
+		zoneAimStatHostCPUUsageWarnThresh,
+		zoneAimStatHostCPUUsageCritThresh,
+		zoneAimStatHostCPUAlert,
+		zoneAimStatHostCPUAggregateStatus,
+		zoneAimStatHostInstanceName
+	}
+	DESCRIPTION
+		"Zone Host CPU State change trap. This trap will be sent when CPU State Changes."
+	::= 165403
+
+zoneAimHostMemStateChangeEvent OBJECT IDENTIFIER ::= { traps 165404 }
+zoneAimHostMemStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostName,
+		zoneAimStatHostID,
+		zoneAimStatHostMemoryUsage,
+		zoneAimStatHostMemoryUsageWarnThreshold,
+		zoneAimStatHostMemoryUsageCritThreshold,
+		zoneAimStatHostMemoryAlert,
+		zoneAimStatHostMemoryState,
+		zoneAimStatHostInstanceName
+	}
+	DESCRIPTION
+		"Zone Host Mem State change trap. This trap will be sent when Host Mem State Changes."
+	::= 165404
+
+zoneAimHostTotalZoneCPUStateChangeEvent OBJECT IDENTIFIER ::= { traps 165405 }
+zoneAimHostTotalZoneCPUStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostName,
+		zoneAimStatHostID,
+		zoneAimStatHostTotalZoneCPUusage,
+		zoneAimStatHostTotalZoneCPUWarnThreshold,
+		zoneAimStatHostTotalZoneCPUCritThreshold,
+		zoneAimStatHostTotalZoneCPUState,
+		zoneAimStatHostInstanceName
+	}
+	DESCRIPTION
+		"Zone Host Total Zone CPU State change trap. This trap will be sent when Total Zone CPU State Changes."
+	::= 165405
+
+zoneAimHostTotalZoneMemStateChangeEvent OBJECT IDENTIFIER ::= { traps 165406 }
+zoneAimHostTotalZoneMemStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostName,
+		zoneAimStatHostID,
+		zoneAimStatHostTotalZoneMemoryusage,
+		zoneAimStatHostTotalZoneMemoryWarnThreshold,
+		zoneAimStatHostTotalZoneMemoryCritThreshold,
+		zoneAimStatHostTotalZoneMemoryState,
+		zoneAimStatHostInstanceName
+	}
+	DESCRIPTION
+		"Zone Host Total Zone Mem State change trap. This trap will be sent when Total Zone Memory State Changes."
+	::= 165406
+
+zoneAimHostThresholdChangeEvent OBJECT IDENTIFIER ::= { traps 165407 }
+zoneAimHostThresholdChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostName,
+		zoneAimStatHostID,
+		zoneAimStatHostCPUUsageWarnThresh,
+		zoneAimStatHostCPUUsageCritThresh,
+		zoneAimStatHostMemoryUsageWarnThreshold,
+		zoneAimStatHostMemoryUsageCritThreshold,
+		zoneAimStatHostTotalZoneCPUWarnThreshold,
+		zoneAimStatHostTotalZoneCPUCritThreshold,
+		zoneAimStatHostTotalZoneMemoryWarnThreshold,
+		zoneAimStatHostTotalZoneMemoryCritThreshold,
+		zoneAimStatHostInstanceName
+	}
+	DESCRIPTION
+		"Zone Host Threshold change trap. This trap will be sent when Host CPU, Host Memory,
+		 Total Zone CPU or Total Zone Memory Threshold Changes."
+	::= 165407
+
+zoneAimHostConnectionStateChangeEvent OBJECT IDENTIFIER ::= { traps 165408 }
+zoneAimHostConnectionStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostName,
+		zoneAimStatHostID,
+		zoneAimStatHostStatus,
+		zoneAimStatHostState,
+		zoneAimStatHostInstanceName
+	}
+	DESCRIPTION
+		"Zone Host Connection State change trap. This trap will be sent when Host SSH 
+		Connection changes to down or up."
+	::= 165408
+
+-- Zone Traps *********************************************************
+
+zoneAimZoneCPUStateChangeEvent OBJECT IDENTIFIER ::= { traps 165409 }
+zoneAimZoneCPUStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatZoneIndex,
+		zoneAimStatZoneName,
+		zoneAimStatZoneHostName,
+		zoneAimStatZoneContainerId,
+		zoneAimStatZoneCPUUsage,
+		zoneAimStatZoneCPUWarnThreshold,
+		zoneAimStatZoneCPUCritThreshold,
+		zoneAimStatZoneCPUAlert,
+		zoneAimStatZoneCPUAggregateStatus,
+		zoneAimStatZoneInstanceName,
+		zoneAimStatZoneHostIndex
+	}
+	DESCRIPTION
+		"Zone CPU State change trap. This trap will be sent when CPU State of Zone Changes."
+	::= 165409
+
+zoneAimZoneMemStateChangeEvent OBJECT IDENTIFIER ::= { traps 165410 }
+zoneAimZoneMemStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatZoneIndex,
+		zoneAimStatZoneName,
+		zoneAimStatZoneHostName,
+		zoneAimStatZoneContainerId,
+		zoneAimStatZoneMemoryUsage,
+		zoneAimStatZoneMemoryWarnThreshold,
+		zoneAimStatZoneMemoryCritThreshold,
+		zoneAimStatZoneMemoryAlert,
+		zoneAimStatZoneMemoryState,
+		zoneAimStatZoneInstanceName,
+		zoneAimStatZoneHostIndex
+	}
+	DESCRIPTION
+		"Zone Memory State change trap. This trap will be sent when Memory State of Zone Changes."
+	::= 165410
+
+zoneAimZoneConfigChangeEvent OBJECT IDENTIFIER ::= { traps 165411 }
+zoneAimZoneConfigChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatZoneIndex,
+		zoneAimStatZoneName,
+		zoneAimStatZoneHostName,
+		zoneAimStatZoneContainerId,
+		zoneAimStatZoneStatusAlert,
+		zoneAimStatZoneMemoryAlert,
+		zoneAimStatZoneMemoryMonitor,
+		zoneAimStatZoneCPUAlert,
+		zoneAimStatZoneCPUMonitor,
+		zoneAimStatZoneCPULagSetting,
+		zoneAimStatZoneMonitor,
+		zoneAimStatZoneInstanceName,
+		zoneAimStatZoneHostIndex
+	}
+	DESCRIPTION
+		"Zone Config change trap. This trap will be sent when Alert,Monitor or Lag Setting Configuration
+		of a Zone changes."
+	::= 165411
+
+zoneAimZoneThresholdChangeEvent OBJECT IDENTIFIER ::= { traps 165412 }
+zoneAimZoneThresholdChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatZoneIndex,
+		zoneAimStatZoneName,
+		zoneAimStatZoneHostName,
+		zoneAimStatZoneContainerId,
+		zoneAimStatZoneCPUWarnThreshold,
+		zoneAimStatZoneCPUCritThreshold,
+		zoneAimStatZoneMemoryWarnThreshold,
+		zoneAimStatZoneMemoryCritThreshold,
+		zoneAimStatZoneInstanceName,
+		zoneAimStatZoneHostIndex
+	}
+	DESCRIPTION
+		"Zone Threshold change trap. This trap will be sent when Zone CPU or Zone Memory 
+		Threshold Changes."
+	::= 165412
+
+zoneAimZoneAddedEvent OBJECT IDENTIFIER ::= { traps 165413 }
+zoneAimZoneAddedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatZoneIndex,
+		zoneAimStatZoneName,
+		zoneAimStatZoneHostName,
+		zoneAimStatZoneContainerId,
+		zoneAimStatZonePath,
+		zoneAimStatZoneResourcePoolId,
+		zoneAimStatZoneResourcePoolName,
+		zoneAimStatZoneHostIndex,
+		zoneAimStatZoneIPv4Address,
+		zoneAimStatZoneIPv6Address,
+		zoneAimStatZoneGuestOS,
+		zoneAimStatZoneAutoBoot,
+		zoneAimStatZoneCPUSharesReserved,
+		zoneAimStatZoneSwapMemory,
+		zoneAimStatZonePhyMemory,
+		zoneAimStatZoneLockedMemory,
+		zoneAimStatZoneFSSType,
+		zoneAimStatZoneProjectCPUShares,
+		zoneAimStatZoneTaskCount,
+		zoneAimStatZoneProjectCount,
+		zoneAimStatZoneFsMountpoint,
+		zoneAimStatZoneFsType,
+		zoneAimStatZoneNetwork,
+		zoneAimStatZoneMemoryState,
+		zoneAimStatZoneMemoryWarnThreshold,
+		zoneAimStatZoneMemoryCritThreshold,
+		zoneAimStatZoneMemoryAlert,
+		zoneAimStatZoneMemoryMonitor,
+		zoneAimStatZoneCPUAggregateStatus,
+		zoneAimStatZoneCPUWarnThreshold,
+		zoneAimStatZoneCPUCritThreshold,
+		zoneAimStatZoneCPUAlert,
+		zoneAimStatZoneCPUMonitor,
+		zoneAimStatZoneMonitor,
+		zoneAimStatZoneStatusAlert,
+		zoneAimStatZoneStatus,
+		zoneAimStatZoneState,
+		zoneAimStatZoneInstanceName,
+		zoneAimStatZoneMACAddresses
+	}
+	DESCRIPTION
+		"Zone Added trap. This trap will be sent when a new Zone is added"
+	::= 165413
+
+zoneAimZoneRemovedEvent OBJECT IDENTIFIER ::= { traps 165414 }
+zoneAimZoneRemovedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatZoneIndex,
+		zoneAimStatZoneName,
+		zoneAimStatZoneHostName,
+		zoneAimStatZoneContainerId,
+		zoneAimStatZoneResourcePoolId,
+		zoneAimStatZoneResourcePoolName,
+		zoneAimStatZoneHostIndex,
+		zoneAimStatZoneInstanceName
+	}
+	DESCRIPTION
+		"Zone Removed trap. This trap will be sent when a Zone is Removed"
+	::= 165414
+
+zoneAimZoneRunningStateChangeEvent OBJECT IDENTIFIER ::= { traps 165415 }
+zoneAimZoneRunningStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatZoneIndex,
+		zoneAimStatZoneName,
+		zoneAimStatZoneHostName,
+		zoneAimStatZoneContainerId,
+		zoneAimStatZoneStatusAlert,
+		zoneAimStatZoneStatus,
+		zoneAimStatZoneState,
+		zoneAimStatZoneInstanceName,
+		zoneAimStatZoneHostIndex
+	}
+	DESCRIPTION
+		"Zone Running State change trap. This trap will be sent when a Zone is booted or halted"
+	::= 165415
+
+zoneAimZoneMigratedEvent OBJECT IDENTIFIER ::= { traps 165454 }
+zoneAimZoneMigratedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatZoneIndex,
+		zoneAimStatZoneName,
+		zoneAimStatZoneHostName,
+		zoneAimStatZoneContainerId,
+		zoneAimStatZoneMonitor,
+		zoneAimStatZoneInstanceName,
+		zoneAimStatZoneHostIndex
+	}
+	DESCRIPTION
+		"Zone Migrated trap. This trap will be sent when a Zone is migrated
+		from one Host to another."
+	::= 165454
+
+-- Container Traps *********************************************************
+
+zoneAimContainerAddedEvent OBJECT IDENTIFIER ::= { traps 165416 }
+zoneAimContainerAddedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatContainerId,
+		zoneAimStatContainerName,
+		zoneAimStatContainerZonename,
+		zoneAimStatContainerZoneIndex,
+		zoneAimStatContainerResourcePoolname,
+		zoneAimStatContainerResourcePoolIndex,
+		zoneAimStatContainerPSetName,
+		zoneAimStatContainerPSetIndex,
+		zoneAimStatContainerHostIndex,
+		zoneAimStatContainerZoneServername,
+		zoneAimStatContainerInstanceName
+		}
+	DESCRIPTION
+		"Container Added trap. This trap will be sent when a new Container is added"
+	::= 165416
+
+zoneAimContainerRemovedEvent OBJECT IDENTIFIER ::= { traps 165417 }
+zoneAimContainerRemovedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatContainerId,
+		zoneAimStatContainerName,
+		zoneAimStatContainerZoneServername,
+		zoneAimStatContainerHostIndex,
+		zoneAimStatContainerZonename,
+		zoneAimStatContainerZoneIndex,
+		zoneAimStatContainerResourcePoolIndex,
+		zoneAimStatContainerInstanceName
+	}
+	DESCRIPTION
+		"Container Added trap. This trap will be sent when a new Container is added"
+	::= 165417
+
+zoneAimContainerConfigChangeEvent OBJECT IDENTIFIER ::= { traps 165455 }
+zoneAimContainerConfigChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatContainerId,
+		zoneAimStatContainerName,
+		zoneAimStatContainerZonename,
+		zoneAimStatContainerZoneIndex,
+		zoneAimStatContainerResourcePoolname,
+		zoneAimStatContainerResourcePoolIndex,
+		zoneAimStatContainerPSetName,
+		zoneAimStatContainerPSetIndex,
+		zoneAimStatContainerHostIndex,
+		zoneAimStatContainerZoneServername,
+		zoneAimStatContainerInstanceName
+		}
+	DESCRIPTION
+		"Container Config change trap. This trap will be sent when COnfiguration of Container changes."
+	::= 165455
+
+-- Project Traps *********************************************************
+
+zoneAimProjectCPUStateChangeEvent OBJECT IDENTIFIER ::= { traps 165418 }
+zoneAimProjectCPUStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatProjectIndex,
+		zoneAimStatProjectName,
+		zoneAimStatProjectZonelId,
+		zoneAimStatProjectContainerId,
+		zoneAimStatProjectCPUUsage,
+		zoneAimStatProjectCPUWarnThreshold,
+		zoneAimStatProjectCPUCritThreshold,
+		zoneAimStatProjectCPUAlert,
+		zoneAimStatProjectCPUAggregateStatus,
+		zoneAimStatProjectHostName,
+		zoneAimStatProjectZoneName,
+		zoneAimStatProjectHostIndex,
+		zoneAimStatProjectInstanceName
+	}
+	DESCRIPTION
+		"Project CPU State change trap. This trap will be sent when CPU State of Project Changes."
+	::= 165418
+
+zoneAimProjectMemStateChangeEvent OBJECT IDENTIFIER ::= { traps 165419 }
+zoneAimProjectMemStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatProjectIndex,
+		zoneAimStatProjectName,
+		zoneAimStatProjectZonelId,
+		zoneAimStatProjectContainerId,
+		zoneAimStatProjectMemoryUsage,
+		zoneAimStatProjectMemoryWarnThreshold,
+		zoneAimStatProjectMemoryCritThreshold,
+		zoneAimStatProjectMemoryAlert,
+		zoneAimStatProjectMemoryState,
+		zoneAimStatProjectHostName,
+		zoneAimStatProjectZoneName,
+		zoneAimStatProjectHostIndex,
+		zoneAimStatProjectInstanceName
+	}
+	DESCRIPTION
+		"Project Memory State change trap. This trap will be sent when Memory State of Project Changes."
+	::= 165419
+
+zoneAimProjectAddedEvent OBJECT IDENTIFIER ::= { traps 165420 }
+zoneAimProjectAddedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatProjectIndex,
+		zoneAimStatProjectName,
+		zoneAimStatProjectDesc,
+		zoneAimStatProjectZonelId,
+		zoneAimStatProjectZoneName,
+		zoneAimStatProjectContainerId,
+		zoneAimStatProjectStatusAlert,
+		zoneAimStatProjectState,
+		zoneAimStatProjectCPUWarnThreshold,
+		zoneAimStatProjectCPUCritThreshold,
+		zoneAimStatProjectCPUAlert,
+		zoneAimStatProjectCPUAggregateStatus,
+		zoneAimStatProjectTaskCount,
+		zoneAimStatProjectFSSEnabled,
+		zoneAimStatProjectCryptoMemMax,
+		zoneAimStatProjectTaskMax,
+		zoneAimStatProjectLWPSMax,
+		zoneAimStatProjectSharedMemMax,
+		zoneAimStatProjectMemCap,
+		zoneAimStatProjectCPUCap,
+		zoneAimStatProjectMemoryWarnThreshold,
+		zoneAimStatProjectMemoryCritThreshold,
+		zoneAimStatProjectMemoryAlert,
+		zoneAimStatProjectMemoryState,
+		zoneAimStatProjectCPUMonitor,
+		zoneAimStatProjectMemoryMonitor,
+		zoneAimStatProjectMonitor,
+		zoneAimStatProjectHostName,
+		zoneAimStatProjectZoneName,
+		zoneAimStatProjectHostIndex,
+		zoneAimStatProjectInstanceName
+	}
+	DESCRIPTION
+		"Project Added trap. This trap will be sent when a new Project is added."
+	::= 165420
+
+zoneAimProjectRemovedEvent OBJECT IDENTIFIER ::= { traps 165421 }
+zoneAimProjectRemovedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatProjectIndex,
+		zoneAimStatProjectName,
+		zoneAimStatProjectZonelId,
+		zoneAimStatProjectContainerId,
+		zoneAimStatProjectHostName,
+		zoneAimStatProjectZoneName,
+		zoneAimStatProjectHostIndex,
+		zoneAimStatProjectInstanceName
+	}
+	DESCRIPTION
+		"Project Removed trap. This trap will be sent when a Project is removed."
+	::= 165421
+
+zoneAimProjectConfigChangeEvent OBJECT IDENTIFIER ::= { traps 165422 }
+zoneAimProjectConfigChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatProjectIndex,
+		zoneAimStatProjectName,
+		zoneAimStatProjectZonelId,
+		zoneAimStatProjectContainerId,
+		zoneAimStatProjectStatusAlert,
+		zoneAimStatProjectMemoryAlert,
+		zoneAimStatProjectCPUAlert,
+		zoneAimStatProjectCPULagSetting,
+		zoneAimStatProjectCPUMonitor,
+		zoneAimStatProjectMemoryMonitor,
+		zoneAimStatProjectMonitor,
+		zoneAimStatProjectHostName,
+		zoneAimStatProjectZoneName,
+		zoneAimStatProjectHostIndex,
+		zoneAimStatProjectInstanceName
+	}
+	DESCRIPTION
+		"Project Config change trap. This trap will be sent when Alert,Monitor or Lag Setting Configuration
+		of a Project changes."
+	::= 165422
+
+zoneAimProjectThresholdChangeEvent OBJECT IDENTIFIER ::= { traps 165423 }
+zoneAimProjectThresholdChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatProjectIndex,
+		zoneAimStatProjectName,
+		zoneAimStatProjectZonelId,
+		zoneAimStatProjectContainerId,
+		zoneAimStatProjectCPUWarnThreshold,
+		zoneAimStatProjectCPUCritThreshold,
+		zoneAimStatProjectMemoryWarnThreshold,
+		zoneAimStatProjectMemoryCritThreshold,
+		zoneAimStatProjectHostName,
+		zoneAimStatProjectZoneName,
+		zoneAimStatProjectHostIndex,
+		zoneAimStatProjectInstanceName
+	}
+	DESCRIPTION
+		"Project Threshold change trap. This trap will be sent when CPU or Memory 
+		Threshold of a Project Changes."
+	::= 165423
+
+zoneAimProjectOverallStateChangeEvent OBJECT IDENTIFIER ::= { traps 165424 }
+zoneAimProjectOverallStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatProjectIndex,
+		zoneAimStatProjectName,
+		zoneAimStatProjectZonelId,
+		zoneAimStatProjectContainerId,
+		zoneAimStatProjectStatusAlert,
+		zoneAimStatProjectStatus,
+		zoneAimStatProjectState,
+		zoneAimStatProjectHostName,
+		zoneAimStatProjectZoneName,
+		zoneAimStatProjectHostIndex,
+		zoneAimStatProjectInstanceName
+	}
+	DESCRIPTION
+		"Project Overall State change trap. This trap will be sent when the overall Project state changes"
+	::= 165424
+
+-- PNIC Traps *********************************************************
+
+zoneAimPNICAddedEvent OBJECT IDENTIFIER ::= { traps 165425 }
+zoneAimPNICAddedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatPNICDeviceId,
+		zoneAimStatPNICName,
+		zoneAimStatPNICHostName,
+		zoneAimStatPNICHostIndex,
+		zoneAimStatPNICId,
+		zoneAimStatPNICMAC,
+		zoneAimStatPNICIp,
+		zoneAimStatPNICConnected,
+		zoneAimStatPNICPktTxt,
+		zoneAimStatPNICPktRcvd,
+		zoneAimStatPNICPktTxtPS,
+		zoneAimStatPNICPktRcvdPs,
+		zoneAimStatPNICKBTxt,
+		zoneAimStatPNICKBRcvd,
+		zoneAimStatPNICKBPSTxt,
+		zoneAimStatPNICKBPSRcvd,
+		zoneAimStatPNICIfSpeed,
+		zoneAimStatPNICUtilization,
+		zoneAimStatPNICLinkState,
+		zoneAimStatPNICStatus,
+		zoneAimStatPNICState,
+		zoneAimStatPNICMonitor,
+		zoneAimStatPNICAlert,
+		zoneAimStatPNICInstanceName
+	}
+	DESCRIPTION
+		"PNIC Added trap. This trap will be sent when a new PNIC is added."
+	::= 165425
+
+zoneAimPNICRemovedEvent OBJECT IDENTIFIER ::= { traps 165426 }
+zoneAimPNICRemovedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatPNICDeviceId,
+		zoneAimStatPNICName,
+		zoneAimStatPNICHostName,
+		zoneAimStatPNICHostIndex,
+		zoneAimStatPNICInstanceName
+	}
+	DESCRIPTION
+		"PNIC Removed trap. This trap will be sent when a PNIC is removed."
+	::= 165426
+
+zoneAimPNICConfigChangeEvent OBJECT IDENTIFIER ::= { traps 165427 }
+zoneAimPNICConfigChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatPNICDeviceId,
+		zoneAimStatPNICName,
+		zoneAimStatPNICHostName,
+		zoneAimStatPNICHostIndex,
+		zoneAimStatPNICMonitor,
+		zoneAimStatPNICAlert,
+		zoneAimStatPNICInstanceName
+	}
+	DESCRIPTION
+		"PNIC Config change trap. This trap will be sent when Alert or Monitor 
+		of a PNIC changes."
+	::= 165427
+
+zoneAimPNICStateChangeEvent OBJECT IDENTIFIER ::= { traps 165428 }
+zoneAimPNICStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatPNICDeviceId,
+		zoneAimStatPNICName,
+		zoneAimStatPNICHostName,
+		zoneAimStatPNICHostIndex,
+		zoneAimStatPNICState,
+		zoneAimStatPNICStatus,
+		zoneAimStatPNICMonitor,
+		zoneAimStatPNICAlert,
+		zoneAimStatPNICInstanceName
+	}
+	DESCRIPTION
+		"PNIC State change trap. This trap will be sent when State 
+		of a PNIC changes."
+	::= 165428
+
+-- VNIC Traps *********************************************************
+
+zoneAimVNICAddedEvent OBJECT IDENTIFIER ::= { traps 165429 }
+zoneAimVNICAddedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatVNICDeviceId,
+		zoneAimStatVNICName,
+		zoneAimStatVNICParentZone,
+		zoneAimStatVNICParentZoneIndex,
+		zoneAimStatVNICContainerId,
+		zoneAimStatVNICMAC,
+		zoneAimStatVNICIp,
+		zoneAimStatVNICPNICId,
+		zoneAimStatVNICConnected,
+		zoneAimStatVNICPktTxt,
+		zoneAimStatVNICPktRcvd,
+		zoneAimStatVNICPktTxtPS,
+		zoneAimStatVNICPktRcvdPs,
+		zoneAimStatVNICKBTxt,
+		zoneAimStatVNICKBRcvd,
+		zoneAimStatVNICKBPSTxt,
+		zoneAimStatVNICKBPSRcvd,
+		zoneAimStatVNICIfSpeed,
+		zoneAimStatVNICUtilization,
+		zoneAimStatVNICStatus,
+		zoneAimStatVNICState,
+		zoneAimStatVNICMonitor,
+		zoneAimStatVNICAlert,
+		zoneAimStatVNICHostName,
+		zoneAimStatVNICHostIndex,
+		zoneAimStatVNICInstanceName
+	}
+	DESCRIPTION
+		"VNIC Added trap. This trap will be sent when a new VNIC is added."
+	::= 165429
+
+zoneAimVNICRemovedEvent OBJECT IDENTIFIER ::= { traps 165430 }
+zoneAimVNICRemovedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatVNICDeviceId,
+		zoneAimStatVNICName,
+		zoneAimStatVNICParentZone,
+		zoneAimStatVNICParentZoneIndex,
+		zoneAimStatVNICContainerId,
+		zoneAimStatVNICHostName,
+		zoneAimStatVNICHostIndex,
+		zoneAimStatVNICInstanceName
+	}
+	DESCRIPTION
+		"VNIC Removed trap. This trap will be sent when a VNIC is removed."
+	::= 165430
+
+zoneAimVNICConfigChangeEvent OBJECT IDENTIFIER ::= { traps 165431 }
+zoneAimVNICConfigChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatVNICDeviceId,
+		zoneAimStatVNICName,
+		zoneAimStatVNICParentZone,
+		zoneAimStatVNICParentZoneIndex,
+		zoneAimStatVNICContainerId,
+		zoneAimStatVNICMonitor,
+		zoneAimStatVNICAlert,
+		zoneAimStatVNICHostName,
+		zoneAimStatVNICHostIndex,
+		zoneAimStatVNICInstanceName
+	}
+	DESCRIPTION
+		"VNIC Config change trap. This trap will be sent when Alert or Monitor 
+		of a VNIC changes."
+	::= 165431
+
+zoneAimVNICStateChangeEvent OBJECT IDENTIFIER ::= { traps 165432 }
+zoneAimVNICStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatVNICDeviceId,
+		zoneAimStatVNICName,
+		zoneAimStatVNICParentZone,
+		zoneAimStatVNICParentZoneIndex,
+		zoneAimStatVNICContainerId,
+		zoneAimStatVNICState,
+		zoneAimStatVNICStatus,
+		zoneAimStatVNICMonitor,
+		zoneAimStatVNICAlert,
+		zoneAimStatVNICHostName,
+		zoneAimStatVNICHostIndex,
+		zoneAimStatVNICInstanceName
+	}
+	DESCRIPTION
+		"VNIC State change trap. This trap will be sent when State 
+		of a VNIC changes."
+	::= 165432
+
+-- HostDisk Traps *********************************************************
+
+zoneAimHostDiskAddedEvent OBJECT IDENTIFIER ::= { traps 165433 }
+zoneAimHostDiskAddedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostDiskDeviceId,
+		zoneAimStatHostDiskName,
+		zoneAimStatHostDiskZoneServerName,
+		zoneAimStatHostDiskLabel,
+		zoneAimStatHostDiskCapacity,
+		zoneAimStatHostDiskMode,
+		zoneAimStatHostDiskUsedPct,
+		zoneAimStatHostDiskUsed,
+		zoneAimStatHostDiskAvail,
+		zoneAimStatHostDiskMountpoint,
+		zoneAimStatHostDiskRead,
+		zoneAimStatHostDiskWrite,
+		zoneAimStatHostDiskKBPSRead,
+		zoneAimStatHostDiskKBPSWrite,
+		zoneAimStatHostDiskWait,
+		zoneAimStatHostDiskActive,
+		zoneAimStatHostDiskWaitPct,
+		zoneAimStatHostDiskBusyPct,
+		zoneAimStatHostDiskWsVc,
+		zoneAimStatHostDiskAsVc,
+		zoneAimStatHostDiskSvc,
+		zoneAimStatHostDiskIdle,
+		zoneAimStatHostDiskMonitor,
+		zoneAimStatHostDiskKBReadAlert,
+		zoneAimStatHostDiskKBReadState,
+		zoneAimStatHostDiskKBWriteAlert,
+		zoneAimStatHostDiskKBWriteState,
+		zoneAimStatHostDiskState,
+		zoneAimStatHostDiskAvailWarnThreshold,
+		zoneAimStatHostDiskAvailCritThreshold,
+		zoneAimStatHostDiskAvailAlert,
+		zoneAimStatHostDiskAvailState,
+		zoneAimStatHostDiskAvailPct,
+		zoneAimStatHostDiskHostIndex,
+		zoneAimStatHostDiskInstanceName
+	}
+	DESCRIPTION
+		"HostDisk Added trap. This trap will be sent when a new HostDisk is added."
+	::= 165433
+
+zoneAimHostDiskRemovedEvent OBJECT IDENTIFIER ::= { traps 165434 }
+zoneAimHostDiskRemovedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostDiskDeviceId,
+		zoneAimStatHostDiskName,
+		zoneAimStatHostDiskZoneServerName,
+		zoneAimStatHostDiskLabel,
+		zoneAimStatHostDiskHostIndex,
+		zoneAimStatHostDiskInstanceName
+	}
+	DESCRIPTION
+		"HostDisk Removed trap. This trap will be sent when a HostDisk is removed."
+	::= 165434
+
+zoneAimHostDiskConfigChangeEvent OBJECT IDENTIFIER ::= { traps 165435 }
+zoneAimHostDiskConfigChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostDiskDeviceId,
+		zoneAimStatHostDiskName,
+		zoneAimStatHostDiskZoneServerName,
+		zoneAimStatHostDiskLabel,
+		zoneAimStatHostDiskMonitor,
+		zoneAimStatHostDiskKBReadAlert,
+		zoneAimStatHostDiskKBWriteAlert,
+		zoneAimStatHostDiskAvailAlert,
+		zoneAimStatHostDiskHostIndex,
+		zoneAimStatHostDiskInstanceName
+	}
+	DESCRIPTION
+		"HostDisk Config change trap. This trap will be sent when Alert or Monitor 
+		of a HostDisk changes."
+	::= 165435
+
+zoneAimHostDiskStateChangeEvent OBJECT IDENTIFIER ::= { traps 165436 }
+zoneAimHostDiskStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostDiskDeviceId,
+		zoneAimStatHostDiskName,
+		zoneAimStatHostDiskZoneServerName,
+		zoneAimStatHostDiskLabel,
+		zoneAimStatHostDiskKBReadState,
+		zoneAimStatHostDiskKBReadAlert,
+		zoneAimStatHostDiskKBWriteState,
+		zoneAimStatHostDiskKBWriteAlert,
+		zoneAimStatHostDiskState,
+		zoneAimStatHostDiskHostIndex,
+		zoneAimStatHostDiskInstanceName
+	}
+	DESCRIPTION
+		"HostDisk State change trap. This trap will be sent when State 
+		of a HostDisk changes."
+	::= 165436
+
+zoneAimHostDiskAvailStateChangeEvent OBJECT IDENTIFIER ::= { traps 165437 }
+zoneAimHostDiskAvailStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostDiskDeviceId,
+		zoneAimStatHostDiskName,
+		zoneAimStatHostDiskZoneServerName,
+		zoneAimStatHostDiskLabel,
+		zoneAimStatHostDiskAvailWarnThreshold,
+		zoneAimStatHostDiskAvailCritThreshold,
+		zoneAimStatHostDiskAvailAlert,
+		zoneAimStatHostDiskAvailPct,
+		zoneAimStatHostDiskAvailState,
+		zoneAimStatHostDiskHostIndex,
+		zoneAimStatHostDiskInstanceName
+	}
+	DESCRIPTION
+		"HostDisk Avail State change trap. This trap will be sent when Avail State 
+		of a HostDisk changes."
+	::= 165437
+
+zoneAimHostDiskThresholdChangeEvent OBJECT IDENTIFIER ::= { traps 165438 }
+zoneAimHostDiskThresholdChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostDiskDeviceId,
+		zoneAimStatHostDiskName,
+		zoneAimStatHostDiskZoneServerName,
+		zoneAimStatHostDiskLabel,
+		zoneAimStatHostDiskAvailWarnThreshold,
+		zoneAimStatHostDiskAvailCritThreshold,
+		zoneAimStatHostDiskHostIndex,
+		zoneAimStatHostDiskInstanceName
+	}
+	DESCRIPTION
+		"HostDisk Threshold change trap. This trap will be sent when 
+		Threshold setting of a HostDisk Changes."
+	::= 165438
+
+-- ResourcePool Traps *********************************************************
+
+zoneAimResourcePoolAddedEvent OBJECT IDENTIFIER ::= { traps 165439 }
+zoneAimResourcePoolAddedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatResourcePoolIndex,
+		zoneAimStatResourcePoolName,
+		zoneAimStatResourcePoolPSetIndex,
+		zoneAimStatResourcePoolPSetName,
+		zoneAimStatResourcePoolType,
+		zoneAimStatResourcePoolActive,
+		zoneAimStatResourcePoolImportance,
+		zoneAimStatResourcePoolFSSenabled,
+		zoneAimStatResourcePoolDefFlag,
+		zoneAimStatResourcePoolCpuShares,
+		zoneAimStatResourcePoolCPUReserveUsed,
+		zoneAimStatResourcePoolCPUReserveUsedForZones,
+		zoneAimStatResourcePoolStatus,
+		zoneAimStatResourcePoolState,
+		zoneAimStatResourcePoolAlert,
+		zoneAimStatResourcePoolMonitor,
+		zoneAimStatResourcePoolContainerList,
+		zoneAimStatResourcePoolHostName,
+		zoneAimStatResourcePoolHostIndex,
+		zoneAimStatResourcePoolInstanceName
+	}
+	DESCRIPTION
+		"ResourcePool Added trap. This trap will be sent when a new ResourcePool is added."
+	::= 165439
+
+zoneAimResourcePoolRemovedEvent OBJECT IDENTIFIER ::= { traps 165440 }
+zoneAimResourcePoolRemovedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatResourcePoolIndex,
+		zoneAimStatResourcePoolName,
+		zoneAimStatResourcePoolPSetIndex,
+		zoneAimStatResourcePoolPSetName,
+		zoneAimStatResourcePoolContainerList,
+		zoneAimStatResourcePoolHostName,
+		zoneAimStatResourcePoolHostIndex,
+		zoneAimStatResourcePoolInstanceName
+	}
+	DESCRIPTION
+		"ResourcePool Removed trap. This trap will be sent when a new ResourcePool is removed."
+	::= 165440
+
+zoneAimResourcePoolConfigChangeEvent OBJECT IDENTIFIER ::= { traps 165441 }
+zoneAimResourcePoolConfigChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatResourcePoolIndex,
+		zoneAimStatResourcePoolName,
+		zoneAimStatResourcePoolPSetIndex,
+		zoneAimStatResourcePoolPSetName,
+		zoneAimStatResourcePoolMonitor,
+		zoneAimStatResourcePoolAlert,
+		zoneAimStatResourcePoolContainerList,
+		zoneAimStatResourcePoolHostName,
+		zoneAimStatResourcePoolHostIndex,
+		zoneAimStatResourcePoolInstanceName
+	}
+	DESCRIPTION
+		"ResourcePool Config change trap. This trap will be sent when Alert or Monitor 
+		of a ResourcePool changes."
+	::= 165441
+
+zoneAimResourcePoolStateChangeEvent OBJECT IDENTIFIER ::= { traps 165442 }
+zoneAimResourcePoolStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatResourcePoolIndex,
+		zoneAimStatResourcePoolName,
+		zoneAimStatResourcePoolPSetIndex,
+		zoneAimStatResourcePoolPSetName,
+		zoneAimStatResourcePoolStatus,
+		zoneAimStatResourcePoolState,
+		zoneAimStatResourcePoolAlert,
+		zoneAimStatResourcePoolContainerList,
+		zoneAimStatResourcePoolHostName,
+		zoneAimStatResourcePoolHostIndex,
+		zoneAimStatResourcePoolInstanceName
+	}
+	DESCRIPTION
+		"ResourcePool State change trap. This trap will be sent when State 
+		of a ResourcePool changes."
+	::= 165442
+
+zoneAimResourcePoolSchedChangeEvent OBJECT IDENTIFIER ::= { traps 165443 }
+zoneAimResourcePoolSchedChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatResourcePoolIndex,
+		zoneAimStatResourcePoolName,
+		zoneAimStatResourcePoolPSetIndex,
+		zoneAimStatResourcePoolPSetName,
+		zoneAimStatResourcePoolFSSenabled,
+		zoneAimStatResourcePoolContainerList,
+		zoneAimStatResourcePoolHostName,
+		zoneAimStatResourcePoolHostIndex,
+		zoneAimStatResourcePoolInstanceName
+	}
+	DESCRIPTION
+		"ResourcePool Scheduler change trap. This trap will be sent when Scheduler Type 
+		of a ResourcePool changes."
+	::= 165443
+
+-- ProcessorSet Traps *********************************************************
+
+zoneAimProcessorSetAddedEvent OBJECT IDENTIFIER ::= { traps 165444 }
+zoneAimProcessorSetAddedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatProcessorSetId,
+		zoneAimStatProcessorSetName,
+		zoneAimStatProcessorSetResourcepoolId,
+		zoneAimStatProcessorSetResourcepoolName,
+		zoneAimStatProcessorSetResourcePoolIdList,
+		zoneAimStatProcessorSetAlert,
+		zoneAimStatProcessorSetState,
+		zoneAimStatProcessorSetStatus,
+		zoneAimStatProcessorSetType,
+		zoneAimStatProcessorSetUnits,
+		zoneAimStatProcessorSetSize,
+		zoneAimStatProcessorSetMin,
+		zoneAimStatProcessorSetMax,
+		zoneAimStatProcessorSetLoad,
+		zoneAimStatProcessorSetEscapable,
+		zoneAimStatProcessorSetDefault,
+		zoneAimStatProcessorSetMonitor,
+		zoneAimStatProcessorSetContainerList,
+		zoneAimStatProcessorSetHostName,
+		zoneAimStatProcessorSetHostIndex,
+		zoneAimStatProcessorSetInstanceName
+	}
+	DESCRIPTION
+		"ProcessorSet Added trap. This trap will be sent when a new ProcessorSet is added."
+	::= 165444
+
+zoneAimProcessorSetRemovedEvent OBJECT IDENTIFIER ::= { traps 165445 }
+zoneAimProcessorSetRemovedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatProcessorSetId,
+		zoneAimStatProcessorSetName,
+		zoneAimStatProcessorSetResourcepoolId,
+		zoneAimStatProcessorSetResourcepoolName,
+		zoneAimStatProcessorSetContainerList,
+		zoneAimStatProcessorSetHostName,
+		zoneAimStatProcessorSetHostIndex,
+		zoneAimStatProcessorSetInstanceName
+	}
+	DESCRIPTION
+		"ProcessorSet Removed trap. This trap will be sent when a new ProcessorSet is removed."
+	::= 165445
+
+zoneAimProcessorSetConfigChangeEvent OBJECT IDENTIFIER ::= { traps 165446 }
+zoneAimProcessorSetConfigChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatProcessorSetId,
+		zoneAimStatProcessorSetName,
+		zoneAimStatProcessorSetResourcepoolId,
+		zoneAimStatProcessorSetResourcepoolName,
+		zoneAimStatProcessorSetMonitor,
+		zoneAimStatProcessorSetAlert,
+		zoneAimStatProcessorSetContainerList,
+		zoneAimStatProcessorSetHostName,
+		zoneAimStatProcessorSetHostIndex,
+		zoneAimStatProcessorSetInstanceName
+	}
+	DESCRIPTION
+		"ProcessorSet Config change trap. This trap will be sent when Alert or Monitor 
+		of a ProcessorSet changes."
+	::= 165446
+
+zoneAimProcessorSetStateChangeEvent OBJECT IDENTIFIER ::= { traps 165447 }
+zoneAimProcessorSetStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatProcessorSetId,
+		zoneAimStatProcessorSetName,
+		zoneAimStatProcessorSetResourcepoolId,
+		zoneAimStatProcessorSetResourcepoolName,
+		zoneAimStatProcessorSetStatus,
+		zoneAimStatProcessorSetState,
+		zoneAimStatProcessorSetAlert,
+		zoneAimStatProcessorSetContainerList,
+		zoneAimStatProcessorSetHostName,
+		zoneAimStatProcessorSetHostIndex,
+		zoneAimStatProcessorSetInstanceName
+	}
+	DESCRIPTION
+		"ProcessorSet State change trap. This trap will be sent when State 
+		of a ProcessorSet changes."
+	::= 165447
+
+-- Additional Host and Zone Traps ***************************************************
+
+zoneAimHostRemovedEvent OBJECT IDENTIFIER ::= { traps 165448 }
+zoneAimHostRemovedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostName,
+		zoneAimStatHostID,
+		zoneAimStatHostInstanceName
+	}
+	DESCRIPTION
+		"This traps is sent when host is removed from zone.cfg file."
+	::= 165448
+
+zoneAimHostAddedEvent OBJECT IDENTIFIER ::= { traps 165449 }
+zoneAimHostAddedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatHostName,
+		zoneAimStatHostID,
+		zoneAimStatHostState,
+		zoneAimStatHostStatus,
+		zoneAimStatHostStatusAlert,
+		zoneAimStatHostMonitor,
+		zoneAimStatHostCPUUsage,
+		zoneAimStatHostCPUAggregateStatus,
+		zoneAimStatHostCPUAlert,
+		zoneAimStatHostCPUMonitor,
+		zoneAimStatHostMemoryUsage,
+		zoneAimStatHostMemoryState,
+		zoneAimStatHostMemoryAlert,
+		zoneAimStatHostMemoryMonitor,
+		zoneAimStatHostInstanceName,
+		zoneAimStatHostMACAddresses,
+		zoneAimStatHostipaddress
+	}
+	DESCRIPTION
+		"This traps is sent when new host is added into zone.cfg file."
+	::= 165449
+
+zoneAimZoneInstalledStateChangeEvent OBJECT IDENTIFIER ::= { traps 165450 }
+zoneAimZoneInstalledStateChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimStatZoneIndex,
+		zoneAimStatZoneName,
+		zoneAimStatZoneHostName,
+		zoneAimStatZoneContainerId,
+		zoneAimStatZoneResourcePoolId,
+		zoneAimStatZoneResourcePoolName,
+		zoneAimStatZoneHostIndex,
+		zoneAimStatZoneStatus,
+		zoneAimStatZoneInstanceName
+		}
+	DESCRIPTION
+		"Zone installed state change trap. This will be sent when the Zone is eithered installed or uninstalled."
+	::= 165450
+
+-- Instance Traps *********************************************************
+
+zoneAimInstanceAddedEvent OBJECT IDENTIFIER ::= { traps 165451 }
+zoneAimInstanceAddedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimInstanceUID,
+		zoneAimInstanceName,
+		zoneAimInstanceRowStatus,
+		zoneAimInstanceDataStatus
+		}
+	DESCRIPTION
+		"This traps is sent when new Instance/Server is added into zone.cfg file."
+	::= 165451
+
+zoneAimInstanceRemovedEvent OBJECT IDENTIFIER ::= { traps 165452 }
+zoneAimInstanceRemovedTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimInstanceUID,
+		zoneAimInstanceName,
+		zoneAimInstanceRowStatus,
+		zoneAimInstanceDataStatus
+		}
+	DESCRIPTION
+		"This traps is sent when new Instance/Server is removed from zone.cfg file."
+	::= 165452
+
+zoneAimInstanceDataStatusChangeEvent OBJECT IDENTIFIER ::= { traps 165453 }
+zoneAimInstanceDataStatusChangeTrap TRAP-TYPE
+	ENTERPRISE sysmgmt
+	VARIABLES {
+		zoneAimInstanceUID,
+		zoneAimInstanceName,
+		zoneAimInstanceRowStatus,
+		zoneAimInstanceDataStatus
+		}
+	DESCRIPTION
+		"This traps is sent when new Instance/Server Data Status is changed."
+	::= 165453
+
+END
+

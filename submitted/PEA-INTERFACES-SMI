@@ -1,0 +1,32 @@
+PEA-INTERFACES-SMI DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY
+        FROM SNMPv2-SMI
+
+    pea
+        FROM PEA-SMI;
+
+peaInterfaces  MODULE-IDENTITY
+    LAST-UPDATED
+         "200601061200Z"
+    ORGANIZATION
+         "Ericsson Danmark A/S"
+    CONTACT-INFO
+         "
+         Ericsson Diax
+         Faelledvej 17
+         DK-7600 Struer
+         Denmark
+         
+         E-mail: diax.support@ericsson.com
+         "
+   DESCRIPTION
+         "
+         The public ethernet access software supports a number of standard 
+         and proprietary MIBs. This MIB module defines objects for reading/writing
+         common interface information.
+         "
+    ::= { pea 10 }
+
+END

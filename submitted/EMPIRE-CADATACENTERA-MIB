@@ -1,0 +1,4126 @@
+-- MibName=cadatacentera
+--
+-- ========================================================================
+--
+--               CA, INC.
+--               Proprietary and Confidential Information
+--
+-- This material contains, and is part of a computer software program
+-- which is, proprietary and confidential information owned by COMPUTER
+-- ASSOCIATES INTERNATIONAL, INC.  The program, including this material,
+-- may not be duplicated, disclosed or reproduced in whole or in part for
+-- any purpose without the express written authorization of COMPUTER
+-- ASSOCIATES. All authorized reproductions must be marked with this
+-- legend.
+--                 Computer Associates International, Inc      
+--
+--                          Copyright (c) 2009
+--                       The Software that Manages eBusiness
+--                          All rights reserved
+--
+--
+-- ------------------------------------------------------------------------
+-- Mib name: cadatacentera
+
+EMPIRE-CADATACENTERA-MIB DEFINITIONS ::= BEGIN
+
+
+IMPORTS
+--	enterprises
+--		FROM RFC1155-SMI
+--	empire, applications, traps
+--		FROM EMPIRE
+	MODULE-IDENTITY, NOTIFICATION-TYPE, enterprises, 
+	Integer32, Gauge32, Unsigned32, Counter32, Counter64, 
+	TimeTicks, IpAddress
+		FROM SNMPv2-SMI
+	OBJECT-TYPE
+		FROM RFC-1212
+	PhysAddress
+		FROM RFC1213-MIB
+	IANAifType
+		FROM IANAifType-MIB
+	TruthValue, DisplayString, TEXTUAL-CONVENTION
+		FROM SNMPv2-TC;
+
+--cadatacentera			OBJECT IDENTIFIER ::= { applications 57 }
+cadatacentera MODULE-IDENTITY
+	LAST-UPDATED "200911191300Z"  
+	ORGANIZATION "CA, Inc."
+	CONTACT-INFO "http://www.ca.com"
+	DESCRIPTION  "This MIB module defines the 
+                      Cisco Universal Computing System Aim."
+--	REVISION     "201001131200Z" 
+--	DESCRIPTION  "changed Chassis Aggregates for BladeIf and SwitchIf"
+	REVISION     "200911191300Z" 
+	DESCRIPTION  "changed caChassisCondition enum"
+	REVISION     "200908120000Z" 
+	DESCRIPTION  "Type changes."
+	::= { applications 58 }
+	
+empire				OBJECT IDENTIFIER ::= { enterprises 546 }
+unix            		OBJECT IDENTIFIER ::= { empire 1 }
+sysmgmt        		        OBJECT IDENTIFIER ::= { unix 1 }
+
+traps				OBJECT IDENTIFIER ::= { empire 9 }
+applications			OBJECT IDENTIFIER ::= { empire 16 }
+
+caGeneralDataCenter		OBJECT IDENTIFIER ::= { cadatacentera 1 }
+caCommonDataCenter		OBJECT IDENTIFIER ::= { cadatacentera 2 }
+caRemoteConfiguration	OBJECT IDENTIFIER ::= { cadatacentera 4 }
+	
+caDataCenterChassis		OBJECT IDENTIFIER ::= { caCommonDataCenter 1 }
+caDataCenterBlade               OBJECT IDENTIFIER ::= { caCommonDataCenter 2 }
+caDataCenterSwitch		OBJECT IDENTIFIER ::= { caCommonDataCenter 3 }
+
+-- *****************************************************************************
+-- caDataCenterChassis Groups
+-- *****************************************************************************
+caChassis 			OBJECT IDENTIFIER ::= { caDataCenterChassis 1 }
+caChassisFan			OBJECT IDENTIFIER ::= { caDataCenterChassis 2 }
+caChassisPower			OBJECT IDENTIFIER ::= { caDataCenterChassis 3 }
+caChassisBladeIfAggr		OBJECT IDENTIFIER ::= { caDataCenterChassis 4 }
+
+
+-- *****************************************************************************
+-- caDataCenterBlade Groups
+-- *****************************************************************************
+caBlade				OBJECT IDENTIFIER ::= { caDataCenterBlade 1 }
+caBladeInterfaces		OBJECT IDENTIFIER ::= { caDataCenterBlade 2 }
+caBladeServer			OBJECT IDENTIFIER ::= { caDataCenterBlade 3 }
+caBladeIfAggr			OBJECT IDENTIFIER ::= { caDataCenterBlade 4 }
+caBladeBmc			OBJECT IDENTIFIER ::= { caDataCenterBlade 5 }
+caBladeIfCard			OBJECT IDENTIFIER ::= { caDataCenterBlade 6 }
+
+-- *****************************************************************************
+-- caDataCenterSwitch Groups
+-- *****************************************************************************
+caSwitch			OBJECT IDENTIFIER ::= { caDataCenterSwitch 1 }
+caSwitchFan			OBJECT IDENTIFIER ::= { caDataCenterSwitch 2 }
+caSwitchPower			OBJECT IDENTIFIER ::= { caDataCenterSwitch 3 }
+caSwitchInterfaces		OBJECT IDENTIFIER ::= { caDataCenterSwitch 4 }
+caSwitchIfAggr 		        OBJECT IDENTIFIER ::= { caDataCenterSwitch 5 }
+caSwitchCard 		        OBJECT IDENTIFIER ::= { caDataCenterSwitch 6 }
+
+Float ::= TEXTUAL-CONVENTION
+	DISPLAY-HINT "d-2"
+	STATUS current
+	DESCRIPTION "This data type represents a Float.
+		     9456 represents 94.56%..."
+	SYNTAX Integer32
+
+Uint64 ::= TEXTUAL-CONVENTION
+	STATUS current
+	DESCRIPTION "This data type represents an unsigned 64 bit
+		     Limited to use in OBJECT-TYPE where the 
+		     ACCESS clause is 'read-only' or 'accessible-for-notify'."
+	SYNTAX Counter64
+
+-- *****************************************************************************
+-- General Data
+-- *****************************************************************************
+caDataCenterGeneralAgentName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The name of the AIM."
+	::= { caGeneralDataCenter 1 }
+
+caDataCenterGeneralAgentVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The currently installed version of the AIM."
+	::= { caGeneralDataCenter 2 }
+
+caDataCenterGeneralAgentHostName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The host name on which this AIM is running."
+	::= { caGeneralDataCenter 3 }
+
+caDataCenterGeneralColdStartTime OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The data and time that the AIM was last started."
+	::= { caGeneralDataCenter 4 }
+
+
+caDataCenterGeneralLastUpdate OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The number of time-ticks since the AIM has been updated."
+	::= { caGeneralDataCenter 5 }
+
+
+caDataCenterGeneralPollInterval OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The time (in seconds) between the polling of updates by the AIM.  Valid values are greater than or equal to 30."
+	::= { caGeneralDataCenter 6 }
+
+caDataCenterGeneralLogLevel OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+                "The Log Level of the AIM.  This impacts how much logging
+                 will be written to the AIM log file, and is cumulative (i.e.
+                 Log Level 4 will get all messages at levels 0 through 4).
+                 Values are:
+                 0      FATAL
+                 1      CRITICAL
+                 2      WARNING
+                 3      INFO
+                 4      DEBUG
+                 5      DEBUG_LOW
+                 6      DEBUG_LOWER
+                 7      DEBUG_LOWEST
+                 Specifying a debug level greater than 4 is discouraged."
+	::= { caGeneralDataCenter 7 }
+
+-- *****************************************************************************
+-- Chassis Table
+-- *****************************************************************************
+caChassisTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of sysUpTime at the time of the last creation or deletion of an entry in the caChassisTable.  If the number of entries has been unchanged since the last re-initialization of the local network management subsystem, then this object contains a zero value."
+	::= { caChassis 1 }
+
+caChassisTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaChassisRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caChassis table."
+	::= { caChassis 2 }
+
+caChassisEntry OBJECT-TYPE
+	SYNTAX CaChassisRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caChassisUcsManagerId,
+		caChassisId }
+	::= { caChassisTable 1 }
+
+CaChassisRow ::=
+	SEQUENCE {
+		caChassisUcsManagerId		Integer32,
+		caChassisId			Integer32,
+		caChassisName			DisplayString,
+		caChassisModel			DisplayString,
+		caChassisSerialNumber		DisplayString,
+		caChassisVendor			DisplayString,
+		caChassisRevision		DisplayString,
+		caChassisCondition 		INTEGER,
+		caChassisDn			DisplayString,
+		caChassisProductName		DisplayString,
+		caChassisPid			DisplayString,
+		caChassisFullyQualifiedDn	DisplayString	
+		}
+
+caChassisUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caChassisEntry 1  }
+
+caChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure."
+	::= { caChassisEntry  2 }
+
+caChassisName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Name of the chassis that should be meaningful to managers."
+	::= { caChassisEntry 3 }
+
+caChassisModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the chassis."
+	::= { caChassisEntry 4 }
+
+caChassisSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the chassis."
+	::= { caChassisEntry 5 }
+
+caChassisVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the chassis."
+	::= { caChassisEntry 6 }
+
+caChassisRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the chassis."
+	::= { caChassisEntry 7 }
+
+caChassisCondition OBJECT-TYPE
+      SYNTAX INTEGER {
+            unknown(1),
+            ok(2),
+            degraded(3),
+            failed(4),
+            notSupported(5),
+            notPresent(6)
+            }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Normalized operational state of the chassis."
+	::= { caChassisEntry 8 }
+
+caChassisDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of the chassis that should be meaningful to managers."
+	::= { caChassisEntry 9 }
+	
+	
+caChassisProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of the chassis."
+	::= { caChassisEntry 10 }
+
+caChassisPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the chassis."
+	::= { caChassisEntry 11 }
+
+
+caChassisFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Fully qualified dn of the chassis that contain UCS Manager name"
+	::= { caChassisEntry 12 }
+	
+
+-- *****************************************************************************
+-- Chassis Fan Table
+-- *****************************************************************************
+caChassisFanTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of sysUpTime at the time of the last creation or deletion of an entry in the caChassisFanTable.  If the number of entries has been unchanged since the last re-initialization of the local network management subsystem, then this object contains a zero value."
+	::= { caChassisFan 1 }
+
+caChassisFanTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaChassisFanRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caChassisFan table."
+	::= { caChassisFan 2 }
+
+caChassisFanEntry OBJECT-TYPE
+	SYNTAX CaChassisFanRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caChassisFanUcsManagerId,
+		caChassisFanChassisId,
+		caChassisFanIndex }
+	::= { caChassisFanTable 1 }
+
+CaChassisFanRow ::=
+	SEQUENCE {
+		caChassisFanUcsManagerId		Integer32,
+		caChassisFanChassisId			Integer32,
+		caChassisFanIndex			Integer32,
+		caChassisFanModel			DisplayString,
+		caChassisFanSerialNumber		DisplayString,
+		caChassisFanVendor			DisplayString,
+		caChassisFanRevision			DisplayString,
+		caChassisFanCondition 			INTEGER,
+		caChassisFanSpeed 			Unsigned32,
+		caChassisFanDn				DisplayString,
+		caChassisFanProductName			DisplayString,
+		caChassisFanPid				DisplayString,
+		caChassisFanFullyQualifiedDn		DisplayString
+		}
+
+caChassisFanUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caChassisFanEntry 1 }
+
+caChassisFanChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure; corresponds to caChassisId."
+	::= { caChassisFanEntry 2 }
+
+caChassisFanIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a fan."
+	::= { caChassisFanEntry 3 }
+
+caChassisFanModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the fan."
+	::= { caChassisFanEntry 4 }
+
+caChassisFanSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the fan."
+	::= { caChassisFanEntry 5 }
+
+caChassisFanVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the fan."
+	::= { caChassisFanEntry 6 }
+
+caChassisFanRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of a fan."
+	::= { caChassisFanEntry 7 }
+
+caChassisFanCondition OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1),
+		ok(2),
+		degraded(3),
+		failed(4),
+		notSupported(5),
+		notPresent(6)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Overall operating condition of the fan."
+	::= { caChassisFanEntry 8 }
+
+caChassisFanSpeed OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"RPMs."
+	::= { caChassisFanEntry 9 }
+
+caChassisFanDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of a fan."
+	::= { caChassisFanEntry 10 }
+	
+caChassisFanProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of the fan."
+	::= { caChassisFanEntry 11 }
+	
+caChassisFanPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the fan."
+	::= { caChassisFanEntry 12 }
+
+caChassisFanFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Fully qualified dn of a fan."
+	::= { caChassisFanEntry 13 }
+	
+
+-- *****************************************************************************
+-- Chassis Power Table
+-- *****************************************************************************
+caChassisPowerTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaChassisPowerRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caChassisPower table."
+	::= { caChassisPower 1 }
+
+caChassisPowerEntry OBJECT-TYPE
+	SYNTAX CaChassisPowerRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caChassisPowerUcsManagerId,
+		caChassisPowerChassisId }
+	::= { caChassisPowerTable 1 }
+
+CaChassisPowerRow ::=
+	SEQUENCE {
+		caChassisPowerUcsManagerId		Integer32,
+		caChassisPowerChassisId			Integer32,
+		caChassisRedundancy			INTEGER,
+		caChassisClusterState			INTEGER,
+		caChassisPowerDn			DisplayString,
+		caChassisPowerFullyQualifiedDn		DisplayString
+		}
+
+caChassisPowerUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caChassisPowerEntry  1  }
+
+caChassisPowerChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure; corresponds to caChassisId."
+	::= { caChassisPowerEntry  2 }
+
+caChassisRedundancy OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1),
+		nonRedundant(2),
+		nPlus1(3), -- default
+		grid(4)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"What kind, if any, power redundancy is the chassis employing."
+	::= { caChassisPowerEntry 3 }
+
+caChassisClusterState OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		slot1Master(2),
+		slot2Master(3),
+		notClustered(4)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"What kind, if any, clustering of the power is this chassis employing."
+	::= { caChassisPowerEntry 4 }
+
+caChassisPowerDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of Chassis power."
+	::= { caChassisPowerEntry  5 }
+
+
+caChassisPowerFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Fully qualified dn of Chassis power."
+	::= { caChassisPowerEntry  6 }
+	
+
+-- *****************************************************************************
+-- Chassis Blade Interface Aggregate Table
+-- *****************************************************************************
+caChassisBladeIfAggrTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaChassisBladeIfAggrRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caChassis BladeIf Aggregate table."
+	::= { caChassisBladeIfAggr 1 }
+
+caChassisBladeIfAggrEntry OBJECT-TYPE
+	SYNTAX CaChassisBladeIfAggrRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caChassisBladeIfAggrUcsManagerId,
+		caChassisBladeIfAggrChassisId }
+	::= { caChassisBladeIfAggrTable 1 }
+
+CaChassisBladeIfAggrRow ::=
+	SEQUENCE {
+                caChassisBladeIfAggrUcsManagerId	Integer32,
+		caChassisBladeIfAggrChassisId		Integer32,
+                caChassisBladeIfAggrHCInUcastPkts       Counter64,
+                caChassisBladeIfAggrHCInMulticastPkts   Counter64,
+                caChassisBladeIfAggrHCInBroadcastPkts   Counter64,
+                caChassisBladeIfAggrHCOutUcastPkts      Counter64,
+                caChassisBladeIfAggrHCOutMulticastPkts  Counter64,
+                caChassisBladeIfAggrHCOutBroadcastPkts  Counter64,
+                caChassisBladeIfAggrHCInOctets          Counter64,
+                caChassisBladeIfAggrHCOutOctets         Counter64,
+                caChassisBladeIfAggrInUnknownProtos     Counter64,
+                caChassisBladeIfAggrInErrors            Counter64,
+                caChassisBladeIfAggrOutErrors           Counter64,
+                caChassisBladeIfAggrInDiscards          Counter64,
+                caChassisBladeIfAggrOutDiscards         Counter64
+	}
+
+caChassisBladeIfAggrUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caChassisBladeIfAggrEntry  1  }
+	
+caChassisBladeIfAggrChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure; corresponds to caChassisId."
+	::= { caChassisBladeIfAggrEntry  2 }
+
+caChassisBladeIfAggrHCInUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  3 }
+
+caChassisBladeIfAggrHCInMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  4 }
+
+caChassisBladeIfAggrHCInBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  5 }
+
+caChassisBladeIfAggrHCOutUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  6 }
+
+caChassisBladeIfAggrHCOutMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  7 }
+
+caChassisBladeIfAggrHCOutBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  8 }
+
+caChassisBladeIfAggrHCInOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  9 }
+
+caChassisBladeIfAggrHCOutOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  10 }
+
+caChassisBladeIfAggrInUnknownProtos OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  11 }
+
+caChassisBladeIfAggrInErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  12 }
+
+caChassisBladeIfAggrOutErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  13 }
+
+caChassisBladeIfAggrInDiscards OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  14 }
+
+caChassisBladeIfAggrOutDiscards OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caChassisBladeIfAggrEntry  15 }
+
+
+
+
+
+-- *****************************************************************************
+-- Chassis PSU Table
+-- *****************************************************************************
+caChassisPsuTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of sysUpTime at the time of the last creation or deletion of an entry in the caChassisPsuTable.  If the number of entries has been unchanged since the last re-initialization of the local network management subsystem, then this object contains a zero value."
+	::= { caChassisPower 2 }
+
+caChassisPsuTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaChassisPsuRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caChassisPsu table."
+	::= { caChassisPower 3 }
+
+caChassisPsuEntry OBJECT-TYPE
+	SYNTAX CaChassisPsuRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caChassisPsuUcsManagerId,
+		caChassisPsuChassisId,
+		caChassisPsuIndex }
+	::= { caChassisPsuTable 1 }
+
+CaChassisPsuRow ::=
+	SEQUENCE {
+		caChassisPsuUcsManagerId		Integer32,
+		caChassisPsuChassisId			Integer32,
+		caChassisPsuIndex			Integer32,
+		caChassisPsuModel			DisplayString,
+		caChassisPsuVendor			DisplayString,
+		caChassisPsuSerialNumber		DisplayString,
+		caChassisPsuRevision			DisplayString,
+		caChassisPsuCondition			INTEGER,
+		caChassisPsuInputCurrent		Float,
+		caChassisPsuInputWatts			Float,
+		caChassisPsuInputVoltage		Float,
+		caChassisPsuOutputCurrent		Float,
+		caChassisPsuOutputWatts			Float,
+		caChassisPsuDn				DisplayString,
+		caChassisPsuProductName			DisplayString,
+		caChassisPsuPid				DisplayString,
+		caChassisPsuFullyQualifiedDn		DisplayString
+		}
+
+caChassisPsuUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caChassisPsuEntry 1  }
+
+caChassisPsuChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure; corresponds to caChassisId."
+	::= { caChassisPsuEntry 2 }
+
+caChassisPsuIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Id unique within the context of the chassis."
+	::= { caChassisPsuEntry 3 }
+
+caChassisPsuModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the PSU."
+	::= { caChassisPsuEntry 4 }
+
+caChassisPsuVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the PSU."
+	::= { caChassisPsuEntry 5 }
+
+caChassisPsuSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the PSU."
+	::= { caChassisPsuEntry 6 }
+
+caChassisPsuRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of a PSU."
+	::= { caChassisPsuEntry 7 }
+
+caChassisPsuCondition OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1),
+		ok(2),
+		degraded(3),
+		failed(4),
+		notSupported(5),
+		notPresent(6)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Overall operating condition of the PSU."
+	::= { caChassisPsuEntry 8 }
+
+caChassisPsuInputCurrent OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Actual amperage drawn by the PSU."
+	::= { caChassisPsuEntry 9 }
+
+caChassisPsuInputWatts OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Actual wattage drawn by the PSU."
+	::= { caChassisPsuEntry 10 }
+
+caChassisPsuInputVoltage OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Actual voltage drawn by the PSU."
+	::= { caChassisPsuEntry 11 }
+
+caChassisPsuOutputCurrent OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Actual output amperage of the PSU."
+	::= { caChassisPsuEntry 12 }
+
+caChassisPsuOutputWatts OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total output vattage of the PSU."
+	::= { caChassisPsuEntry 13 }
+
+caChassisPsuDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of the PSU."
+	::= { caChassisPsuEntry 14 }
+
+caChassisPsuProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of the PSU."
+	::= { caChassisPsuEntry 15 }
+	
+caChassisPsuPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the PSU."
+	::= { caChassisPsuEntry 16 }
+
+
+caChassisPsuFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Fully qualified dn of the PSU."
+	::= { caChassisPsuEntry 17 }
+	
+	
+-- *****************************************************************************
+-- Blade Table
+-- *****************************************************************************
+caBladeTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of sysUpTime at the time of the last creation or deletion of an entry in the caBladeTable.  If the number of entries has been unchanged since the last re-initialization of the local network management subsystem, then this object contains a zero value."
+	::= { caBlade 1 }
+
+caBladeTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaBladeRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caBlade table."
+	::= { caBlade 2 }
+
+caBladeEntry OBJECT-TYPE
+	SYNTAX CaBladeRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caBladeUcsManagerId,
+		caBladeIndex }
+	::= { caBladeTable 1 }
+
+CaBladeRow ::=
+	SEQUENCE {
+		caBladeUcsManagerId			Integer32,
+		caBladeIndex				Integer32,
+		caBladeName				DisplayString,
+		caBladeModel				DisplayString,
+		caBladeSerialNumber			DisplayString,
+		caBladeVendor				DisplayString,
+		caBladeRevision				DisplayString,
+		caBladeCondition 			INTEGER,
+		caBladeChassisId 			Integer32,
+		caBladeSlotId 				Integer32,
+		caBladeDn 				DisplayString,
+		caBladeProductName              	DisplayString,
+		caBladePid				DisplayString,
+		caBladeOrigUuid				DisplayString,
+		caBladeUuid				DisplayString,
+		caBladeFullyQualifiedDn			DisplayString
+		}
+
+caBladeUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caBladeEntry 1  }
+
+caBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a blade in a chassis."
+	::= { caBladeEntry  2 }
+
+caBladeName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Meaningful and/or friendly name for the blade."
+	::= { caBladeEntry 3 }
+
+caBladeModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the blade."
+	::= { caBladeEntry 4 }
+
+caBladeSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the blade."
+	::= { caBladeEntry 5 }
+
+caBladeVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the blade."
+	::= { caBladeEntry 6 }
+
+caBladeRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the blade."
+	::= { caBladeEntry 7 }
+
+caBladeCondition OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1),
+		ok(2),
+		degraded(3),
+		failed(4),
+		notSupported(5),
+		notPresent(6)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Overall operating condition of the blade."
+	::= { caBladeEntry 8 }
+
+caBladeChassisId OBJECT-TYPE
+	SYNTAX Integer32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure; corresponds to caChassisId."
+	::= { caBladeEntry 9 }
+
+caBladeSlotId OBJECT-TYPE
+	SYNTAX Integer32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Slot Number in the chassis that this blade resides."
+	::= { caBladeEntry 10 }
+
+caBladeDn OBJECT-TYPE
+	SYNTAX DisplayString 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of this blade."
+	::= { caBladeEntry 11 }
+caBladeProductName OBJECT-TYPE
+	SYNTAX DisplayString 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product Name of this blade."
+	::= { caBladeEntry 12 }
+	
+caBladePid OBJECT-TYPE
+	SYNTAX DisplayString 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of this blade."
+	::= { caBladeEntry 13 }
+
+caBladeOrigUuid OBJECT-TYPE
+	SYNTAX DisplayString 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade original UUID"
+	::= { caBladeEntry 14 }
+	
+	
+caBladeUuid OBJECT-TYPE
+	SYNTAX DisplayString 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade UUID"
+	::= { caBladeEntry 15 }
+	
+	
+caBladeFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade instance DN has the UCS  Manager name included as part of blade DN"
+	::= { caBladeEntry 16 }
+	
+	
+-- *****************************************************************************
+-- Blade Interfaces Table
+-- *****************************************************************************
+caBladeIfNumber OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caBladeInterfaces 1 }
+
+caBladeIfTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caBladeInterfaces 2 }
+
+caBladeIfTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaBladeIfRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caBladeIf table."
+	::= { caBladeInterfaces 3 }
+
+caBladeIfEntry OBJECT-TYPE
+	SYNTAX CaBladeIfRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caBladeIfUcsManagerId,
+		caBladeIfBladeIndex,
+		caBladeIfIndex }
+	::= { caBladeIfTable 1 }
+
+CaBladeIfRow ::=
+	SEQUENCE {
+		caBladeIfUcsManagerId		Integer32,
+		caBladeIfBladeIndex		Integer32,
+		caBladeIfIndex			Integer32,
+		caBladeIfType			IANAifType,
+		caBladeIfAdminStatus		INTEGER,
+		caBladeIfOperStatus		INTEGER,
+		caBladeIfPhysAddress		DisplayString,
+		caBladeIfHCInUcastPkts		Counter64,
+		caBladeIfHCInMulticastPkts	Counter64,
+		caBladeIfHCInBroadcastPkts	Counter64,
+		caBladeIfHCOutUcastPkts 	Counter64,
+		caBladeIfHCOutMulticastPkts 	Counter64,
+		caBladeIfHCOutBroadcastPkts 	Counter64,
+		caBladeIfHCInOctets 		Counter64,
+		caBladeIfHCOutOctets 		Counter64,
+		caBladeIfInOctets	 	Counter64,
+		caBladeIfOutOctets 		Counter64,
+		caBladeIfInUnknownProtos 	Counter64,
+		caBladeIfInErrors 		Counter64,
+		caBladeIfOutErrors		Counter64,
+		caBladeIfMtu			Counter64,
+		caBladeIfInUcastPkts		Counter64,
+		caBladeIfInMulticastPkts	Counter64,
+		caBladeIfInBroadcastPkts	Counter64,
+		caBladeIfInDiscards		Counter64,
+		caBladeIfOutUcastPkts 		Counter64,
+		caBladeIfOutMulticastPkts	Counter64,
+		caBladeIfOutBroadcastPkts	Counter64,
+		caBladeIfOutDiscards		Counter64,
+		caBladeIfPromiscuousMode	TruthValue,
+		caBladeIfSpeed			Counter64,
+		caBladeIfId			Integer32,
+		caBladeIfDescr			DisplayString,
+		caBladeIfLastChange		TimeTicks,
+		caBladeIfLinkUpDownTrapEnable	TruthValue,
+		caBladeIfConnectorPresent	TruthValue,
+		caBladeIfHighSpeed		Counter64,
+		caBladeIfName			DisplayString,
+		caBladeIfAlias			DisplayString,
+		caBladeIfDn			DisplayString,
+		caBladeIfOperability		INTEGER,
+		caBladeIfOriginalPhysAddress	DisplayString,
+		caBladeIfThermal		DisplayString,
+		caBladeIfAdminState		DisplayString,
+		caBladeIfLinkState		DisplayString,
+		caBladeIfOperState		DisplayString,
+		caBladeIfVendor			DisplayString,
+		caBladeIfModel			DisplayString,
+		caBladeIfFullyQualifiedDn	DisplayString
+		}
+
+caBladeIfUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caBladeIfEntry 1  }
+
+caBladeIfBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the blade from the caBladeTable."
+	::= { caBladeIfEntry 2 }
+
+caBladeIfIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of an interface on a blade."
+	::= { caBladeIfEntry 3 }
+
+caBladeIfType OBJECT-TYPE
+	SYNTAX IANAifType
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The type of interface."
+	::= { caBladeIfEntry 4 }
+
+caBladeIfAdminStatus OBJECT-TYPE
+	SYNTAX INTEGER {
+		up(1),       -- ready to pass packets
+		down(2),
+		testing(3)   -- in some test mode
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Administrative desired state of the interface."
+	::= { caBladeIfEntry 5 }
+
+caBladeIfOperStatus OBJECT-TYPE
+	SYNTAX INTEGER {
+		up(1),
+		down(2),
+		testing(3),
+		unknown(4),
+		dormant(5),
+		notPresent(6),
+		lowerLayerDown(7)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operational state of the interface."
+	::= { caBladeIfEntry 6 }
+
+caBladeIfPhysAddress OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"MAC address of the interface."
+	::= { caBladeIfEntry 7 }
+
+caBladeIfHCInUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 8 }
+
+caBladeIfHCInMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 9 }
+
+caBladeIfHCInBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 10 }
+
+caBladeIfHCOutUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 11 }
+
+caBladeIfHCOutMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 12 }
+
+caBladeIfHCOutBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 13 }
+
+caBladeIfHCInOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 14 }
+
+caBladeIfHCOutOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 15 }
+
+caBladeIfInOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 16 }
+
+caBladeIfOutOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 17 }
+
+caBladeIfInUnknownProtos OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 18 }
+
+caBladeIfInErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 19 }
+
+caBladeIfOutErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 20 }
+
+caBladeIfMtu OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 21 }
+
+caBladeIfInUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 22 }
+
+caBladeIfInMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 23 }
+
+caBladeIfInBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 24 }
+
+caBladeIfInDiscards OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 25 }
+
+caBladeIfOutUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 26 }
+
+caBladeIfOutMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 27 }
+
+caBladeIfOutBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 28 }
+
+caBladeIfOutDiscards OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 29 }
+
+caBladeIfPromiscuousMode OBJECT-TYPE
+	SYNTAX TruthValue
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 30 }
+
+caBladeIfSpeed OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfEntry 31 }
+
+caBladeIfId OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Identifier of the interface in relation to the blade identifier within a chassis."
+	::= { caBladeIfEntry 32 }
+
+caBladeIfDescr OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caBladeIfEntry 33 }
+
+caBladeIfLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caBladeIfEntry 34 }
+
+caBladeIfLinkUpDownTrapEnable OBJECT-TYPE
+	SYNTAX TruthValue
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caBladeIfEntry 35 }
+
+caBladeIfConnectorPresent OBJECT-TYPE
+	SYNTAX TruthValue
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caBladeIfEntry 36 }
+
+caBladeIfHighSpeed OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caBladeIfEntry 37 }
+
+caBladeIfName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caBladeIfEntry 38 }
+
+caBladeIfAlias OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caBladeIfEntry 39 }
+
+caBladeIfDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of the interface in relation to the blade identifier within a chassis."
+	::= { caBladeIfEntry 40 }
+
+caBladeIfOperability OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade interface operability"
+	::= { caBladeIfEntry 41 }
+	
+	
+caBladeIfOriginalPhysAddress OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Original blade interface physical address(MAC or WWN)"
+	::= { caBladeIfEntry 42 }
+	
+	
+caBladeIfThermal OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Interface thermal status.  Only available for host ether interfaces."
+	::= { caBladeIfEntry 43 }
+
+caBladeIfAdminState OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Admin state of the interface"
+	::= { caBladeIfEntry 44 }
+
+
+caBladeIfLinkState OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Link state of the interface"
+	::= { caBladeIfEntry 45 }
+
+caBladeIfOperState OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operating State of the interface"
+	::= { caBladeIfEntry 46 }
+	
+caBladeIfVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Interface vendor"
+	::= { caBladeIfEntry 47 }
+	
+caBladeIfModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Interface model"
+	::= { caBladeIfEntry 48 }
+	
+	
+caBladeIfFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Fully qualified dn of the interface in relation to the blade identifier within a chassis and UCS Manager domain."
+	::= { caBladeIfEntry 49 }
+
+-- *****************************************************************************
+-- Blade Server Table
+-- *****************************************************************************
+caBladeServerTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaBladeServerRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"Blade Server table."
+	::= { caBladeServer 1 }
+
+caBladeServerEntry OBJECT-TYPE
+	SYNTAX CaBladeServerRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caBladeServerUcsManagerId,
+		caBladeServerBladeIndex }
+	::= { caBladeServerTable 1 }
+
+CaBladeServerRow ::=
+	SEQUENCE {
+		caBladeServerUcsManagerId		Integer32,
+		caBladeServerBladeIndex			Integer32,
+		caBladeServerCpuLoad			Float,
+		caBladeServerMemorySize			Unsigned32,
+		caBladeServerCurrentAllocatedMemory	Unsigned32,
+		caBladeServerTotalLocalStorageSize	Uint64,
+		caBladeServerTotalUsedLocalStorage	Uint64,
+		caBladeServerDn				DisplayString,
+		caBladeServerFullyQualifiedDn		DisplayString
+		}
+
+caBladeServerUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caBladeServerEntry 1 }
+
+caBladeServerBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Corresponds to caBladeIndex; instance of a blade with a server component known to it."
+	::= { caBladeServerEntry 2 }
+
+caBladeServerCpuLoad OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Average percentage that the processors on this server blade were not idle over the time period of a minute."
+	::= { caBladeServerEntry 3 }
+
+caBladeServerMemorySize OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total available read-write memory, typically RAM, of a particular server blade. Unit: MBs"
+	::= { caBladeServerEntry 4 }
+
+caBladeServerCurrentAllocatedMemory OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Amount of read-write memory currently allocated by the server blade. (memory in use). Unit: MBs"
+	::= { caBladeServerEntry 5 }
+
+caBladeServerTotalLocalStorageSize OBJECT-TYPE
+	SYNTAX Uint64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"MBs of local disk storage not including networked drives."
+	::= { caBladeServerEntry 6 }
+
+caBladeServerTotalUsedLocalStorage OBJECT-TYPE
+	SYNTAX Uint64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"MBs of local disk storage currently allocated and occupied."
+	::= { caBladeServerEntry 7 }
+
+caBladeServerDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of the blade server."
+	::= { caBladeServerEntry 8 }
+
+
+caBladeServerFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Fully qualified dn of the blade server."
+	::= { caBladeServerEntry 9 }
+	
+-- *****************************************************************************
+-- Chassis Blade Interface Aggregate Table
+-- *****************************************************************************
+caBladeIfAggrTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaBladeIfAggrRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"ca BladeIf Aggregate table."
+	::= { caBladeIfAggr 1 }
+
+caBladeIfAggrEntry OBJECT-TYPE
+	SYNTAX CaBladeIfAggrRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caBladeIfAggrUcsManagerId,
+		caBladeIfAggrChassisId,
+                caBladeIfAggrBladeIndex }
+	::= { caBladeIfAggrTable 1 }
+
+CaBladeIfAggrRow ::=
+	SEQUENCE {
+                caBladeIfAggrUcsManagerId			 Integer32,
+		caBladeIfAggrChassisId		 Integer32,
+		caBladeIfAggrBladeIndex		 Integer32,
+                caBladeIfAggrHCInUcastPkts       Counter64,
+                caBladeIfAggrHCInMulticastPkts   Counter64,
+                caBladeIfAggrHCInBroadcastPkts   Counter64,
+                caBladeIfAggrHCOutUcastPkts      Counter64,
+                caBladeIfAggrHCOutMulticastPkts  Counter64,
+                caBladeIfAggrHCOutBroadcastPkts  Counter64,
+                caBladeIfAggrHCInOctets          Counter64,
+                caBladeIfAggrHCOutOctets         Counter64,
+                caBladeIfAggrInUnknownProtos     Counter64,
+                caBladeIfAggrInErrors            Counter64,
+                caBladeIfAggrOutErrors           Counter64,
+                caBladeIfAggrInDiscards          Counter64,
+                caBladeIfAggrOutDiscards         Counter64
+	        }
+
+caBladeIfAggrUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caBladeIfAggrEntry  1 }
+	
+caBladeIfAggrChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure; corresponds to caChassisId."
+	::= { caBladeIfAggrEntry  2 }
+
+
+caBladeIfAggrBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Corresponds to caBladeIndex; instance of a blade with a server component known to it."
+	::= { caBladeIfAggrEntry  3 }
+
+caBladeIfAggrHCInUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  4 }
+
+caBladeIfAggrHCInMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  5 }
+
+caBladeIfAggrHCInBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  6 }
+
+caBladeIfAggrHCOutUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  7 }
+
+caBladeIfAggrHCOutMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  8 }
+
+caBladeIfAggrHCOutBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  9 }
+
+caBladeIfAggrHCInOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  10 }
+
+caBladeIfAggrHCOutOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  11 }
+
+caBladeIfAggrInUnknownProtos OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  12 }
+
+caBladeIfAggrInErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  13 }
+
+caBladeIfAggrOutErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  14 }
+
+caBladeIfAggrInDiscards OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  15 }
+
+caBladeIfAggrOutDiscards OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		" Total Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caBladeIfAggrEntry  16 }
+
+
+
+
+
+-- *****************************************************************************
+-- Chassis Blade BMC Table
+-- *****************************************************************************
+caBladeBmcTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaBladeBmcRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"ca Blade BMC table."
+	::= { caBladeBmc 1 }
+
+caBladeBmcEntry OBJECT-TYPE
+	SYNTAX CaBladeBmcRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caBladeBmcUcsManagerId,
+		caBladeBmcBladeIndex }
+	::= { caBladeBmcTable 1 }
+
+CaBladeBmcRow ::=
+	SEQUENCE {
+                caBladeBmcUcsManagerId			Integer32,
+                caBladeBmcBladeIndex		 	Integer32,
+                caBladeBmcChassisId		        Integer32,
+                caBladeBmcBladeSlotId			Integer32,
+                caBladeBmcDn				DisplayString,
+                caBladeBmcVendor			DisplayString,
+                caBladeBmcSerial			DisplayString,
+                caBladeBmcModel				DisplayString,
+                caBladeBmcRevision			DisplayString,
+                caBladeBmcMgmtIfIp			DisplayString,
+                caBladeBmcMgmtIfSubnetMask		DisplayString,
+                caBladeBmcMgmtIfDefaultGateway		DisplayString,
+                caBladeBmcMgmtIfMac			DisplayString,
+                caBladeBmcBootLoaderVersion		DisplayString,
+                caBladeBmcRunningVersion		DisplayString,
+                caBladeBmcBackupVersion			DisplayString,
+                caBladeBmcStartupVersion		DisplayString,
+                caBladeBmcUpdateStatus			DisplayString,
+                caBladeBmcActiveStatus			DisplayString,
+                caBladeBmcProductName			DisplayString,
+                caBladeBmcPid				DisplayString,
+                caBladeBmcFullyQualifiedDn		DisplayString
+	        }
+
+caBladeBmcUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caBladeBmcEntry  1 }
+	
+caBladeBmcBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade Index"
+	::= { caBladeBmcEntry  2 }
+
+
+caBladeBmcChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Chassis id"
+	::= { caBladeBmcEntry  3 }
+
+caBladeBmcBladeSlotId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade slot id"
+	::= { caBladeBmcEntry  4 }
+
+caBladeBmcDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC DN"
+	::= { caBladeBmcEntry  5 }
+
+caBladeBmcVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC Vendor"
+	::= { caBladeBmcEntry  6 }
+
+caBladeBmcSerial OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC serial"
+	::= { caBladeBmcEntry  7 }
+
+caBladeBmcModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC model"
+	::= { caBladeBmcEntry  8 }
+
+caBladeBmcRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC version"
+	::= { caBladeBmcEntry  9 }
+
+caBladeBmcMgmtIfIp OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC management interface IP"
+	::= { caBladeBmcEntry  10 }
+
+caBladeBmcMgmtIfSubnetMask OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC management interface subnet mask"
+	::= { caBladeBmcEntry  11 }
+
+caBladeBmcMgmtIfDefaultGateway OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC managment interface default gateway"
+	::= { caBladeBmcEntry  12 }
+
+caBladeBmcMgmtIfMac OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC management interface MAC address"
+	::= { caBladeBmcEntry  13 }
+
+caBladeBmcBootLoaderVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC boot loader version"
+	::= { caBladeBmcEntry  14 }
+
+caBladeBmcRunningVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC running version"
+	::= { caBladeBmcEntry  15 }
+
+caBladeBmcBackupVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC backup version"
+	::= { caBladeBmcEntry  16 }
+
+caBladeBmcStartupVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC startup version"
+	::= { caBladeBmcEntry  17 }
+	
+caBladeBmcUpdateStatus OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC update status"
+	::= { caBladeBmcEntry  18 }
+	
+caBladeBmcActiveStatus OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC active status"
+	::= { caBladeBmcEntry  19 }
+caBladeBmcProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC product name"
+	::= { caBladeBmcEntry  20 }
+	
+caBladeBmcPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC pid"
+	::= { caBladeBmcEntry  21 }
+
+
+caBladeBmcFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade BMC fully qualified DN"
+	::= { caBladeBmcEntry  22 }
+	
+-- *****************************************************************************
+-- Chassis Blade Interface Card Table
+-- *****************************************************************************
+caBladeIfCardTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaBladeIfCardRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"ca Blade interface card table."
+	::= { caBladeIfCard 1 }
+
+caBladeIfCardEntry OBJECT-TYPE
+	SYNTAX CaBladeIfCardRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caBladeIfCardUcsManagerId,
+		caBladeIfCardBladeIndex,
+		caBladeIfCardId		}
+	::= { caBladeIfCardTable 1 }
+
+CaBladeIfCardRow ::=
+	SEQUENCE {
+                caBladeIfCardUcsManagerId		Integer32,
+                caBladeIfCardBladeIndex		 	Integer32,
+                caBladeIfCardId				Integer32,
+                caBladeIfCardDn				DisplayString,
+                caBladeIfCardVendor			DisplayString,
+                caBladeIfCardSerial			DisplayString,
+                caBladeIfCardModel			DisplayString,
+                caBladeIfCardOperability		DisplayString,
+                caBladeIfCardOperState			DisplayString,
+                caBladeIfCardThermal			DisplayString,    
+                caBladeIfCardRevision                   DisplayString,
+                caBladeIfCardProductName                DisplayString,
+                caBladeIfCardConnPath                   DisplayString,
+                caBladeIfCardPower                      DisplayString,
+                caBladeIfCardPresence                   DisplayString,
+                caBladeIfCardPid			DisplayString,
+                caBladeIfCardFullyQualifiedDn		DisplayString
+	        }
+
+caBladeIfCardUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caBladeIfCardEntry  1 }
+	
+caBladeIfCardBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade Index"
+	::= { caBladeIfCardEntry  2 }
+
+
+caBladeIfCardId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Interface card id"
+	::= { caBladeIfCardEntry  3 }
+
+
+caBladeIfCardDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard DN"
+	::= { caBladeIfCardEntry  4 }
+
+caBladeIfCardVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard Vendor"
+	::= { caBladeIfCardEntry  5 }
+
+caBladeIfCardSerial OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard serial"
+	::= { caBladeIfCardEntry  6 }
+
+caBladeIfCardModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard model"
+	::= { caBladeIfCardEntry  7 }
+
+caBladeIfCardOperability OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard  operability"
+	::= { caBladeIfCardEntry  8 }
+
+caBladeIfCardOperState OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard operstate"
+	::= { caBladeIfCardEntry  9 }
+
+caBladeIfCardThermal OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard thermal"
+	::= { caBladeIfCardEntry  10 }
+	
+caBladeIfCardRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard Revision"
+	::= { caBladeIfCardEntry  11 }
+	
+caBladeIfCardProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard Product name"
+	::= { caBladeIfCardEntry  12 }
+	
+caBladeIfCardConnPath OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard connPah"
+	::= { caBladeIfCardEntry  13 }
+	
+caBladeIfCardPower OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard Power"
+	::= { caBladeIfCardEntry  14 }
+	
+caBladeIfCardPresence OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard Presence"
+	::= { caBladeIfCardEntry  15 }
+	
+caBladeIfCardPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard Pid"
+	::= { caBladeIfCardEntry  16 }
+
+
+caBladeIfCardFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade IfCard fully qualified DN"
+	::= { caBladeIfCardEntry  17 }
+	
+
+-- *****************************************************************************
+-- caSwithTable
+-- *****************************************************************************
+caSwitchTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of sysUpTime at the time of the last creation or deletion of an entry in the caSwitchTable.  If the number of entries has been unchanged since the last re-initialization of the local network management subsystem, then this object contains a zero value."
+	::= { caSwitch 1 }
+
+caSwitchTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaSwitchRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"Switch table."
+	::= { caSwitch 2 }
+
+caSwitchEntry OBJECT-TYPE
+	SYNTAX CaSwitchRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caSwitchUcsManagerId,
+		caSwitchIndex }
+	::= { caSwitchTable 1 }
+
+CaSwitchRow ::=
+	SEQUENCE {
+		caSwitchUcsManagerId		Integer32,
+		caSwitchIndex			Integer32,
+		caSwitchModel			DisplayString,
+		caSwitchSerialNumber		DisplayString,
+		caSwitchVendor			DisplayString,
+		caSwitchRevision		DisplayString,
+		caSwitchId			DisplayString,
+		caSwitchChassisId		Integer32,
+		caSwitchSlotId			Integer32,
+		caSwitchDn			DisplayString,
+		caSwitchProductName		DisplayString,
+		caSwitchPid			DisplayString,
+		caSwitchFullyQualifiedDn	DisplayString
+		}
+
+caSwitchUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= {  caSwitchEntry 1 }
+
+caSwitchIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index in the table."
+	::= { caSwitchEntry 2 }
+
+caSwitchModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the switch."
+	::= { caSwitchEntry 3 }
+
+caSwitchSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the switch."
+	::= { caSwitchEntry 4 }
+
+caSwitchVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the switch."
+	::= { caSwitchEntry 5 }
+
+caSwitchRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the switch."
+	::= { caSwitchEntry 6 }
+
+caSwitchId OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Identifier for the switch."
+	::= { caSwitchEntry 7 }
+
+caSwitchChassisId OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index into the caChassisTable if this switch is part of a chassis.  If the switch is external or not residing in any chassis instance of this MIB then this value should be 0."
+	::= { caSwitchEntry 8 }
+
+caSwitchSlotId OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Identifier for the slot that a switch, when residing in a chassis, occupies.  This slot is not likely to be the same type of slot as a blade.  When the switch does not occupy space in a chassis (so caSwitchChassisId is 0) then this value should be 0."
+	::= { caSwitchEntry 9 }
+
+caSwitchDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of the switch."
+	::= { caSwitchEntry 10 }
+	
+caSwitchProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of the switch."
+	::= { caSwitchEntry 11 }
+	
+caSwitchPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the switch."
+	::= { caSwitchEntry 12 }
+
+caSwitchFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Fully qualified dn of the switch."
+	::= { caSwitchEntry 13 }
+	
+
+-- *****************************************************************************
+-- caSwithFan
+-- *****************************************************************************
+caSwitchFanTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of sysUpTime at the time of the last creation or deletion of an entry in the caSwitchFanTable.  If the number of entries has been unchanged since the last re-initialization of the local network management subsystem, then this object contains a zero value."
+	::= { caSwitchFan 1 }
+
+caSwitchFanTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaSwitchFanRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"Switch Fan table."
+	::= { caSwitchFan 2 }
+
+caSwitchFanEntry OBJECT-TYPE
+	SYNTAX CaSwitchFanRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caSwitchFanUcsManagerId,
+		caSwitchFanSwitchIndex,
+		caSwitchFanIndex }
+	::= { caSwitchFanTable 1 }
+
+CaSwitchFanRow ::=
+	SEQUENCE {
+	caSwitchFanUcsManagerId			Integer32,	
+	caSwitchFanSwitchIndex			Integer32,
+	caSwitchFanIndex			Integer32,
+	caSwitchFanModel			DisplayString,
+	caSwitchFanSerialNumber			DisplayString,
+	caSwitchFanVendor			DisplayString,
+	caSwitchFanRevision			DisplayString,
+	caSwitchFanCondition			INTEGER,
+	caSwitchFanSpeed			Unsigned32,
+	caSwitchFanDn				DisplayString,
+	caSwitchFanProductName			DisplayString,
+	caSwitchFanPid				DisplayString,
+	caSwitchFanFullyQualifiedDn		DisplayString
+	}
+
+caSwitchFanUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caSwitchFanEntry 1 }
+
+caSwitchFanSwitchIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the switch; corresponds to caSwitchTable."
+	::= { caSwitchFanEntry 2 }
+
+caSwitchFanIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of a fan."
+	::= { caSwitchFanEntry 3 }
+
+caSwitchFanModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the fan."
+	::= { caSwitchFanEntry 4 }
+
+caSwitchFanSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the fan."
+	::= { caSwitchFanEntry 5 }
+
+caSwitchFanVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the fan."
+	::= { caSwitchFanEntry 6 }
+
+caSwitchFanRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the fan."
+	::= { caSwitchFanEntry 7 }
+
+caSwitchFanCondition OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1),
+		ok(2),
+		degraded(3),
+		failed(4),
+		notSupported(5),
+		notPresent(6)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Overall condition of the fan."
+	::= { caSwitchFanEntry 8 }
+
+caSwitchFanSpeed OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"RPMs"
+	::= { caSwitchFanEntry 9 }
+
+caSwitchFanDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of the Fan for this switch."
+	::= { caSwitchFanEntry 10 }
+	
+caSwitchFanProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of the Fan for this switch."
+	::= { caSwitchFanEntry 11 }
+
+caSwitchFanPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the Fan for this switch."
+	::= { caSwitchFanEntry 12 }
+
+caSwitchFanFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Fully qualified dn of the Fan for this switch."
+	::= { caSwitchFanEntry 13 }
+	
+-- *****************************************************************************
+-- caSwithPower
+--
+-- caSwitchPsuTable
+-- *****************************************************************************
+caSwitchPsuTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of sysUpTime at the time of the last creation or deletion of an entry in the caSwitchPsuTable.  If the number of entries has been unchanged since the last re-initialization of the local network management subsystem, then this object contains a zero value."
+	::= { caSwitchPower 1 }
+
+caSwitchPsuTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaSwitchPsuRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"Switch power table."
+	::= { caSwitchPower 2 }
+
+caSwitchPsuEntry OBJECT-TYPE
+	SYNTAX CaSwitchPsuRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caSwitchPsuUcsManagerId,
+		caSwitchPsuSwitchId,
+		caSwitchPsuId }
+	::= { caSwitchPsuTable 1 }
+
+CaSwitchPsuRow ::=
+	SEQUENCE {
+	caSwitchPsuUcsManagerId			Integer32,
+	caSwitchPsuSwitchId			Integer32,
+	caSwitchPsuId				Integer32,
+	caSwitchPsuModel			DisplayString,
+	caSwitchPsuVendor			DisplayString,
+	caSwitchPsuSerialNumber			DisplayString,
+	caSwitchPsuRevision			DisplayString,
+	caSwitchPsuCondition			INTEGER,
+	caSwitchInputCurrent			Float,
+	caSwitchInputWatts			Float,
+	caSwitchInputVoltage			Float,
+	caSwitchOutputCurrent			Float,
+	caSwitchOutputWatts			Float,
+	caSwitchPsuDn				DisplayString,
+	caSwitchPsuProductName			DisplayString,
+	caSwitchPsuPid				DisplayString,
+	caSwitchPsuFullyQualifiedDn		DisplayString
+	}
+
+caSwitchPsuUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caSwitchPsuEntry 1 }
+
+caSwitchPsuSwitchId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the switch; corresponds to caSwitchTable."
+	::= { caSwitchPsuEntry 2 }
+
+caSwitchPsuId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of a PSU."
+	::= { caSwitchPsuEntry 3 }
+
+caSwitchPsuModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the PSU."
+	::= { caSwitchPsuEntry 4 }
+
+caSwitchPsuVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the PSU."
+	::= { caSwitchPsuEntry 5 }
+
+caSwitchPsuSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the PSU."
+	::= { caSwitchPsuEntry 6 }
+
+caSwitchPsuRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the PSU."
+	::= { caSwitchPsuEntry 7 }
+
+caSwitchPsuCondition OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1),
+		ok(2),
+		degraded(3),
+		failed(4),
+		notSupported(5),
+		notPresent(6)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Overall condition of the PSU."
+	::= { caSwitchPsuEntry 8 }
+
+caSwitchInputCurrent OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Actual amperage drawn by the PSU."
+	::= { caSwitchPsuEntry 9 }
+
+caSwitchInputWatts OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Actual wattage drawn by the PSU."
+	::= { caSwitchPsuEntry 10 }
+
+caSwitchInputVoltage OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Actual voltage drawn by the PSU."
+	::= { caSwitchPsuEntry 11 }
+
+caSwitchOutputCurrent OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Actual output amperage of the PSU."
+	::= { caSwitchPsuEntry 12 }
+
+caSwitchOutputWatts OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total output wattage of the PSU."
+	::= { caSwitchPsuEntry 13 }
+
+caSwitchPsuDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of the PSU."
+	::= { caSwitchPsuEntry 14 }
+	
+caSwitchPsuProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Ptoduct name of the PSU."
+	::= { caSwitchPsuEntry 15 }
+	
+caSwitchPsuPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the PSU."
+	::= { caSwitchPsuEntry 16 }
+
+
+caSwitchPsuFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Fully qualified dn of the PSU."
+	::= { caSwitchPsuEntry 17 }
+	
+-- *****************************************************************************
+-- caSwithInterfaces
+--
+-- caSwitchIfTable
+-- *****************************************************************************
+caSwitchIfNumber OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caSwitchInterfaces 1 }
+
+caSwitchIfTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of sysUpTime at the time of the last creation or deletion of an entry in the caSwitchIfTable.  If the number of entries has been unchanged since the last re-initialization of the local network management subsystem, then this object contains a zero value."
+	::= { caSwitchInterfaces 2 }
+
+caSwitchIfTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaSwitchIfRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"Switch Interfaces table."
+	::= { caSwitchInterfaces 3 }
+
+caSwitchIfEntry OBJECT-TYPE
+	SYNTAX CaSwitchIfRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caSwitchIfUcsManagerId,
+		caSwitchIfSwitchIndex,
+		caSwitchIfIndex }
+	::= { caSwitchIfTable 1 }
+
+CaSwitchIfRow ::=
+	SEQUENCE {
+		caSwitchIfUcsManagerId			Integer32,
+		caSwitchIfSwitchIndex			Integer32,
+		caSwitchIfIndex				Integer32,
+		caSwitchIfType				IANAifType,
+		caSwitchIfAdminStatus			INTEGER,
+		caSwitchIfOperStatus			INTEGER,
+		caSwitchIfPhysAddress			DisplayString,
+		caSwitchIfHCInUcastPkts			Counter64,
+		caSwitchIfHCInMulticastPkts		Counter64,
+		caSwitchIfHCInBroadcastPkts		Counter64,
+		caSwitchIfHCOutUcastPkts		Counter64,
+		caSwitchIfHCOutMulticastPkts		Counter64,
+		caSwitchIfHCOutBroadcastPkts		Counter64,
+		caSwitchIfHCInOctets			Counter64,
+		caSwitchIfHCOutOctets			Counter64,
+		caSwitchIfInOctets			Counter64,
+		caSwitchIfOutOctets			Counter64,
+		caSwitchIfInUnknownProtos		Counter64,
+		caSwitchIfInErrors			Counter64,
+		caSwitchIfOutErrors			Counter64,
+		caSwitchIfMtu				Counter64,
+		caSwitchIfInUcastPkts			Counter64,
+		caSwitchIfInMulticastPkts		Counter64,
+		caSwitchIfInBroadcastPkts		Counter64,
+		caSwitchIfInDiscards			Counter64,
+		caSwitchIfOutUcastPkts	 		Counter64,
+		caSwitchIfOutMulticastPkts		Counter64,
+		caSwitchIfOutBroadcastPkts		Counter64,
+		caSwitchIfOutDiscards			Counter64,
+		caSwitchIfPromiscuousMode		TruthValue,
+		caSwitchIfSpeed				Counter64,
+		caSwitchIfSlotId			Integer32,
+		caSwitchIfPortId			Integer32,
+		caSwitchIfDescr				DisplayString,
+		caSwitchIfLastChange			TimeTicks,
+		caSwitchIfLinkUpDownTrapEnable		TruthValue,
+		caSwitchIfConnectorPresent		TruthValue,
+		caSwitchIfHighSpeed			Counter64,
+		caSwitchIfName				DisplayString,
+		caSwitchIfAlias				DisplayString,
+		caSwitchIfDn				DisplayString,
+		caSwitchIfPortType			DisplayString,
+		caSwitchIfRole				DisplayString,
+		caSwitchIfSwitchCardIndex		Integer32,
+		caSwitchIfFullyQualifiedDn		DisplayString
+		}
+
+caSwitchIfUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caSwitchIfEntry 1 }
+	
+caSwitchIfSwitchIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"index of the switch from the caSwitchTable."
+	::= { caSwitchIfEntry 2 }
+
+caSwitchIfIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"index of interface on a switch."
+	::= { caSwitchIfEntry 3 }
+
+caSwitchIfType OBJECT-TYPE
+	SYNTAX IANAifType
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The type of interface."
+	::= { caSwitchIfEntry 4 }
+
+caSwitchIfAdminStatus OBJECT-TYPE
+	SYNTAX INTEGER {
+		enabled(1),       
+		disabled(2)  -- default
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Administrative desired state of the interface."
+	::= { caSwitchIfEntry 5 }
+
+caSwitchIfOperStatus OBJECT-TYPE
+	SYNTAX INTEGER {
+		up(1),
+		down(2),
+		testing(3),
+		unknown(4),
+		dormant(5),
+		notPresent(6),
+		lowerLayerDown(7)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operational state of the interface."
+	::= { caSwitchIfEntry 6 }
+
+caSwitchIfPhysAddress OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"MAC address of the interface."
+	::= { caSwitchIfEntry 7 }
+
+caSwitchIfHCInUcastPkts	OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 8 }
+
+caSwitchIfHCInMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 9 }
+
+caSwitchIfHCInBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 10 }
+
+caSwitchIfHCOutUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 11 }
+
+caSwitchIfHCOutMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 12 }
+
+caSwitchIfHCOutBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 13 }
+
+caSwitchIfHCInOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 14 }
+
+caSwitchIfHCOutOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 15 }
+
+caSwitchIfInOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 16 }
+
+caSwitchIfOutOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 17 }
+
+caSwitchIfInUnknownProtos OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 18 }
+
+caSwitchIfInErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 19 }
+
+caSwitchIfOutErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 20 }
+
+caSwitchIfMtu OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 21 }
+
+caSwitchIfInUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 22 }
+
+caSwitchIfInMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 23 }
+
+caSwitchIfInBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 24 }
+
+caSwitchIfInDiscards OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 25 }
+
+caSwitchIfOutUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 26 }
+
+caSwitchIfOutMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 27 }
+
+caSwitchIfOutBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 28 }
+
+caSwitchIfOutDiscards OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 29 }
+
+caSwitchIfPromiscuousMode OBJECT-TYPE
+	SYNTAX TruthValue
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 30 }
+
+caSwitchIfSpeed OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfEntry 31 }
+
+caSwitchIfSlotId OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Identifier of the slot on the switch containing the interface or 0 if not applicable."
+	::= { caSwitchIfEntry 32 }
+
+caSwitchIfPortId OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Identifier of the interface in relation to the slot in the switch; may be the same as caSwitchIfIndex."
+	::= { caSwitchIfEntry 33 }
+
+caSwitchIfDescr	OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caSwitchIfEntry 34 }
+
+caSwitchIfLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caSwitchIfEntry 35 }
+
+caSwitchIfLinkUpDownTrapEnable OBJECT-TYPE
+	SYNTAX TruthValue
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caSwitchIfEntry 36 }
+
+caSwitchIfConnectorPresent OBJECT-TYPE
+	SYNTAX TruthValue
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caSwitchIfEntry 37 }
+
+caSwitchIfHighSpeed OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caSwitchIfEntry 38 }
+
+caSwitchIfName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caSwitchIfEntry 39 }
+
+caSwitchIfAlias	OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifGeneralInformationGroup from RFC 2863."
+	::= { caSwitchIfEntry 40 }
+
+caSwitchIfDn	OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of the interface for the switch."
+	::= { caSwitchIfEntry 41 }
+
+
+caSwitchIfPortType	OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch interface port type"
+	::= { caSwitchIfEntry 42 }
+
+caSwitchIfRole	OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch interface Role"
+	::= { caSwitchIfEntry 43 }
+
+caSwitchIfSwitchCardIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"switch card index"
+	::= { caSwitchIfEntry 44 }
+	
+	
+caSwitchIfFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Fully qualified dn of the interface for the switch."
+	::= { caSwitchIfEntry 45 }
+	
+-- *****************************************************************************
+-- caSwithIf Aggregate Table
+-- *****************************************************************************
+caSwitchIfAggrTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaSwitchIfAggrRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caCSwitchIf Aggregate table."
+	::= { caSwitchIfAggr 1 }
+
+caSwitchIfAggrEntry OBJECT-TYPE
+	SYNTAX CaSwitchIfAggrRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caSwitchIfAggrUcsManagerId,
+		caSwitchIfAggrSwitchId }
+	::= { caSwitchIfAggrTable 1 }
+
+CaSwitchIfAggrRow ::=
+	SEQUENCE {
+                 caSwitchIfAggrUcsManagerId		Integer32,	
+                 caSwitchIfAggrSwitchId                 Integer32,
+                 caSwitchIfAggrHCInUcastPkts            Counter64,
+                 caSwitchIfAggrHCInMulticastPkts        Counter64,
+                 caSwitchIfAggrHCInBroadcastPkts        Counter64,
+                 caSwitchIfAggrHCOutUcastPkts           Counter64,
+                 caSwitchIfAggrHCOutMulticastPkts       Counter64,
+                 caSwitchIfAggrHCOutBroadcastPkts       Counter64,
+                 caSwitchIfAggrHCInOctets               Counter64,
+                 caSwitchIfAggrHCOutOctets              Counter64,
+                 caSwitchIfAggrInUnknownProtos          Counter64,
+                 caSwitchIfAggrInErrors                 Counter64,
+                 caSwitchIfAggrOutErrors                Counter64,
+                 caSwitchIfAggrInDiscards               Counter64,
+                 caSwitchIfAggrOutDiscards              Counter64
+		}
+
+caSwitchIfAggrUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caSwitchIfAggrEntry 1 }
+	
+caSwitchIfAggrSwitchId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"index of interface on a switch."
+	::= { caSwitchIfAggrEntry 2 }
+
+caSwitchIfAggrHCInUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 3 }
+
+caSwitchIfAggrHCInMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 4 }
+
+caSwitchIfAggrHCInBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 5 }
+
+caSwitchIfAggrHCOutUcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 6 }
+
+caSwitchIfAggrHCOutMulticastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 7 }
+
+caSwitchIfAggrHCOutBroadcastPkts OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 8 }
+
+caSwitchIfAggrHCInOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 9 }
+
+caSwitchIfAggrHCOutOctets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 10 }
+
+caSwitchIfAggrInUnknownProtos OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 11 }
+
+caSwitchIfAggrInErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 12 }
+
+caSwitchIfAggrOutErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 13 }
+
+caSwitchIfAggrInDiscards OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 14 }
+
+caSwitchIfAggrOutDiscards OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Like object of ifVHCPacketGroup from RFC 2863."
+	::= { caSwitchIfAggrEntry 15 }
+
+
+
+-- *****************************************************************************
+-- caSwithCard Table
+-- *****************************************************************************
+caSwitchCardTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaSwitchCardRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caCSwitchCard table."
+	::= { caSwitchCard 1 }
+
+caSwitchCardEntry OBJECT-TYPE
+	SYNTAX CaSwitchCardRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caSwitchCardUcsManagerId,
+		caSwitchCardIndex }
+	::= { caSwitchCardTable 1 }
+
+CaSwitchCardRow ::=
+	SEQUENCE {
+                 caSwitchCardUcsManagerId		Integer32,	
+                 caSwitchCardIndex	                Integer32,
+                 caSwitchCardSwitchIndex		Integer32,
+                 caSwitchCardSlotId		        Integer32,
+                 caSwitchCardName		        DisplayString,
+                 caSwitchCardSerial		        DisplayString,
+                 caSwitchCardModel		        DisplayString,
+                 caSwitchCardVendor		        DisplayString,
+                 caSwitchCardRevision		        DisplayString,
+                 caSwitchCardNumOfPorts		        Integer32,
+                 caSwitchCardProductName	        DisplayString,
+                 caSwitchCardOperState		        DisplayString,
+                 caSwitchCardOperability	        DisplayString,
+                 caSwitchCardState			DisplayString,
+                 caSwitchCardDn		                DisplayString,
+                 caSwitchCardDescription                DisplayString,
+                 caSwitchCardPid			DisplayString,
+                 caSwitchCardFullyQualifiedDn		DisplayString
+		}
+
+caSwitchCardUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caSwitchCardEntry 1 }
+	
+caSwitchCardIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card index"
+	::= { caSwitchCardEntry 2 }
+
+caSwitchCardSwitchIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch id"
+	::= { caSwitchCardEntry 3 }
+
+caSwitchCardSlotId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card slot id"
+	::= {caSwitchCardEntry 4 }
+
+caSwitchCardName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card name"
+	::= { caSwitchCardEntry 5 }
+
+caSwitchCardSerial OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card serial"
+	::= { caSwitchCardEntry 6 }
+
+caSwitchCardModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card model"
+	::= { caSwitchCardEntry 7 }
+
+caSwitchCardVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card vendor"
+	::= { caSwitchCardEntry 8 }
+
+caSwitchCardRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card revision"
+	::= { caSwitchCardEntry 9 }
+
+caSwitchCardNumOfPorts OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of ports for this fixed/expanded module"
+	::= { caSwitchCardEntry 10 }
+
+caSwitchCardProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card product name only valid for FC"
+	::= { caSwitchCardEntry 11 }
+
+caSwitchCardOperState OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card operating state"
+	::= { caSwitchCardEntry 12 }
+
+caSwitchCardOperability OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card operability"
+	::= { caSwitchCardEntry 13 }
+
+caSwitchCardState OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card state"
+	::= { caSwitchCardEntry 14 }
+
+caSwitchCardDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card DN"
+	::= { caSwitchCardEntry 15 }
+	
+caSwitchCardDescription OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Switch card Descrption"
+    ::= { caSwitchCardEntry 16 }
+    
+caSwitchCardPid OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Switch card Pid"
+    ::= { caSwitchCardEntry 17 }
+
+
+caSwitchCardFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch card fully qualified DN"
+	::= { caSwitchCardEntry 18 }
+	
+
+-- *****************************************************************************
+-- Trap Definitions
+-- *****************************************************************************
+caChassisPsuInoperableEvent OBJECT IDENTIFIER ::= { traps 165501 }
+caChassisPsuInoperableTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caChassisPsuUcsManagerId,
+		caChassisPsuChassisId,
+		caChassisPsuIndex,
+		caChassisPsuCondition }
+	STATUS current
+	DESCRIPTION
+		"A power supply in a chassis has become inoperable and its condition ahs transistioned to failure."
+	::= { sysmgmt 165501 }
+
+caChassisFanInoperableEvent OBJECT IDENTIFIER ::= { traps 165502 }
+caChassisFanInoperableTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caChassisFanUcsManagerId,
+		caChassisFanChassisId,
+		caChassisFanIndex,
+		caChassisFanCondition }
+	STATUS current
+	DESCRIPTION
+		"A fan in a chassis has become inoperable and its condition has transitioned to failure."
+	::= { sysmgmt 165502 }
+
+caChassisInoperableEvent OBJECT IDENTIFIER ::= { traps 165503 }
+caChassisInoperableTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caChassisUcsManagerId,
+		caChassisId,
+		caChassisCondition
+	}
+	STATUS current
+	DESCRIPTION
+		"A chassis has become inoperable and its condition has transitioned to failure.	"
+	::= { sysmgmt 165503 }
+
+caChassisPowerWarningEvent OBJECT IDENTIFIER ::= { traps 165504 }
+caChassisPowerWarningTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caChassisPsuUcsManagerId,
+		caChassisPsuChassisId,
+		caChassisPsuIndex,
+		caChassisPsuCondition
+	}
+	STATUS current
+	DESCRIPTION
+		"The operation of a power supply in a chassis has degraded and its condition has transitioned to degraded."
+	::= { sysmgmt 165504 }
+
+caChassisFanWarningEvent OBJECT IDENTIFIER ::= { traps 165505 }
+caChassisFanWarningTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caChassisFanUcsManagerId,
+		caChassisFanChassisId,
+		caChassisFanIndex,
+		caChassisFanCondition
+	}
+	STATUS current
+	DESCRIPTION
+		"The operation of a fan in a chassis has degraded and its condition has transitioned to degraded.	"
+	::= { sysmgmt 165505 }
+
+caChassisPsuRemovedEvent OBJECT IDENTIFIER ::= { traps 165506 }
+caChassisPsuRemovedTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caChassisPsuUcsManagerId,
+		caChassisPsuChassisId,
+		caChassisPsuIndex
+	}
+	STATUS current
+	DESCRIPTION
+		"A power supply has been removed from a chassis."
+	::= { sysmgmt 165506 }
+
+caChassisFanRemovedEvent OBJECT IDENTIFIER ::= { traps 165507 }
+caChassisFanRemovedTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caChassisFanUcsManagerId,
+		caChassisFanChassisId,
+		caChassisFanIndex
+	}
+	STATUS current
+	DESCRIPTION
+		"A fan has been removed from a chassis.	"
+	::= { sysmgmt 165507 }
+
+caChassisRemovedEvent OBJECT IDENTIFIER ::= { traps 165508 }
+caChassisRemovedTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caChassisUcsManagerId,
+		caChassisId
+	}
+	STATUS current
+	DESCRIPTION
+		"A chassis has been removed from management."	
+	::= { sysmgmt 165508 }
+		
+caBladeLinkDownEvent OBJECT IDENTIFIER ::= { traps 165509 }
+caBladeLinkDownTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caBladeUcsManagerId,
+		caBladeChassisId,
+		caBladeSlotId,
+		caBladeIfBladeIndex,
+		caBladeIfIndex,
+		caBladeIfAdminStatus,
+		caBladeIfOperStatus
+	}
+	STATUS current
+	DESCRIPTION
+		"A caBladeLinkDown trap signifies that the caBladeIfOperStatus object for one of a blades interfaces is about to enter the down state from some other state (but not from the notPresent state).  This other state is indicated by the included value of caBladeIfOperStatus.	"
+	::= { sysmgmt 165509 }
+
+caBladeLinkUpEvent OBJECT IDENTIFIER ::= { traps 165510 }
+caBladeLinkUpTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caBladeUcsManagerId,
+		caBladeChassisId,
+		caBladeSlotId,
+		caBladeIfBladeIndex,
+		caBladeIfIndex,
+		caBladeIfAdminStatus,
+		caBladeIfOperStatus
+	}
+	STATUS current
+	DESCRIPTION
+		"A caBladeLinkUp trap signifies that the caBladeIfOperStatus object for one of a blades interfaces left the down state and transitioned into some other state (but not into the notPresent state).  This other state is indicated by the included value of caBladeIfOperStatus.	"
+	::= { sysmgmt 165510 }
+
+caBladeInoperableEvent OBJECT IDENTIFIER ::= { traps 165511 }
+caBladeInoperableTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caBladeUcsManagerId,
+		caBladeIndex,
+		caBladeChassisId,
+		caBladeSlotId,
+		caBladeCondition
+	}
+	STATUS current
+	DESCRIPTION
+		"A blade has become inoperable and its condition has transitioned to failure."
+	::= { sysmgmt 165511 }
+
+caBladeTemperatureWarningEvent OBJECT IDENTIFIER ::= { traps 165512 }
+caBladeTemperatureWarningTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caBladeUcsManagerId,
+		caBladeIndex,
+		caBladeChassisId,
+		caBladeSlotId,
+		caBladeCondition
+	}
+	STATUS current
+	DESCRIPTION
+		"A blade has detected a problem related to its current temperature and has transitioned its condition to degraded.	"
+	::= { sysmgmt 165512 }
+
+caBladePowerWarningEvent OBJECT IDENTIFIER ::= { traps 165513 }
+caBladePowerWarningTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caBladeUcsManagerId,
+		caBladeIndex,
+		caBladeChassisId,
+		caBladeSlotId,
+		caBladeCondition
+	}
+	STATUS current
+	DESCRIPTION
+		"A blade has detected a problem related to its current power readings and has transitioned its condition to degraded.	"
+	::= { sysmgmt 165513 }
+
+
+caBladeRemovedEvent OBJECT IDENTIFIER ::= { traps 165514 }
+caBladeRemovedTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caBladeUcsManagerId,
+		caBladeIndex,
+		caChassisId
+	}
+	STATUS current
+	DESCRIPTION
+		"A blade has been removed from a chassis."
+	::= { sysmgmt 165514 }
+		
+caSwitchLinkDownEvent OBJECT IDENTIFIER ::= { traps 165515 }
+caSwitchLinkDownTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caSwitchUcsManagerId,
+		caSwitchIfSwitchIndex,
+		caSwitchIfIndex,
+		caSwitchIfAdminStatus,
+		caSwitchIfOperStatus
+	}
+	STATUS current
+	DESCRIPTION
+		"A caSwitchLinkDown trap signifies that the caSwitchIfOperStatus object for one of a switches interfaces is about to enter the down state from some other state (but not from the notPresent state).  This other state is indicated by the included value of caSwitchIfOperStatus."
+	::= { sysmgmt 165515 }
+
+caSwitchLinkUpEvent OBJECT IDENTIFIER ::= { traps 165516 }
+caSwitchLinkUpTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caSwitchIfUcsManagerId,
+		caSwitchIfSwitchIndex,
+		caSwitchIfIndex,
+		caSwitchIfAdminStatus,
+		caSwitchIfOperStatus
+	}
+	STATUS current
+	DESCRIPTION
+		"A caSwitchLinkUp trap signifies that the caSwitchIfOperStatus object for one of a switches interfaces left the down state and transitioned into some other state (but not into the notPresent state).  This other state is indicated by the included value of caSwitchIfOperStatus.	"
+	::= { sysmgmt 165516 }
+
+caSwitchInoperableEvent OBJECT IDENTIFIER ::= { traps 165517 }
+caSwitchInoperableTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caSwitchUcsManagerId,
+		caSwitchIndex
+	}
+	STATUS current
+	DESCRIPTION
+		"A switch has become inoperable and its condition has transitioned to failure.	"
+	::= { sysmgmt 165517 }
+
+caUcsSwitchFanRemovedEvent OBJECT IDENTIFIER ::= { traps 165518 }
+caUcsSwitchFanRemovedTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caSwitchFanUcsManagerId,
+		caSwitchFanSwitchIndex,
+		caSwitchFanIndex
+	}
+	STATUS current
+	DESCRIPTION
+		"A power supply has been removed from a switch.	"
+	::= { sysmgmt 165518 }
+
+caUcsSwitchPsuRemovedEvent OBJECT IDENTIFIER ::= { traps 165519 }
+caUcsSwitchPsuRemovedTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caSwitchPsuUcsManagerId,
+		caSwitchPsuSwitchId,
+		caSwitchPsuId
+	}
+	STATUS current
+	DESCRIPTION
+		"A fan has been removed from a switch."
+	::= { sysmgmt 165519 }
+
+caSwitchFanInoperableEvent OBJECT IDENTIFIER ::= { traps 165520 }
+caSwitchFanInoperableTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caSwitchFanUcsManagerId,
+		caSwitchFanSwitchIndex,
+		caSwitchFanIndex,
+		caSwitchFanCondition
+	}
+	STATUS current
+	DESCRIPTION
+		"A fan in a switch has become inoperable and its condition has transitioned to failure.	"
+	::= { sysmgmt 165520 }
+
+caSwitchPsuInoperableEvent OBJECT IDENTIFIER ::= { traps 165521 }
+caSwitchPsuInoperableTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caSwitchPsuUcsManagerId,
+		caSwitchPsuSwitchId,
+		caSwitchPsuId,
+		caSwitchPsuCondition
+	}
+	STATUS current
+	DESCRIPTION
+		"A power supply in a switch has become inoperable and its condition has transitioned to failure."
+	::= { sysmgmt 165521 }
+
+caSwitchFanWarningEvent OBJECT IDENTIFIER ::= { traps 165522 }
+caSwitchFanWarningTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caSwitchFanUcsManagerId,
+		caSwitchFanSwitchIndex,
+		caSwitchFanIndex,
+		caSwitchFanCondition
+	}
+	STATUS current
+	DESCRIPTION
+		"The operation of a fan in a switch has degraded and its condition has transitioned to degraded."
+	::= { sysmgmt 165522 }
+
+caSwitchPowerWarningEvent OBJECT IDENTIFIER ::= { traps 165523 }
+caSwitchPowerWarningTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caSwitchPsuUcsManagerId,
+		caSwitchPsuSwitchId,
+		caSwitchPsuId,
+		caSwitchPsuCondition
+	}
+	STATUS current
+	DESCRIPTION
+		"The operation of a power supply in a switch has degraded and its condition has transitioned to degraded."
+	::= { sysmgmt 165523 }
+
+caSwitchMgmtRemovedEvent OBJECT IDENTIFIER ::= { traps 165524 }
+caSwitchMgmtRemovedTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caSwitchUcsManagerId,
+		caSwitchIndex
+	}
+	STATUS current
+	DESCRIPTION
+		"A switch has been removed from management."
+	::= { sysmgmt 165524 }
+
+caSwitchChassisRemovedEvent OBJECT IDENTIFIER ::= { traps 165525 }
+caSwitchChassisRemovedTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caSwitchUcsManagerId,
+		caSwitchIndex,
+		caSwitchChassisId,
+		caSwitchSlotId
+	}
+	STATUS current
+	DESCRIPTION
+		"A switch that is contained in a chassis has been removed."
+	::= { sysmgmt 165525 }
+
+caUcsBladeInsufficientlyEquippedEvent OBJECT IDENTIFIER ::= { traps 165529 }
+caUcsBladeInsufficientlyEquippedTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caBladeUcsManagerId,
+		caBladeIndex,
+		caBladeChassisId,
+		caBladeSlotId
+	}
+	STATUS current
+	DESCRIPTION
+		"A blade in a chassis has determined itself to be insufficiently equipped to be able to perform the functions asked of it."
+	::= { sysmgmt 165529 }
+
+-- *****************************************************************************
+-- Remote Configuration Data
+-- *****************************************************************************
+caUcsRemoteConfigTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsRemoteConfigRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsRemoteConfig table."
+	::= { caRemoteConfiguration 1 }
+
+caUcsRemoteConfigEntry OBJECT-TYPE
+	SYNTAX CaUcsRemoteConfigRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsRemoteConfigId }
+	::= { caUcsRemoteConfigTable 1 }
+
+CaUcsRemoteConfigRow ::=
+	SEQUENCE {	
+	caUcsRemoteConfigId			Integer32,	
+	caUcsRemoteConfigManagerName		DisplayString,
+	caUcsRemoteConfigUserName		DisplayString,
+	caUcsRemoteConfigPassword		DisplayString,
+	caUcsRemoteConfigPort			DisplayString,
+	caUcsRemoteConfigProtocol		DisplayString,
+	caUcsRemoteConfigRowStatus		INTEGER,
+	caUcsRemoteConfigDataCacheStatus	INTEGER						
+	}
+	
+caUcsRemoteConfigId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"UCS Remote Configuration id"
+	::= { caUcsRemoteConfigEntry 1 }
+
+caUcsRemoteConfigManagerName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"Name of the UCS Manager."
+	::= { caUcsRemoteConfigEntry 2 }
+
+caUcsRemoteConfigUserName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"Remote Config Name of the UCS Manager User Name."
+	::= { caUcsRemoteConfigEntry 3 }
+
+caUcsRemoteConfigPassword OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"Remote Config Name of the UCS Manager User Password."
+	::= { caUcsRemoteConfigEntry 4 }
+
+caUcsRemoteConfigPort OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"Remote Config Name of the UCS Manager Port."
+	::= { caUcsRemoteConfigEntry 5 }
+
+caUcsRemoteConfigProtocol OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"Remote Config Name of the UCS Manager Protocol."
+	::= { caUcsRemoteConfigEntry 6 }
+
+caUcsRemoteConfigRowStatus OBJECT-TYPE
+	SYNTAX INTEGER
+    {
+        active(1),
+        notInService(2),
+        notReady(3),
+        createAndGo(4),
+        createAndWait(5),
+        destroy(6)
+    }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"Remote Config Name of the UCS Manager RowStatus."
+	DEFVAL { 6 }
+	::= { caUcsRemoteConfigEntry 7 }	
+
+caUcsRemoteConfigDataCacheStatus OBJECT-TYPE
+	SYNTAX INTEGER
+    {
+        ready(1),
+        notReady(2),
+        connectionFailed(3),
+        hostAuthenticationFailed(5),
+        unknownError(6)
+    }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"Data cache status"
+	DEFVAL { 2 }
+	::= { caUcsRemoteConfigEntry 8 }
+
+
+END

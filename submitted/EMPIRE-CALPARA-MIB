@@ -1,0 +1,2498 @@
+-- COPYRIGHT 2010 CA, Inc. ALL RIGHTS RESERVED.
+-- THIS DOCUMENT CONTAINS CONFIDENTIAL AND TRADE SECRET INFORMATION OF
+-- THE CA, Inc.  COPYRIGHT NOTICE IS PRECAUTIONARY
+-- ONLY AND DOES NOT IMPLY PUBLICATION.
+
+-- No part of this document may be reproduced, transmitted, transcribed,
+-- stored in a retrieval system, or translated into any language or
+-- computer language, in any form or by any means, without
+-- prior written consent of CA, Inc.
+
+
+EMPIRE-CALPARA-MIB DEFINITIONS ::= BEGIN
+    IMPORTS
+        MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE, Integer32, Gauge32, Counter64, enterprises
+            FROM SNMPv2-SMI
+        RowStatus, DisplayString
+            FROM SNMPv2-TC
+        SnmpAdminString
+            FROM SNMP-FRAMEWORK-MIB;
+
+------------------------------------------------------------
+--  LPAR MIB root OID is: 1.3.6.1.4.1.546.16.53
+------------------------------------------------------------
+calpara MODULE-IDENTITY
+    LAST-UPDATED "201009140000Z"
+    ORGANIZATION "CA Technologies"
+    CONTACT-INFO    
+        "One CA Plaza, Islandia, NY 11749, USA, www.ca.com/support"
+    DESCRIPTION
+        "This MIB is for IBM Logical Partition management.
+        It is implemented by the SystemEDGE AIM for LPAR Monitoring (calpara)."
+
+    REVISION "201009140000Z"
+    DESCRIPTION
+        "Deprecated status monitoring related attributes and trap definitions (see below)
+        Changed MIB to conform to the SMIv2
+        Changed lparAimLPAdd trap varbind (lparAimStatLPStatus instead lparAimStatLPState)
+        Added new attribute lparAimStatSysCpuUtilization
+        Using Counter64 for lparAimStatvDiskKBRead and lparAimStatvDiskKBWritten
+        Using SnmpAdminString for several attributes (I18N support)"
+
+    REVISION "201002240000Z"
+    DESCRIPTION
+        "Initial version of this MIB module (based on 11.7)."
+    ::= { applications 53 }
+
+empire       OBJECT IDENTIFIER ::= { enterprises 546 }
+unix         OBJECT IDENTIFIER ::= { empire 1 }
+traps        OBJECT IDENTIFIER ::= { empire 9 }
+applications OBJECT IDENTIFIER ::= { empire 16 }
+sysmgmt      OBJECT IDENTIFIER ::= { unix 1 }
+
+
+------------------------------------------------------------
+--  LPAR Top Level Groups
+------------------------------------------------------------
+
+lparAimGroup              OBJECT IDENTIFIER ::= { calpara 1 }    
+lparAimCfgGenGroup        OBJECT IDENTIFIER ::= { calpara 2 }
+lparAimStatGroup          OBJECT IDENTIFIER ::= { calpara 3 }
+
+lparAimStatSysGroup       OBJECT IDENTIFIER ::= { lparAimStatGroup 2 }
+lparAimStatLPGroup        OBJECT IDENTIFIER ::= { lparAimStatGroup 3 }
+lparAimStatSlotGroup      OBJECT IDENTIFIER ::= { lparAimStatGroup 4 }
+lparAimStatProfGroup      OBJECT IDENTIFIER ::= { lparAimStatGroup 5 }
+lparAimStatSysProfGroup   OBJECT IDENTIFIER ::= { lparAimStatGroup 6 }
+lparAimStatvSCSIGroup     OBJECT IDENTIFIER ::= { lparAimStatGroup 7 }
+lparAimStatvEthernetGroup OBJECT IDENTIFIER ::= { lparAimStatGroup 8 }
+lparAimStatvSerialGroup   OBJECT IDENTIFIER ::= { lparAimStatGroup 9 }
+lparAimStatvDiskGroup     OBJECT IDENTIFIER ::= { lparAimStatGroup 10 }
+
+
+------------------------------------------------------------
+--  LPAR Trap Definitions
+------------------------------------------------------------
+
+lparAimSysDownEvent                  OBJECT IDENTIFIER ::= { traps 165315 }
+lparAimSysDeleteEvent                OBJECT IDENTIFIER ::= { traps 165316 }
+lparAimSysAddEvent                   OBJECT IDENTIFIER ::= { traps 165317 }
+
+lparAimLPAddEvent                    OBJECT IDENTIFIER ::= { traps 165321 }
+lparAimLPDeleteEvent                 OBJECT IDENTIFIER ::= { traps 165322 }
+
+lparAimSlotAddEvent                  OBJECT IDENTIFIER ::= { traps 165340 }
+lparAimSlotDeleteEvent               OBJECT IDENTIFIER ::= { traps 165341 }
+lparAimSlotLPChangeEvent             OBJECT IDENTIFIER ::= { traps 165342 }
+
+lparAimProfAddEvent                  OBJECT IDENTIFIER ::= { traps 165350 }
+lparAimProfDeleteEvent               OBJECT IDENTIFIER ::= { traps 165351 }
+
+lparAimSysProfAddEvent               OBJECT IDENTIFIER ::= { traps 165360 }
+lparAimSysProfDeleteEvent            OBJECT IDENTIFIER ::= { traps 165361 }
+lparAimSysProfChangeEvent            OBJECT IDENTIFIER ::= { traps 165362 }
+
+lparAimVIOvSCSIAddEvent              OBJECT IDENTIFIER ::= { traps 165370 }
+lparAimVIOvSCSIDeleteEvent           OBJECT IDENTIFIER ::= { traps 165371 }
+lparAimVIOvEthernetAddEvent          OBJECT IDENTIFIER ::= { traps 165373 }
+lparAimVIOvEthernetDeleteEvent       OBJECT IDENTIFIER ::= { traps 165374 }
+lparAimVIOvSerialAddEvent            OBJECT IDENTIFIER ::= { traps 165375 }
+lparAimVIOvSerialDeleteEvent         OBJECT IDENTIFIER ::= { traps 165376 }
+
+lparAimInstanceAddEvent              OBJECT IDENTIFIER ::= { traps 165380 }
+lparAimInstanceDeleteEvent           OBJECT IDENTIFIER ::= { traps 165381 }
+lparAimInstanceDataStatusChangeEvent OBJECT IDENTIFIER ::= { traps 165382 }
+
+
+------------------------------------------------------------
+--  LPAR Deprecated Object Identifiers 
+------------------------------------------------------------
+
+--  The following Top Level OIDs, attributes and traps are deprecated.
+--  These OIDs resp. OIDs within these groups should no more be used.
+
+--  lparAimEventGroup                     OBJECT IDENTIFIER ::= { calpara 4 }
+--  lparAimStatGenGroup                   OBJECT IDENTIFIER ::= { lparAimStatGroup 1 }
+
+--  lparAimCfgGenLogLevel                 OBJECT-TYPE ::= { lparAimCfgGenGroup 5 }
+--  lparAimConfigGeneralTable             OBJECT-TYPE ::= { lparAimCfgGenGroup 6 }
+--  lparAimCfgGenVsysNameCIM              OBJECT-TYPE ::= { lparAimCfgGenGroup 7 }
+
+--  lparAimStatSysWarningCPUThreshold     OBJECT-TYPE ::= { lparAimStatSysEntry 28 }
+--  lparAimStatSysCriticalCPUThreshold    OBJECT-TYPE ::= { lparAimStatSysEntry 29 }
+--  lparAimStatSysWarningMemThreshold     OBJECT-TYPE ::= { lparAimStatSysEntry 30 }
+--  lparAimStatSysCriticalMemThreshold    OBJECT-TYPE ::= { lparAimStatSysEntry 31 }
+--  lparAimStatSysMonitor                 OBJECT-TYPE ::= { lparAimStatSysEntry 33 }
+--  lparAimStatSysAlertState              OBJECT-TYPE ::= { lparAimStatSysEntry 34 }
+--  lparAimStatSysState                   OBJECT-TYPE ::= { lparAimStatSysEntry 35 }
+--  lparAimStatSysCpuState                OBJECT-TYPE ::= { lparAimStatSysEntry 39 }
+
+--  lparAimStatLPCPUUsageWarningThresh    OBJECT-TYPE ::= { lparAimStatLPEntry 32 }
+--  lparAimStatLPCPUUsageCritThresh       OBJECT-TYPE ::= { lparAimStatLPEntry 33 }
+--  lparAimStatLPMemoryUsageWarningThresh OBJECT-TYPE ::= { lparAimStatLPEntry 36 }
+--  lparAimStatLPMemoryUsageCritThresh    OBJECT-TYPE ::= { lparAimStatLPEntry 37 }
+--  lparAimStatLPCPUState                 OBJECT-TYPE ::= { lparAimStatLPEntry 38 }
+--  lparAimStatLPMemoryState              OBJECT-TYPE ::= { lparAimStatLPEntry 39 }
+--  lparAimStatLPCPUAlert                 OBJECT-TYPE ::= { lparAimStatLPEntry 40 }
+--  lparAimStatLPMemoryAlert              OBJECT-TYPE ::= { lparAimStatLPEntry 41 }
+--  lparAimStatLPMonitor                  OBJECT-TYPE ::= { lparAimStatLPEntry 42 }
+--  lparAimStatLPAlertState               OBJECT-TYPE ::= { lparAimStatLPEntry 43 }
+--  lparAimStatLPCPUMonitor               OBJECT-TYPE ::= { lparAimStatLPEntry 44 }
+--  lparAimStatLPMemoryMonitor            OBJECT-TYPE ::= { lparAimStatLPEntry 45 }
+--  lparAimStatLPCPULagSetting            OBJECT-TYPE ::= { lparAimStatLPEntry 46 }
+--  lparAimStatLPCPULagValue              OBJECT-TYPE ::= { lparAimStatLPEntry 47 }
+--  lparAimStatLPCPUAggregateStatus       OBJECT-TYPE ::= { lparAimStatLPEntry 49 }
+--  lparAimStatLPState                    OBJECT-TYPE ::= { lparAimStatLPEntry 51 }
+--  lparAimStatLPMonitorBkp               OBJECT-TYPE ::= { lparAimStatLPEntry 55 }
+--  lparAimStatLPCPUMonitorBkp            OBJECT-TYPE ::= { lparAimStatLPEntry 56 }
+--  lparAimStatLPMemoryMonitorBkp         OBJECT-TYPE ::= { lparAimStatLPEntry 57 }
+
+--  lparAimStatSlotMonitor                OBJECT-TYPE ::= { lparAimStatSlotEntry 13 }
+--  lparAimStatSlotMonitorBkp             OBJECT-TYPE ::= { lparAimStatSlotEntry 14 }
+
+--  lparAimSysStateChangeEvent            OBJECT IDENTIFIER ::= { traps 165310 }
+--  lparAimSysCfgMonitorChangeEvent       OBJECT IDENTIFIER ::= { traps 165311 }
+--  lparAimSysCfgAlertChangeEvent         OBJECT IDENTIFIER ::= { traps 165312 }
+--  lparAimSysCPUThresholdChangeEvent     OBJECT IDENTIFIER ::= { traps 165313 }
+--  lparAimSysMEMThresholdChangeEvent     OBJECT IDENTIFIER ::= { traps 165314 }
+--  lparAimSysCpuStateChangeEvent         OBJECT IDENTIFIER ::= { traps 165318 }
+--  lparAimLPStateChangeEvent             OBJECT IDENTIFIER ::= { traps 165320 }
+--  lparAimLPMonitorEvent                 OBJECT IDENTIFIER ::= { traps 165323 }
+--  lparAimLPAlertEvent                   OBJECT IDENTIFIER ::= { traps 165324 }
+--  lparAimLPCPUMonitorEvent              OBJECT IDENTIFIER ::= { traps 165325 }
+--  lparAimLPMemoryMonitorEvent           OBJECT IDENTIFIER ::= { traps 165326 }
+--  lparAimLPCPULagSettingEvent           OBJECT IDENTIFIER ::= { traps 165327 }
+--  lparAimLPCPUWarnThresholdEvent        OBJECT IDENTIFIER ::= { traps 165328 }
+--  lparAimLPCPUCritThresholdEvent        OBJECT IDENTIFIER ::= { traps 165329 }
+--  lparAimLPMemoryWarnThresholdEvent     OBJECT IDENTIFIER ::= { traps 165330 }
+--  lparAimLPMemoryCritThresholdEvent     OBJECT IDENTIFIER ::= { traps 165331 }
+--  lparAimLPMemoryStateEven              OBJECT IDENTIFIER ::= { traps 165332 }
+--  lparAimLPCPUStateEvent                OBJECT IDENTIFIER ::= { traps 165333 }
+--  lparAimSlotMonitorChangeEvent         OBJECT IDENTIFIER ::= { traps 165343 }
+
+
+------------------------------------------------------------
+--  The LPAR System Instance Table
+------------------------------------------------------------
+
+lparAimInstanceCount OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Number of LPAR Instances in lparAimInstanceTable."
+::= {lparAimGroup 1}
+
+lparAimInstanceTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF LparAimInstanceRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "A table containing the LPAR Instances."
+::= { lparAimGroup 2 }
+
+lparAimInstanceEntry OBJECT-TYPE
+    SYNTAX LparAimInstanceRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The LPAR Instances Table entry."
+    INDEX { lparAimInstanceUID }
+::= { lparAimInstanceTable 1 }
+
+LparAimInstanceRow ::= SEQUENCE {
+    lparAimInstanceUID        Integer32,
+    lparAimInstanceName       DisplayString,
+    lparAimInstanceSysName    DisplayString,
+    lparAimInstanceHMCName    DisplayString,
+    lparAimInstanceUserName   SnmpAdminString,
+    lparAimInstancePassword   SnmpAdminString,
+    lparAimInstanceRowStatus  Integer32,
+    lparAimInstanceDataStatus Integer32
+}
+
+lparAimInstanceUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "LPAR Instance unique identifier."
+::= { lparAimInstanceEntry  1}
+
+lparAimInstanceName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(255))
+    MAX-ACCESS read-create
+    STATUS current
+    DESCRIPTION
+       "Name of the LPAR Instance."
+::= { lparAimInstanceEntry  2}
+
+lparAimInstanceSysName OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The name of the System."
+::= { lparAimInstanceEntry  3}
+
+lparAimInstanceHMCName OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-create
+    STATUS current
+    DESCRIPTION
+        "Host name of HMC console."
+::= { lparAimInstanceEntry  4}
+
+lparAimInstanceUserName OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-create
+    STATUS current
+    DESCRIPTION
+        "User name for connecting to the HMC console."
+::= { lparAimInstanceEntry  5}
+
+lparAimInstancePassword OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-create
+    STATUS current
+    DESCRIPTION
+        "Password for connecting to the HMC console."
+::= { lparAimInstanceEntry  6}
+
+lparAimInstanceRowStatus OBJECT-TYPE
+    SYNTAX RowStatus
+    MAX-ACCESS read-create
+    STATUS current
+    DESCRIPTION
+        "The row status according to the Textual Conventions for SMIv2 (see RFC 2579).
+        active(1)        - the row is available for usage
+        notInService(2)  - setting to this value disables usage of the row
+        notReady(3)      - an error occured during usage of the row
+        createAndGo(4)   - setting to this value creates the row with row status set to active(1)
+        createAndWait(5) - setting to this value creates the row with row status set to notInService(2)
+        destroy(6)       - setting to this value deletes the row"
+    DEFVAL { 5 }
+::= { lparAimInstanceEntry  7 }
+
+lparAimInstanceDataStatus OBJECT-TYPE
+    SYNTAX INTEGER {
+        ready(1),
+        notReady(2),
+        hostUnreachable(3),
+        authenticationFailed(4),
+        unknownError(5)
+    }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The status of data of the LPAR Instance (Server), i.e. status of Aim caches for the instance.
+        ready(1)                - data are ready in Aim cache, caches were populated
+        notReady(2)             - data are Not ready, caches were not populated yet
+        hostUnreachable(3)      - HMC host unreachable, data are kept in Aim caches
+        authenticationFailed(4) - authentication failed for HMC host, data are kept in Aim caches
+        unknownError(5)         - unknow error, data are kept in Aim caches"
+::= { lparAimInstanceEntry  8 }
+
+
+------------------------------------------------------------
+--  The LPAR Config General Group
+------------------------------------------------------------
+
+lparAimCfgGenPluginName OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The plugin name."
+::= { lparAimCfgGenGroup 1 }
+
+lparAimCfgGenPluginVer OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The currently installed version of the plugin."
+::= { lparAimCfgGenGroup 2 }
+
+lparAimCfgGenPollInterval OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "The time (in seconds) between the polling by the Agent.
+        Valid values are greater than or equal to 300 seconds."
+    DEFVAL { 300 }
+::= { lparAimCfgGenGroup 3 }
+
+lparAimCfgGenPluginHostName OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The host name on which this LPAR plugin is running."
+::= { lparAimCfgGenGroup 4 }
+
+
+------------------------------------------------------------
+-- The LPAR Statistic System Table
+------------------------------------------------------------
+
+lparAimStatSysTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF LparAimStatSysRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "A table containing the servers the LPAR Plugin monitors."
+::= { lparAimStatSysGroup 1 }
+
+lparAimStatSysEntry OBJECT-TYPE
+    SYNTAX LparAimStatSysRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The table entry of servers the LPAR Plugin monitors."
+    INDEX { lparAimStatSysInstanceUID }
+::= { lparAimStatSysTable 1 }
+
+LparAimStatSysRow ::= SEQUENCE {
+    lparAimStatSysInstanceUID      Integer32,
+    lparAimStatSysInstanceName     DisplayString,
+    lparAimStatSysName             DisplayString,
+    lparAimStatSysType             DisplayString,
+    lparAimStatSysStatus           Integer32,
+    lparAimStatSysSrNum            DisplayString,
+    lparAimStatSysModelType        DisplayString,
+    lparAimStatSysProdLine         DisplayString,
+    lparAimStatSysSPVer            DisplayString,
+    lparAimStatSysMaxPartition     Integer32,
+    lparAimStatSysProcInstalled    Integer32,
+    lparAimStatSysMemInstalled     Integer32,
+    lparAimStatSysFreeMem          Integer32,
+    lparAimStatSysCpuCODCapable    Integer32,
+    lparAimStatSysMemCODCapable    Integer32,
+    lparAimStatSysOS400Capable     Integer32,
+    lparAimStatSysMicroLPCapable   Integer32,
+    lparAimStatSysVirtualIOCapable Integer32,
+    lparAimStatSysLMBSize          Integer32,
+    lparAimStatSysLoad             Integer32,
+    lparAimStatSysFiveLoad         Integer32,
+    lparAimStatSysFifteenLoad      Integer32,
+    lparAimStatSysPhyProcConsumed  Integer32,
+    lparAimStatSysCPU              Integer32,
+    lparAimStatSysCPUAverage       Integer32,
+    lparAimStatSysMem              Integer32,
+    lparAimStatSysMemAverage       Integer32,
+    lparAimStatSysUnavailable      Integer32,
+    lparAimStatSysEntC             DisplayString,
+    lparAimStatHMCName             DisplayString,
+    lparAimStatSysCpuUtilization   DisplayString,
+    lparAimStatSysIP               DisplayString,
+    lparAimStatSysAllocMem         Integer32,
+    lparAimStatSysLparMem          Integer32,
+    lparAimStatSysAvailCPU         Integer32,
+    lparAimStatSysOpPanel          DisplayString
+}
+
+lparAimStatSysInstanceUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "LPAR Instance unique identifier."
+::= { lparAimStatSysEntry 1 }
+        
+lparAimStatSysInstanceName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The LPAR Plugin instance name."
+::= { lparAimStatSysEntry 2 }
+
+lparAimStatSysName OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The name of the System."
+::= { lparAimStatSysEntry 3 }
+
+lparAimStatSysType OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Type of the System. P4/P5/P6."
+::= { lparAimStatSysEntry 4 }
+
+lparAimStatSysStatus OBJECT-TYPE
+    SYNTAX INTEGER {
+        unknown(1),
+        initializing(2),
+        ready(3),
+        no-power(4),
+        error(5),
+        incomplete(6),
+        no-connection(7),
+        recovery(8),
+        version-mismatch(9),
+        cuod-cta(10),
+        operating(11)
+    }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Status of the System."
+::= { lparAimStatSysEntry 5 }
+
+lparAimStatSysSrNum OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Serial Number of the System."
+::= { lparAimStatSysEntry 6 }
+
+lparAimStatSysModelType OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Model type of the System."
+::= { lparAimStatSysEntry 7 }
+
+lparAimStatSysProdLine OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Product line of the System."
+::= { lparAimStatSysEntry 8 }
+
+lparAimStatSysSPVer OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Service Processor Version running on the System."
+::= { lparAimStatSysEntry 9 }
+
+lparAimStatSysMaxPartition OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Maximum number of logical partitions possible on the System."
+::= { lparAimStatSysEntry 10 }
+
+lparAimStatSysProcInstalled OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The number of processors installed on the System."
+::= { lparAimStatSysEntry 11 }
+
+lparAimStatSysMemInstalled OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The memory (MB) installed on the System."
+::= { lparAimStatSysEntry 12 }
+
+lparAimStatSysFreeMem OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The free memory ( MB ) available on the System."
+::= { lparAimStatSysEntry 13 }
+
+lparAimStatSysCpuCODCapable OBJECT-TYPE
+    SYNTAX INTEGER {
+        unknown(1),
+        yes(2),
+        no(3)
+    }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Indicates whether system is CPU Capacity On Demand capable."
+::= { lparAimStatSysEntry 14 }
+
+lparAimStatSysMemCODCapable OBJECT-TYPE
+    SYNTAX INTEGER {
+        unknown(1),
+        yes(2),
+        no(3)
+    }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Indicates whether system is Memory Capacity On Demand capable."
+::= { lparAimStatSysEntry 15 }
+
+lparAimStatSysOS400Capable OBJECT-TYPE
+    SYNTAX INTEGER {
+        unknown(1),
+        yes(2),
+        no(3)
+    }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Indicates whether system is OS400 capable."
+::= { lparAimStatSysEntry 16 }
+
+lparAimStatSysMicroLPCapable OBJECT-TYPE
+    SYNTAX INTEGER {
+        unknown(1),
+        yes(2),
+        no(3)
+    }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Indicates whether system is Micro LPAR capable."
+::= { lparAimStatSysEntry 17 }
+
+lparAimStatSysVirtualIOCapable OBJECT-TYPE
+    SYNTAX INTEGER {
+        unknown(1),
+        yes(2),
+        no(3)
+    }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Indicates whether system is Virtual IO capable."
+::= { lparAimStatSysEntry 18 }
+        
+lparAimStatSysLMBSize OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The size of one logical memory block (LMB), in megabytes."
+::= { lparAimStatSysEntry 19 }
+
+lparAimStatSysLoad  OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Managed System Partitions Average Load (Run queue size). Value is Average Load multiplied by 100"
+::= { lparAimStatSysEntry 20 }
+
+lparAimStatSysFiveLoad OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Managed System Partitions 5 minute Average Load (Run queue size). Value is Actual FiveLoad multiplied by 100"
+::= { lparAimStatSysEntry 21 }
+
+lparAimStatSysFifteenLoad OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Managed System Partitions 15 minute Average Load (Run queue size). Value is Actual FifteenLoad multiplied by 100"
+::= { lparAimStatSysEntry 22 }
+
+lparAimStatSysPhyProcConsumed OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The amount Physical Processor Consumed for whole system(not average)."
+::= { lparAimStatSysEntry 23 }
+
+lparAimStatSysCPU OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Managed System Partitions Overall CPU."
+::= { lparAimStatSysEntry 24 }
+
+lparAimStatSysCPUAverage OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Managed System Partitions Average CPU."
+::= { lparAimStatSysEntry 25 }
+
+lparAimStatSysMem OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Managed System Partitions Memory Usage."
+::= { lparAimStatSysEntry 26 }
+
+lparAimStatSysMemAverage OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Managed System Partitions Average Memory Usage."
+::= { lparAimStatSysEntry 27 }
+
+lparAimStatSysUnavailable OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Managed System Unavailable."
+::= { lparAimStatSysEntry 32 }
+
+lparAimStatSysEntC OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Average Entitlement Capacity for the running Partitions on this Managed System"
+::= { lparAimStatSysEntry 36 }
+
+lparAimStatHMCName OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "HMC name"
+::= { lparAimStatSysEntry 37 }
+
+lparAimStatSysCpuUtilization OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Managed System CPU Utilization in Percent"
+    ::= { lparAimStatSysEntry 38 }
+
+lparAimStatSysIP OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The IP Address of the system."
+::= { lparAimStatSysEntry 40 }
+
+lparAimStatSysAllocMem OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The allocted memory ( MB ) on the System."
+::= { lparAimStatSysEntry 41 }
+
+lparAimStatSysLparMem OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Memory available for partition creation (total installed - firmware used)."
+::= { lparAimStatSysEntry 42 }
+
+lparAimStatSysAvailCPU OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Available processor units"
+::= { lparAimStatSysEntry 43 }
+
+lparAimStatSysOpPanel OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The operations panel on the actual hardware unit."
+::= { lparAimStatSysEntry 44 }
+
+
+------------------------------------------------------------
+-- The LPAR Statistic Logical Partition Table
+------------------------------------------------------------
+
+lparAimStatLPCount OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The number of currently monitored logical partitions."
+::= { lparAimStatLPGroup 1 }
+
+lparAimStatLPTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF LparAimStatLPRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "A table containing the partitions which are being monitored."
+::= { lparAimStatLPGroup 2 }
+
+lparAimStatLPEntry OBJECT-TYPE
+    SYNTAX LparAimStatLPRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The table entry."
+    INDEX { lparAimStatLPInstanceUID, lparAimStatLPUID }
+::= { lparAimStatLPTable 1 }
+
+LparAimStatLPRow ::= SEQUENCE {
+    lparAimStatLPInstanceUID      Integer32,
+    lparAimStatLPInstanceName     DisplayString,
+    lparAimStatLPUID              Integer32,
+    lparAimStatLPId               Integer32,
+    lparAimStatLPName             SnmpAdminString,
+    lparAimStatLPDesc             SnmpAdminString,
+    lparAimStatLPProfile          SnmpAdminString,
+    lparAimStatLPStatus           Integer32,
+    lparAimStatLPCapable          Integer32,
+    lparAimStatLPProcMin          Integer32,
+    lparAimStatLPProcMax          Integer32,
+    lparAimStatLPProcCur          Integer32,
+    lparAimStatLPMemMin           Integer32,
+    lparAimStatLPMemMax           Integer32,
+    lparAimStatLPMemCur           Integer32,
+    lparAimStatLPLoad             Integer32,
+    lparAimStatLPFiveLoad         Integer32,
+    lparAimStatLPFifteenLoad      Integer32,
+    lparAimStatLPSharedProcPoolId DisplayString,
+    lparAimStatLPProcMode         DisplayString,
+    lparAimStatLPSharingMode      DisplayString,
+    lparAimStatLPIP               DisplayString,
+    lparAimStatLPNumCPUs          Integer32,
+    lparAimStatLPPhyProcConsumed  Integer32,
+    lparAimStatLPCPUPhyBusy       Integer32,
+    lparAimStatLPCPUIdle          Integer32,
+    lparAimStatLPCPUSysTime       Integer32,
+    lparAimStatLPCPUUserTime      Integer32,
+    lparAimStatLPCPUIOWait        Integer32,
+    lparAimStatLPNumLogicalCPU    Integer32,
+    lparAimStatLPCPUUsage         Gauge32,
+    lparAimStatLPLMB              Integer32,
+    lparAimStatLPMemoryUsage      Gauge32,
+    lparAimStatLPUnavailable      Integer32,
+    lparAimStatLPEntC             DisplayString,
+    lparAimStatLPNumDiskDrives    Integer32,
+    lparAimStatLPNumDrivePaths    Integer32,
+    lparAimStatLPNumVDisks        Integer32,
+    lparAimStatLPHostname         DisplayString,
+    lparAimStatLPOs               DisplayString,
+    lparAimStatLPMAC              DisplayString,
+    lparAimStatLPCurVProc         Integer32,
+    lparAimStatLPMaxVProc         Integer32,
+    lparAimStatLPMinVProc         Integer32,
+    lparAimStatLPOpPanel          DisplayString
+}
+
+lparAimStatLPInstanceUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "LPAR Instance unique identifier."
+::= { lparAimStatLPEntry 1 }
+
+lparAimStatLPInstanceName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The LPAR Plugin instance name."
+::= { lparAimStatLPEntry 2 }
+
+lparAimStatLPUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The unique identifier for the logical partition."
+::= { lparAimStatLPEntry 3 }
+
+lparAimStatLPId OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The identifier for the logical partition."
+::= { lparAimStatLPEntry 4 }
+
+lparAimStatLPName OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The name of the logical partition."
+::= { lparAimStatLPEntry 5 }
+
+lparAimStatLPDesc OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The description for this watcher."
+::= { lparAimStatLPEntry 6 }
+
+lparAimStatLPProfile OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The profile associated with the logical partition."
+::= { lparAimStatLPEntry 7 }
+
+lparAimStatLPStatus OBJECT-TYPE
+    SYNTAX INTEGER {
+        unknown(1),
+        ready(2),
+        starting(3),
+        running(4),
+        error(5),
+        not-activated(6),
+        open-firmware(7)
+    }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The status of logical partition."
+::= { lparAimStatLPEntry 8}
+
+lparAimStatLPCapable OBJECT-TYPE
+    SYNTAX INTEGER {
+        unknown(1),
+        yes(2),
+        no(3)
+    }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The flag indicating if the logical Partition is DLPAR capable."
+::= { lparAimStatLPEntry 9 }
+
+lparAimStatLPProcMin OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The minimum number of processing units that needs to be allocated to the logical partition."
+::= { lparAimStatLPEntry 10 }
+
+lparAimStatLPProcMax OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The maximum number of processing units that can be allocated to the logical partition."
+::= { lparAimStatLPEntry 11 }
+
+lparAimStatLPProcCur OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The current number of processing units that is allocated to the logical partition."
+::= { lparAimStatLPEntry 12 }
+
+lparAimStatLPMemMin OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The minimum amount of memory in MB that needs to be allocated to the logical partition."
+::= { lparAimStatLPEntry 13 }
+
+lparAimStatLPMemMax OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The maximum amount of memory in MB that can be allocated to the logical partition."
+::= { lparAimStatLPEntry 14 }
+
+lparAimStatLPMemCur OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The current amount of memory in MB that is allocated to the logical partition."
+::= { lparAimStatLPEntry 15 }
+
+lparAimStatLPLoad  OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Load Average of the logical partition. Value is Actual Load multiplied by 100"
+::= { lparAimStatLPEntry 16 }
+
+lparAimStatLPFiveLoad  OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The 5-minute Load Average of the logical partition. Value is Actual FiveLoad multiplied by 100"
+::= { lparAimStatLPEntry 17 }
+         
+lparAimStatLPFifteenLoad  OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The 15-minute Load Average of the logical partition. Value is Actual FifteenLoad multiplied by 100"
+::= { lparAimStatLPEntry 18 }
+
+lparAimStatLPSharedProcPoolId OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The shared processor pool id number of the logical partition."
+::= { lparAimStatLPEntry 19 }
+
+lparAimStatLPProcMode OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Processor mode of the logical partition."
+::= { lparAimStatLPEntry 20 }
+
+lparAimStatLPSharingMode OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Sharing Mode of the logical partition."
+::= { lparAimStatLPEntry 21 }
+
+lparAimStatLPIP OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The IP Address of the logical partition."
+::= { lparAimStatLPEntry 22 }
+
+lparAimStatLPNumCPUs  OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The processing units of the logical partition. Value displayed multiplied by 100."
+::= { lparAimStatLPEntry 23 }
+
+lparAimStatLPPhyProcConsumed OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The physical processor consumed by the logical partition (summation not average)."
+::= { lparAimStatLPEntry 24 }
+
+lparAimStatLPCPUPhyBusy  OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The percentage of time (over the sample period) the logical partition CPU was busy."
+::= { lparAimStatLPEntry 25 }
+
+lparAimStatLPCPUIdle  OBJECT-TYPE
+    SYNTAX Integer32 (0..100)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The percentage of time (over the sample period) the CPU of the logical partition was idle.
+        This value is only available for Virtual I/O server."
+::= { lparAimStatLPEntry 26 }
+
+lparAimStatLPCPUSysTime  OBJECT-TYPE
+    SYNTAX Integer32 (0..100)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The percentage of time (over the sample period) the CPU of logical partition was executing kernel
+        or operating system. This value is only available for Virtual I/O server."
+::= { lparAimStatLPEntry 27 }
+
+lparAimStatLPCPUUserTime  OBJECT-TYPE
+    SYNTAX Integer32 (0..100)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The percentage of time (over the sample period) the CPU of logical partition was executing in
+        user mode. This value is only available for Virtual I/O server."
+::= { lparAimStatLPEntry 28 }
+
+lparAimStatLPCPUIOWait  OBJECT-TYPE
+    SYNTAX Integer32 (0..100)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The percentage of time (over the sample period) the CPU of logical partition was waiting for I/O.
+        This value is only available for Virtual I/O server."
+::= { lparAimStatLPEntry 29 }
+
+lparAimStatLPNumLogicalCPU  OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The number of allocated logical CPU to the logical partition.
+        This value is only available forVirtual I/O server."
+::= { lparAimStatLPEntry 30 }
+
+lparAimStatLPCPUUsage OBJECT-TYPE
+    SYNTAX Gauge32 (0..100)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The CPU usage of the LPAR."
+::= { lparAimStatLPEntry 31 }
+
+lparAimStatLPLMB OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Number of Logical Memory Blocks allocated to the logical partition."
+::= { lparAimStatLPEntry 34 }
+
+lparAimStatLPMemoryUsage OBJECT-TYPE
+    SYNTAX Gauge32 (0..100)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The memory usage of the logical partition."
+::= { lparAimStatLPEntry 35 }
+
+lparAimStatLPUnavailable OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Partition Unavailable."
+    ::= { lparAimStatLPEntry 48 }
+
+lparAimStatLPEntC  OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The percentage of entitle capacity consumed by the partition.
+        This value is available if the partition is running with shared processor.
+        Since the time base over which this data is computed vary, this value can
+        sometimes exceed 100%. This excess is noticed only for small sampling period."
+    ::= { lparAimStatLPEntry 50 }
+
+lparAimStatLPNumDiskDrives OBJECT-TYPE
+    SYNTAX Integer32    
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Number of Disk Drives in the partition.
+        This value is only available for Virtual I/O server."
+    ::= { lparAimStatLPEntry 52 }
+
+lparAimStatLPNumDrivePaths OBJECT-TYPE
+    SYNTAX Integer32    
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Number of Drive Paths in the partition.
+        This value is only available for Virtual I/O server."
+    ::= { lparAimStatLPEntry 53 }
+
+lparAimStatLPNumVDisks OBJECT-TYPE
+    SYNTAX Integer32    
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Number of Virtual Disks in the partition.
+        This value is only available for Virtual I/O server."
+    ::= { lparAimStatLPEntry 54 }
+
+lparAimStatLPHostname  OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The host name of the OS running on the system."
+    ::= { lparAimStatLPEntry 58 }
+
+lparAimStatLPOs  OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Installed OS version UNIX(aix/linux) / VIO Server."
+    ::= { lparAimStatLPEntry 59 }
+
+lparAimStatLPMAC  OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The partition's MAC address."
+    ::= { lparAimStatLPEntry 60 }
+
+lparAimStatLPCurVProc OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The desired number of virtual processors allocated to the shared mode partition."
+    ::= { lparAimStatLPEntry 61 }
+
+lparAimStatLPMaxVProc OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The max number of virtual processors allocated to the shared mode partition."
+    ::= { lparAimStatLPEntry 62 }
+
+lparAimStatLPMinVProc OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The minimum number of virtual processors allocated to the shared mode partition."
+    ::= { lparAimStatLPEntry 63 }
+
+lparAimStatLPOpPanel OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The operations panel of the partition."
+    ::= { lparAimStatLPEntry 64 }
+
+
+------------------------------------------------------------
+-- The LPAR Statistic Slot Table
+------------------------------------------------------------
+
+lparAimStatSlotCount OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The number of currently monitored Slots."
+::= { lparAimStatSlotGroup 1 }
+
+lparAimStatSlotTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF LparAimStatSlotRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "A table containing the Slots which are being monitored."
+::= { lparAimStatSlotGroup 2 }
+
+lparAimStatSlotEntry OBJECT-TYPE
+    SYNTAX LparAimStatSlotRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The table entry."
+    INDEX { lparAimStatSlotInstanceUID, lparAimStatSlotUID }
+::= { lparAimStatSlotTable 1 }
+
+LparAimStatSlotRow ::= SEQUENCE {
+    lparAimStatSlotInstanceUID    Integer32,
+    lparAimStatSlotInstanceName   DisplayString,
+    lparAimStatSlotUID            Integer32,
+    lparAimStatSlotDRCName        DisplayString,
+    lparAimStatSlotDRCIndex       Integer32,
+    lparAimStatSlotName           DisplayString,
+    lparAimStatSlotDrawer         DisplayString,
+    lparAimStatSlotPartition      SnmpAdminString,
+    lparAimStatSlotType           SnmpAdminString,
+    lparAimStatSlotId             DisplayString,
+    lparAimStatSlotVendor         SnmpAdminString,
+    lparAimStatSlotParentDRCIndex DisplayString
+}
+
+lparAimStatSlotInstanceUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "LPAR Instance unique identifier."
+::= { lparAimStatSlotEntry 1 }
+
+lparAimStatSlotInstanceName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The LPAR plugin instance name."
+::= { lparAimStatSlotEntry 2 }
+
+lparAimStatSlotUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Slot unique identifier."
+::= { lparAimStatSlotEntry 3 }
+
+lparAimStatSlotDRCName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The DRC name of the slot."
+::= { lparAimStatSlotEntry 4 }
+
+lparAimStatSlotDRCIndex OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The DRC Index the slot."
+::= { lparAimStatSlotEntry 5 }
+
+lparAimStatSlotName OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The name of the Slot."
+::= { lparAimStatSlotEntry 6 }
+
+lparAimStatSlotDrawer OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The drawer the slot belongs to."
+::= { lparAimStatSlotEntry 7 }
+
+lparAimStatSlotPartition OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The partition the slot is assigned."
+::= { lparAimStatSlotEntry 8 }
+
+lparAimStatSlotType OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The type of the slot."
+::= { lparAimStatSlotEntry 9 }
+
+lparAimStatSlotId OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The ID of the slot."
+::= { lparAimStatSlotEntry 10 }
+
+lparAimStatSlotVendor OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Vendor of the slot."
+::= { lparAimStatSlotEntry 11 }
+
+lparAimStatSlotParentDRCIndex OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The parent DRC Index the slot."
+::= { lparAimStatSlotEntry 12 }
+
+
+------------------------------------------------------------
+-- The LPAR Statistic Profile Table
+------------------------------------------------------------
+
+lparAimStatProfCount OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The number of profiles on the System."
+::= { lparAimStatProfGroup 1 }
+
+lparAimStatProfTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF LparAimStatProfRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "A table containing the Profiles which are being monitored."
+::= { lparAimStatProfGroup 2 }
+
+lparAimStatProfEntry OBJECT-TYPE
+    SYNTAX LparAimStatProfRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The table entry."
+    INDEX { lparAimStatProfInstanceUID, lparAimStatProfUID }
+::= { lparAimStatProfTable 1 }
+
+LparAimStatProfRow ::= SEQUENCE {
+    lparAimStatProfInstanceUID  Integer32,
+    lparAimStatProfInstanceName DisplayString,
+    lparAimStatProfUID          Integer32,
+    lparAimStatProfName         SnmpAdminString,
+    lparAimStatProfSlot         DisplayString,
+    lparAimStatProfLP           SnmpAdminString,
+    lparAimStatProfDeflt        DisplayString,
+    lparAimStatProfMaxCPU       Integer32,
+    lparAimStatProfMinCPU       Integer32,
+    lparAimStatProfDesCPU       Integer32,
+    lparAimStatProfMaxMem       Integer32,
+    lparAimStatProfMinMem       Integer32,
+    lparAimStatProfDesMem       Integer32,
+    lparAimStatProfBootMod      DisplayString,
+    lparAimStatProfProcMode     DisplayString,
+    lparAimStatProfSharingMode  DisplayString
+}
+
+lparAimStatProfInstanceUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "LPAR Instance unique identifier."
+::= { lparAimStatProfEntry 1 }
+        
+lparAimStatProfInstanceName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The LPAR plugin instance name."
+::= { lparAimStatProfEntry 2 }
+
+lparAimStatProfUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The unique identifier of the profile."
+::= { lparAimStatProfEntry 3 }
+
+lparAimStatProfName OBJECT-TYPE
+    SYNTAX SnmpAdminString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The name of the Profile."
+::= { lparAimStatProfEntry 4 }
+
+lparAimStatProfSlot OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The slot for the Profile."
+::= { lparAimStatProfEntry 5 }
+
+lparAimStatProfLP OBJECT-TYPE
+    SYNTAX SnmpAdminString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The partition to which the profile is associated with."
+::= { lparAimStatProfEntry 6 }
+
+lparAimStatProfDeflt OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Is the profile a default profile for the partition."
+::= { lparAimStatProfEntry 7 }
+
+lparAimStatProfMaxCPU OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Maximum number of processors that partition can have."
+::= { lparAimStatProfEntry 8 }
+
+lparAimStatProfMinCPU OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Minimum number of processors that partition should have."
+::= { lparAimStatProfEntry 9 }
+
+lparAimStatProfDesCPU OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Desired number of processors that partition should have."
+::= { lparAimStatProfEntry 10 }
+
+lparAimStatProfMaxMem OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Maximum memory ( MB ) that partition can have."
+::= { lparAimStatProfEntry 11 }
+
+lparAimStatProfMinMem OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Minimum memory (MB) that partition should have."
+::= { lparAimStatProfEntry 12 }
+
+lparAimStatProfDesMem OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Desired memory ( MB ) that partition should have."
+::= { lparAimStatProfEntry 13 }
+
+lparAimStatProfBootMod OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The Boot mode of the partition."
+::= { lparAimStatProfEntry 14 }
+
+lparAimStatProfProcMode OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The processor mode."
+::= { lparAimStatProfEntry 15 }
+
+lparAimStatProfSharingMode OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The sharing mode."
+::= { lparAimStatProfEntry 16 }
+
+
+------------------------------------------------------------
+-- THE LPAR Statistic System Profile Table
+------------------------------------------------------------
+
+lparAimStatSysProfCount OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The number of system profiles on the System."
+::= { lparAimStatSysProfGroup 1 }
+
+lparAimStatSysProfTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF LparAimStatSysProfRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "A table containing the system profiles."
+::= { lparAimStatSysProfGroup 2 }
+
+lparAimStatSysProfEntry OBJECT-TYPE
+    SYNTAX LparAimStatSysProfRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The table entry."
+    INDEX { lparAimStatSysProfInstanceUID, lparAimStatSysProfUID }
+::= { lparAimStatSysProfTable 1 }
+
+LparAimStatSysProfRow ::= SEQUENCE {
+    lparAimStatSysProfInstanceUID  Integer32,
+    lparAimStatSysProfInstanceName DisplayString,
+    lparAimStatSysProfUID          Integer32,
+    lparAimStatSysProfName         SnmpAdminString,
+    lparAimStatSysProfProfiles     SnmpAdminString,
+    lparAimStatSysProfPartitions   SnmpAdminString
+}
+
+lparAimStatSysProfInstanceUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "LPAR Instance unique identifier."
+::= { lparAimStatSysProfEntry 1 }
+
+lparAimStatSysProfInstanceName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The LPAR Plugin instance."
+::= { lparAimStatSysProfEntry 2 }
+
+lparAimStatSysProfUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The System Profile's unique identifier."
+::= { lparAimStatSysProfEntry 3 }
+
+lparAimStatSysProfName OBJECT-TYPE
+    SYNTAX SnmpAdminString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The name of the System Profile."
+::= { lparAimStatSysProfEntry 4 }
+
+lparAimStatSysProfProfiles OBJECT-TYPE
+    SYNTAX SnmpAdminString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The profiles that belong to the System Profile."
+::= { lparAimStatSysProfEntry 5 }
+
+lparAimStatSysProfPartitions OBJECT-TYPE
+    SYNTAX SnmpAdminString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The partitions the system profile is associated with."
+::= { lparAimStatSysProfEntry 6 }
+
+
+------------------------------------------------------------
+-- The LPAR Statistic Virtual SCSI Table
+------------------------------------------------------------
+
+lparAimStatvSCSICount OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The number of virtual SCSI devices hosted in the system."
+::= { lparAimStatvSCSIGroup 1 }
+
+lparAimStatvSCSITable OBJECT-TYPE
+    SYNTAX SEQUENCE OF LparAimStatvSCSIRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "A table containing the virtual SCSI devices."
+::= { lparAimStatvSCSIGroup 2 }
+
+lparAimStatvSCSIEntry OBJECT-TYPE
+    SYNTAX LparAimStatvSCSIRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The table entry."
+    INDEX { lparAimStatvSCSIInstanceUID, lparAimStatvSCSIUID }
+::= { lparAimStatvSCSITable 1 }
+
+LparAimStatvSCSIRow ::= SEQUENCE {
+    lparAimStatvSCSIInstanceUID       Integer32,
+    lparAimStatvSCSIInstanceName      DisplayString,
+    lparAimStatvSCSIUID               Integer32,
+    lparAimStatvSCSILPAR              SnmpAdminString,
+    lparAimStatvSCSILPARID            DisplayString,
+    lparAimStatvSCSISlotNum           DisplayString,
+    lparAimStatvSCSIAdapterType       SnmpAdminString,
+    lparAimStatvSCSIRemoteLPARID      DisplayString,
+    lparAimStatvSCSIRemoteLPAR        SnmpAdminString,
+    lparAimStatvSCSIRemoteLPARSlotNum DisplayString,
+    lparAimStatvSCSIIsRequired        DisplayString,
+    lparAimStatvSCSIBackingDevice     DisplayString
+}
+
+lparAimStatvSCSIInstanceUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The LPAR Plugin instance name."
+::= { lparAimStatvSCSIEntry 1 }
+
+lparAimStatvSCSIInstanceName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The LPAR Plugin instance name."
+::= { lparAimStatvSCSIEntry 2 }
+
+lparAimStatvSCSIUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The VSCSI's unique identifier."
+::= { lparAimStatvSCSIEntry 3 }
+
+lparAimStatvSCSILPAR OBJECT-TYPE
+    SYNTAX SnmpAdminString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The name of the LPAR the virtual SCSI device is being hosted on."
+::= { lparAimStatvSCSIEntry 4 }
+
+lparAimStatvSCSILPARID OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The ID of the LPAR the virtual SCSI device is being hosted on."
+::= { lparAimStatvSCSIEntry 5 }
+
+lparAimStatvSCSISlotNum OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The virtual SCSI device's slot number"
+::= { lparAimStatvSCSIEntry 6 }
+
+lparAimStatvSCSIAdapterType OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The type of virtual SCSI adapter"
+::= { lparAimStatvSCSIEntry 7 }
+
+lparAimStatvSCSIRemoteLPARID OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The remote LPAR ID that is allowed to connect to this virtual SCSI device"
+::= { lparAimStatvSCSIEntry 8 }
+
+lparAimStatvSCSIRemoteLPAR OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The name of the remote LPAR that is allowed to connect to this virtual SCSI device"
+::= { lparAimStatvSCSIEntry 9 }
+
+lparAimStatvSCSIRemoteLPARSlotNum OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The slot number of the remote LPAR that is allowed to connect to this virtual SCSI device"
+::= { lparAimStatvSCSIEntry 10 }
+
+lparAimStatvSCSIIsRequired OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Indicates if the virtual SCSI device is required for the logical partition.
+        Valid values are yes and no."
+::= { lparAimStatvSCSIEntry 11 }
+
+lparAimStatvSCSIBackingDevice OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The backing physical device for this virtual SCSI device"
+::= { lparAimStatvSCSIEntry 12 }
+
+
+------------------------------------------------------------
+-- The LPAR Statistic Virtual Ethernet Table
+------------------------------------------------------------
+
+lparAimStatvEthernetCount OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The number of virtual Ethernet devices hosted in the system."
+::= { lparAimStatvEthernetGroup 1 }
+
+lparAimStatvEthernetTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF LparAimStatvEthernetRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "A table containing the virtual Ethernet devices."
+::= { lparAimStatvEthernetGroup 2 }
+
+lparAimStatvEthernetEntry OBJECT-TYPE
+    SYNTAX LparAimStatvEthernetRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The table entry."
+    INDEX { lparAimStatvEthernetInstanceUID, lparAimStatvEthernetUID }
+::= { lparAimStatvEthernetTable 1 }
+
+LparAimStatvEthernetRow ::= SEQUENCE {
+    lparAimStatvEthernetInstanceUID    Integer32,
+    lparAimStatvEthernetInstanceName   DisplayString,
+    lparAimStatvEthernetUID            Integer32,
+    lparAimStatvEthernetLPAR           SnmpAdminString,
+    lparAimStatvEthernetLPARID         DisplayString,
+    lparAimStatvEthernetSlotNum        DisplayString,
+    lparAimStatvEthernetIEEE           DisplayString,
+    lparAimStatvEthernetPortVLAN       DisplayString,
+    lparAimStatvEthernetAdditionalVLAN DisplayString,
+    lparAimStatvEthernetIsTrunk        DisplayString,
+    lparAimStatvEthernetIsRequired     DisplayString,
+    lparAimStatvEthernetMACAddress     DisplayString
+}
+
+lparAimStatvEthernetInstanceUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The virtual Ethernet's unique identifier."
+::= { lparAimStatvEthernetEntry 1 }
+
+lparAimStatvEthernetInstanceName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The LPAR Plugin instance name."
+::= { lparAimStatvEthernetEntry 2 }
+
+lparAimStatvEthernetUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The VEthernet's unique identifier."
+::= { lparAimStatvEthernetEntry 3 }
+
+lparAimStatvEthernetLPAR OBJECT-TYPE
+    SYNTAX SnmpAdminString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The name of the LPAR the virtual Ethernet device is being hosted on."
+::= { lparAimStatvEthernetEntry 4 }
+
+lparAimStatvEthernetLPARID OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The ID of the LPAR the virtual Ethernet device is being hosted on."
+::= { lparAimStatvEthernetEntry 5 }
+
+lparAimStatvEthernetSlotNum OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The virtual Ethernet device's slot number"
+::= { lparAimStatvEthernetEntry 6 }
+
+lparAimStatvEthernetIEEE OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Indicates if the adapter is an IEEE 802.1Q compatible adapter"
+::= { lparAimStatvEthernetEntry 7 }
+
+lparAimStatvEthernetPortVLAN OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The virtual LAN the virtual Ethernet is connected to"
+::= { lparAimStatvEthernetEntry 8 }
+
+lparAimStatvEthernetAdditionalVLAN OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Additional virtual LANs the virtual Ethernet is connected to"
+::= { lparAimStatvEthernetEntry 9 }
+
+lparAimStatvEthernetIsTrunk OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Indicates if the virtual Ethernet adapter is the trunk or uplink adapter for the virtual LAN.
+        Valid values are yes and no."
+::= { lparAimStatvEthernetEntry 10 }
+
+lparAimStatvEthernetIsRequired OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Indicates if the virtual Ethernet device is required for the logical partition.
+        Valid values are yes and no."
+::= { lparAimStatvEthernetEntry 11 }
+
+lparAimStatvEthernetMACAddress OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The MAC address of the virtual Ethernet device"
+::= { lparAimStatvEthernetEntry 12 }
+
+
+------------------------------------------------------------
+-- The LPAR Statistic Virtual Serial Table
+------------------------------------------------------------
+
+lparAimStatvSerialCount OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The number of virtual serial devices hosted in the system."
+::= { lparAimStatvSerialGroup 1 }
+
+lparAimStatvSerialTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF LparAimStatvSerialRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "A table containing the virtual serial devices."
+::= { lparAimStatvSerialGroup 2 }
+
+lparAimStatvSerialEntry OBJECT-TYPE
+    SYNTAX LparAimStatvSerialRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The table entry."
+    INDEX { lparAimStatvSerialInstanceUID, lparAimStatvSerialUID }
+::= { lparAimStatvSerialTable 1 }
+
+LparAimStatvSerialRow ::= SEQUENCE {
+    lparAimStatvSerialInstanceUID   Integer32,
+    lparAimStatvSerialInstanceName  DisplayString,
+    lparAimStatvSerialUID           Integer32,
+    lparAimStatvSerialLPAR          SnmpAdminString,
+    lparAimStatvSerialLPARID        DisplayString,
+    lparAimStatvSerialSlotNum       DisplayString,
+    lparAimStatvSerialAdapterType   SnmpAdminString,
+    lparAimStatvSerialSupportsHMC   DisplayString,
+    lparAimStatvSerialRemoteLPARID  DisplayString,
+    lparAimStatvSerialRemoteLPAR    SnmpAdminString,
+    lparAimStatvSerialRemoteSlotNum DisplayString,
+    lparAimStatvSerialIsRequired    DisplayString
+}
+
+lparAimStatvSerialInstanceUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "LPAR Instance unique identifier."
+::= { lparAimStatvSerialEntry 1 }
+
+lparAimStatvSerialInstanceName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The LPAR plugin instance name."
+::= { lparAimStatvSerialEntry 2 }
+
+lparAimStatvSerialUID OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The virtual SCSI's unique identifier."
+::= { lparAimStatvSerialEntry 3 }
+
+lparAimStatvSerialLPAR OBJECT-TYPE
+    SYNTAX SnmpAdminString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The name of the LPAR the virtual serial device is being hosted on."
+::= { lparAimStatvSerialEntry 4 }
+
+lparAimStatvSerialLPARID OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The ID of the LPAR the virtual serial device is being hosted on."
+::= { lparAimStatvSerialEntry 5 }
+
+lparAimStatvSerialSlotNum OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The virtual serial device's slot number"
+::= { lparAimStatvSerialEntry 6 }
+
+lparAimStatvSerialAdapterType OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The type of virtual serial device"
+::= { lparAimStatvSerialEntry 7 }
+
+lparAimStatvSerialSupportsHMC OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Indicates if the serial device can be used by an HMC"
+::= { lparAimStatvSerialEntry 8 }
+
+lparAimStatvSerialRemoteLPARID OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The identifier of the remote partition the virtual serial device is associated with."
+::= { lparAimStatvSerialEntry 9 }
+
+lparAimStatvSerialRemoteLPAR OBJECT-TYPE
+    SYNTAX SnmpAdminString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The remote LPAR that is allowed to connect to this virtual serial device"
+::= { lparAimStatvSerialEntry 10 }
+
+lparAimStatvSerialRemoteSlotNum OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The remote LPAR's slot number that is allowed to connect to this virtual serial device"
+::= { lparAimStatvSerialEntry 11 }
+
+lparAimStatvSerialIsRequired OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Indicates if the virtual Serial device is required for the logical partition.
+        Valid values are yes and no."
+::= { lparAimStatvSerialEntry 12 }
+
+
+------------------------------------------------------------
+-- The LPAR Statistic Virtual Disk Table
+------------------------------------------------------------
+
+lparAimStatvDiskCount OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The number of physical disk on Virtual I/O Server. Only those disks are displayed,
+        which has PhysicalVolume parameter specified."
+::= { lparAimStatvDiskGroup 1 }
+
+lparAimStatvDiskTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF LparAimStatvDiskRow
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "A table containing the physical disks."
+::= { lparAimStatvDiskGroup 2 }
+
+lparAimStatvDiskEntry OBJECT-TYPE
+    SYNTAX LparAimStatvDiskRow 
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The table entry."
+    INDEX { lparAimStatvDiskInstanceUID, lparAimStatvDiskUID }
+::= { lparAimStatvDiskTable 1 }
+
+LparAimStatvDiskRow ::= SEQUENCE {
+    lparAimStatvDiskInstanceUID   Integer32,
+    lparAimStatvDiskInstanceName  DisplayString,
+    lparAimStatvDiskUID           Integer32,
+    lparAimStatvDiskLPARID        DisplayString,
+    lparAimStatvDiskLPAR          SnmpAdminString,
+    lparAimStatvDiskName          DisplayString,
+    lparAimStatvDiskActivePercent Integer32,
+    lparAimStatvDiskKBPS          Integer32,
+    lparAimStatvDiskTPS           Integer32,
+    lparAimStatvDiskKBRead        Counter64,
+    lparAimStatvDiskKBWritten     Counter64
+}
+
+lparAimStatvDiskInstanceUID  OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "LPAR Instance unique identifier."
+::= { lparAimStatvDiskEntry 1 }
+
+lparAimStatvDiskInstanceName  OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Name of LPAR Instance."
+::= { lparAimStatvDiskEntry 2 }
+
+lparAimStatvDiskUID  OBJECT-TYPE
+    SYNTAX Integer32 (1..2147483647)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The unique identifier of physical disk."
+::= { lparAimStatvDiskEntry 3 }
+
+lparAimStatvDiskLPARID  OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "LPAR identification number to which this disk belongs to."
+::= { lparAimStatvDiskEntry 4 }
+
+lparAimStatvDiskLPAR  OBJECT-TYPE
+    SYNTAX SnmpAdminString 
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "LPAR name to which this disk belongs to."
+::= { lparAimStatvDiskEntry 5 }
+
+lparAimStatvDiskName  OBJECT-TYPE
+    SYNTAX DisplayString (SIZE(20))
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The name of physical disk."
+::= { lparAimStatvDiskEntry 6 }
+
+lparAimStatvDiskActivePercent  OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The percentage of time the physical disk was active(bandwidth utilization for the drive)."
+::= { lparAimStatvDiskEntry 7 }
+
+lparAimStatvDiskKBPS  OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The amount of data transferred (read or written) to the drive in KB per second."
+::= { lparAimStatvDiskEntry 8 }
+
+lparAimStatvDiskTPS  OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The number of transfers per second that were issued to the physical disk.
+        A transfer is an I/O request to the physical disk. Multiple logical requests can be
+        combined into a single I/O request to the disk. A transfer is of indeterminate size."
+::= { lparAimStatvDiskEntry 9 }
+
+lparAimStatvDiskKBRead  OBJECT-TYPE
+    SYNTAX Counter64
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Total number of KB read."
+::= { lparAimStatvDiskEntry 10 }
+
+lparAimStatvDiskKBWritten  OBJECT-TYPE
+    SYNTAX Counter64
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "Total number of KB written."
+::= { lparAimStatvDiskEntry 11 }
+
+
+------------------------------------------------------------
+--  LPAR Deprecated TRAP-TYPE Definitions 
+------------------------------------------------------------
+
+--  The following traps are deprecated.
+--  These trap numbers should no more be used.
+
+--  lparAimSysStateChangeTrap    TRAP-TYPE ::= 165310
+--  lparAimSysCfgMonitorChange   TRAP-TYPE ::= 165311
+--  lparAimSysCfgAlertChange     TRAP-TYPE ::= 165312
+--  lparAimSysCPUThresholdChange TRAP-TYPE ::= 165313
+--  lparAimSysMEMThresholdChange TRAP-TYPE ::= 165314
+--  lparAimSysCpuStateChange     TRAP-TYPE ::= 165318
+
+--  lparAimLPStateChange         TRAP-TYPE ::= 165320
+--  lparAimLPMonitor             TRAP-TYPE ::= 165323
+--  lparAimLPAlert               TRAP-TYPE ::= 165324
+--  lparAimLPCPUMonitor          TRAP-TYPE ::= 165325
+--  lparAimLPMemoryMonitor       TRAP-TYPE ::= 165326
+--  lparAimLPCPULagSetting       TRAP-TYPE ::= 165327
+--  lparAimLPCPUWarnThreshold    TRAP-TYPE ::= 165328
+--  lparAimLPCPUCritThreshold    TRAP-TYPE ::= 165329
+--  lparAimLPMemoryWarnThreshold TRAP-TYPE ::= 165330
+--  lparAimLPMemoryCritThreshold TRAP-TYPE ::= 165331
+--  lparAimLPMemoryState         TRAP-TYPE ::= 165332
+--  lparAimLPCPUState            TRAP-TYPE ::= 165333
+
+--  lparAimSlotMonitorChange     TRAP-TYPE ::= 165343
+
+
+------------------------------------------------------------
+-- The System TRAP-TYPE Definitions
+------------------------------------------------------------
+
+lparAimSysDown NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName,
+        lparAimStatHMCName,
+        lparAimStatSysType
+    }
+    STATUS current
+    DESCRIPTION
+        "The system down trap."
+::= { sysmgmt 165315 }
+
+lparAimSysDelete NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName,
+        lparAimStatHMCName,
+        lparAimStatSysType
+    }
+    STATUS current
+    DESCRIPTION
+        "The system delete trap."
+::= { sysmgmt 165316 }
+
+lparAimSysAdd NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName,
+        lparAimStatHMCName,
+        lparAimStatSysType
+    }
+    STATUS current
+    DESCRIPTION
+        "The system added trap."
+::= { sysmgmt 165317 }
+
+
+------------------------------------------------------------
+-- The LPAR NOTIFICATION-TYPE Definitions
+------------------------------------------------------------
+
+lparAimLPAdd NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName,
+        lparAimStatLPName,
+        lparAimStatLPStatus,
+        lparAimStatHMCName,
+        lparAimStatLPId,
+        lparAimStatSysType,
+        lparAimStatLPUID
+    }
+    STATUS current
+    DESCRIPTION
+        "The LP added trap."
+::= { sysmgmt 165321 }
+
+lparAimLPDelete NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName,
+        lparAimStatLPName,
+        lparAimStatHMCName,
+        lparAimStatLPId,
+        lparAimStatSysType,
+        lparAimStatLPUID
+    }
+    STATUS current
+    DESCRIPTION
+        "The LP deleted Trap."
+::= { sysmgmt 165322 }
+
+
+------------------------------------------------------------
+-- The Slot NOTIFICATION-TYPE Definitions
+------------------------------------------------------------
+
+lparAimSlotAdd NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatSlotDRCName,
+        lparAimStatSlotId,
+        lparAimStatSlotType,
+        lparAimStatSlotPartition
+    }
+    STATUS current
+    DESCRIPTION
+        "The Slot added trap."
+::= { sysmgmt 165340 }
+
+lparAimSlotDelete NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatSlotDRCName
+    }
+    STATUS current
+    DESCRIPTION
+        "The Slot deleted trap."
+::= { sysmgmt 165341 }
+
+lparAimSlotLPChange NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatSlotDRCName,
+        lparAimStatSlotId,
+        lparAimStatSlotType,
+        lparAimStatSlotPartition
+    }
+    STATUS current
+    DESCRIPTION
+        "The Slot partition change trap."
+::= { sysmgmt 165342 }
+
+
+------------------------------------------------------------
+-- The Profile NOTIFICATION-TYPE Definitions
+------------------------------------------------------------
+
+lparAimProfAdd NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatProfName,
+        lparAimStatProfLP
+    }
+    STATUS current
+    DESCRIPTION
+        "The profile added trap."
+::= { sysmgmt 165350 }
+
+lparAimProfDelete NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatProfName,
+        lparAimStatProfLP
+    }
+    STATUS current
+    DESCRIPTION
+        "The profile deleted trap."
+::= { sysmgmt 165351 }
+
+
+------------------------------------------------------------
+-- The System Profile NOTIFICATION-TYPE Definitions
+------------------------------------------------------------
+
+lparAimSysProfAdd NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatSysProfName,
+        lparAimStatSysProfPartitions
+    }
+    STATUS current
+    DESCRIPTION
+        "The system profile added trap."
+::= { sysmgmt 165360 }
+
+lparAimSysProfDelete NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatSysProfName,
+        lparAimStatSysProfPartitions
+    }
+    STATUS current
+    DESCRIPTION
+        "The system profile deleted trap."
+::= { sysmgmt 165361 }
+
+lparAimSysProfChange NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatSysProfName,
+        lparAimStatSysProfPartitions
+    }
+    STATUS current
+    DESCRIPTION
+        "The system profile change trap."
+::= { sysmgmt 165362 }
+
+
+------------------------------------------------------------
+-- The Virtial IO NOTIFICATION-TYPE Definitions
+------------------------------------------------------------
+
+lparAimVIOvSCSIAdd NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatvSCSILPAR,
+        lparAimStatvSCSILPARID,
+        lparAimStatvSCSISlotNum,
+        lparAimStatvSCSIAdapterType,
+        lparAimStatvSCSIRemoteLPAR,
+        lparAimStatvSCSIRemoteLPARSlotNum,
+        lparAimStatvSCSIIsRequired,
+        lparAimStatvSCSIBackingDevice,
+        lparAimStatvSCSIUID
+    }
+    STATUS current
+    DESCRIPTION
+        "The VIO Server SCSI added trap."
+::= { sysmgmt 165370 }
+
+lparAimVIOvSCSIDelete NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatvSCSILPAR,
+        lparAimStatvSCSIAdapterType,
+        lparAimStatvSCSISlotNum,
+        lparAimStatvSCSIUID
+    }
+    STATUS current
+    DESCRIPTION
+        "The VIO Server SCSI deleted trap."
+::= { sysmgmt 165371 }
+
+lparAimVIOvEthernetAdd NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatvEthernetLPAR,
+        lparAimStatvEthernetLPARID,
+        lparAimStatvEthernetSlotNum,
+        lparAimStatvEthernetIEEE,
+        lparAimStatvEthernetPortVLAN,
+        lparAimStatvEthernetAdditionalVLAN,
+        lparAimStatvEthernetIsTrunk,
+        lparAimStatvEthernetIsRequired,
+        lparAimStatvEthernetMACAddress,
+        lparAimStatvEthernetUID
+    }
+    STATUS current
+    DESCRIPTION
+        "The VIO Server Ethernet added trap."
+::= { sysmgmt 165373 }
+
+lparAimVIOvEthernetDelete NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatvEthernetLPAR,        
+        lparAimStatvEthernetSlotNum,
+        lparAimStatvEthernetUID
+    }
+    STATUS current
+    DESCRIPTION
+        "The VIO Server Ethernet deleted trap."
+::= { sysmgmt 165374 }
+
+lparAimVIOvSerialAdd NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatvSerialLPAR,
+        lparAimStatvSerialLPARID,
+        lparAimStatvSerialSlotNum,
+        lparAimStatvSerialAdapterType,
+        lparAimStatvSerialSupportsHMC,
+        lparAimStatvSerialRemoteLPARID,
+        lparAimStatvSerialRemoteLPAR,
+        lparAimStatvSerialRemoteSlotNum,
+        lparAimStatvSerialIsRequired
+    }
+    STATUS current
+    DESCRIPTION
+        "The VIO Server Serial added trap."
+::= { sysmgmt 165375 }
+
+lparAimVIOvSerialDelete NOTIFICATION-TYPE
+    OBJECTS { 
+        lparAimStatSysName, 
+        lparAimStatvSerialLPAR,
+        lparAimStatvSerialAdapterType,
+        lparAimStatvSerialSlotNum
+    }
+    STATUS current
+    DESCRIPTION
+        "The VIO Server Serial deleted trap."
+::= { sysmgmt 165376 }
+
+
+------------------------------------------------------------
+-- The System Instance NOTIFICATION-TYPE Definitions
+------------------------------------------------------------
+
+lparAimInstanceAddTrap NOTIFICATION-TYPE
+    OBJECTS {
+        lparAimInstanceUID,
+        lparAimInstanceName,
+        lparAimInstanceSysName,
+        lparAimInstanceHMCName,
+        lparAimInstanceDataStatus
+    } 
+    STATUS current
+    DESCRIPTION
+        "LPAR Instance added trap. This trap will be sent when a new LPAR Instance is added,
+        and data in Aim caches were updated according to that change."
+::= { sysmgmt 165380 }
+
+lparAimInstanceDeleteTrap NOTIFICATION-TYPE
+    OBJECTS {
+        lparAimInstanceUID,
+        lparAimInstanceName,
+        lparAimInstanceSysName,
+        lparAimInstanceHMCName,
+        lparAimInstanceDataStatus
+    } 
+    STATUS current
+    DESCRIPTION
+        "LPAR Instance deleted trap. This trap will be sent when a LPAR Instance is deleted,
+        and data in Aim caches were updated according to that change."
+::= { sysmgmt 165381 }
+
+lparAimInstanceDataStatusChangeTrap NOTIFICATION-TYPE
+    OBJECTS {
+        lparAimInstanceUID,
+        lparAimInstanceName,
+        lparAimInstanceSysName,
+        lparAimInstanceHMCName,
+        lparAimInstanceDataStatus
+    } 
+    STATUS current
+    DESCRIPTION
+        "LPAR Instance data status change trap. This trap will be sent when data status of
+        LPAR Instance is changed, and data in Aim caches were updated according to that change.
+        The first DataStatus var is an old value, the second one holds a new value."
+::= { sysmgmt 165382 }
+
+
+END

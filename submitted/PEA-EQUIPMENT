@@ -1,0 +1,2868 @@
+PEA-EQUIPMENT DEFINITIONS ::= BEGIN 
+
+IMPORTS
+    pea                                                       
+        FROM PEA-SMI 
+
+    -- standar X.733 header for the traps       
+    managedObjectClass, 
+    managedObjectInstance, 
+    sequenceNumber, 
+    perceivedSeverity, 
+    eventTime, 
+    eventTypePem, 
+    probableCause  
+        FROM PEM-STANDARD 
+    
+    TruthValue,
+    DisplayString,
+    MacAddress,
+    TEXTUAL-CONVENTION
+        FROM SNMPv2-TC
+
+    InterfaceIndex,
+    ifIndex         
+        FROM IF-MIB
+        
+    MODULE-IDENTITY,  
+    OBJECT-TYPE, 
+    NOTIFICATION-TYPE,
+    Integer32,
+    Unsigned32,
+    IpAddress
+        FROM SNMPv2-SMI
+
+--     pethMainPseConsumptionPower,
+--     pethPsePortDetectionStatus
+--        FROM POWER-ETHERNET-MIB
+
+--     alarmIndex, 
+--     alarmVariable, 
+--     alarmSampleType, 
+--     alarmValue,  
+--     alarmRisingThreshold,
+--     alarmFallingThreshold
+--         FROM RMON-MIB
+        
+    OBJECT-GROUP, NOTIFICATION-GROUP
+        FROM SNMPv2-CONF;
+           
+peaEquipment  MODULE-IDENTITY
+    LAST-UPDATED 
+         "200508161200Z"
+    ORGANIZATION
+         "Ericsson Danmark A/S"
+    CONTACT-INFO
+         "
+         Ericsson Diax
+         Faelledvej 17
+         DK-7600 Struer
+         Denmark
+         
+         E-mail: diax.support@ericsson.com
+         "       
+   DESCRIPTION
+         "
+         The public ethernet access software supports a number of standard 
+         and proprietary MIBs. This MIB module defines objects for reading/writing
+         common equipment information.           
+         "                                                           
+         
+    ::= { pea 1 }
+    
+commonObjects             OBJECT IDENTIFIER ::= { peaEquipment  1 }
+commonTraps               OBJECT IDENTIFIER ::= { peaEquipment  2 }
+
+traps                     OBJECT IDENTIFIER ::= { commonTraps  0 }
+trapsParameters           OBJECT IDENTIFIER ::= { commonTraps  1 }
+
+versions                  OBJECT IDENTIFIER ::= { commonObjects 1 }
+mainProcessor             OBJECT IDENTIFIER ::= { commonObjects 2 }
+temperature               OBJECT IDENTIFIER ::= { commonObjects 3 }
+fansStatus                OBJECT IDENTIFIER ::= { commonObjects 4 }
+alarmFilter               OBJECT IDENTIFIER ::= { commonObjects 5 }
+configurationData         OBJECT IDENTIFIER ::= { commonObjects 6 }
+upgradeSW                 OBJECT IDENTIFIER ::= { commonObjects 7 }
+
+
+-- commonObjects between 8 and 14 are used below
+identificationData        OBJECT IDENTIFIER ::= { commonObjects 15 }
+-- commonObjects between 16 and 19 are used below
+peaMultilink              OBJECT IDENTIFIER ::= { commonObjects 20 }
+-- commonObjects 15 used below
+
+deviceIdData            OBJECT IDENTIFIER ::= { identificationData 1 }
+microProcessorIdData    OBJECT IDENTIFIER ::= { identificationData 2 }
+analogueFrontEndIdData  OBJECT IDENTIFIER ::= { identificationData 3 }
+dcDcConverterIdData     OBJECT IDENTIFIER ::= { identificationData 4 }
+
+
+--pethObjects             OBJECT IDENTIFIER ::= { peaEquipment  3 }
+--pethNotifications       OBJECT IDENTIFIER ::= { peaEquipment  4 }
+--pethNotificationTypes   OBJECT IDENTIFIER ::= { pethNotifications 0 }
+
+
+ifObjects               OBJECT IDENTIFIER ::= { peaEquipment 5  }
+ifNotifications         OBJECT IDENTIFIER ::= { peaEquipment 6  }
+ifNotificationTypes     OBJECT IDENTIFIER ::= { ifNotifications 0   }
+
+-- Mib Groups ...   
+peaEquipmentMibGroups   OBJECT IDENTIFIER ::= { peaEquipment 7  } 
+
+-- SNMP v2 notification
+snmpv2Notifications       OBJECT IDENTIFIER ::= { peaEquipment 8  }   
+snmpv2NotificationsTypes  OBJECT IDENTIFIER ::= { snmpv2Notifications 0  }
+-- Bridge notifications
+bridgeNotifications       OBJECT IDENTIFIER ::= { peaEquipment 9  } 
+bridgeNotificationsTypes  OBJECT IDENTIFIER ::= { bridgeNotifications 0  }
+--RMON notifications
+rmonNotifications         OBJECT IDENTIFIER ::= { peaEquipment 10  } 
+rmonNotificationsTypes    OBJECT IDENTIFIER ::= { rmonNotifications 0  }
+
+PhyModeType ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT "1x"
+    STATUS       current
+    DESCRIPTION
+            "Represent the Ethernet PHY Mode."
+    SYNTAX       OCTET STRING (SIZE (1))
+
+--************************************************************************
+-- Equipment Information
+--************************************************************************
+
+sysId OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "This value includes the full name and version
+     identification of the node software."
+    ::= { versions 1 }    
+ 
+bootSwId OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "This value includes the full name and version
+     identification of the BOOT software."
+    ::= { versions 2 } 
+
+cfgVer OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The CfgVer will initially be zero, but is set to
+     the version number defined in the configuration file 
+     received from the tftp server at system start-up. The 
+     management system may use this version number to verify 
+     that the unit contains the correct configuration 
+     parameter values. The management system may update the 
+     version number when configuration parameters are modified."
+    ::= { versions 3 }
+
+activeSwInfo OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "This value represents the software version of the active software part of the node."
+    ::= { versions 4 }
+
+passiveSwInfo OBJECT-TYPE
+    SYNTAX      DisplayString 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "This value represents the software version of the passive software part of the node."
+    ::= { versions 5 } 
+
+--************************************************************************
+-- common performance statistics
+--************************************************************************
+
+processorLoad OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..100)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The percentage of time that the main processor was not idle.
+     Average over 10 seconds. (almost like hrProcessorLoad in RFC1514)."
+    ::= { mainProcessor 1 }
+
+memFree OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..100)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The amount of free memory on main processor in percent."
+    ::= { mainProcessor 2 }
+    
+memFreeBytes OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The amount of free memory on main processor in bytes."
+    ::= { mainProcessor 3 }
+    
+memBuffersUsed OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The total number of memory buffers currently used (Ethernet, ATM & local IP-stack)."
+    ::= { mainProcessor 4 }    
+
+--************************************************************************
+-- temperature and state of fans
+--************************************************************************
+
+tempControlState OBJECT-TYPE
+    SYNTAX      INTEGER {low(0), normal(1), high(2), tooHigh(3)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The state of the temperature control can be:
+     0 - Low
+     1 - Normal
+     2 - High
+     3 - TooHigh"
+    ::= { temperature 1 }
+
+tempValue OBJECT-TYPE
+    SYNTAX      Integer32 (1..150)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The temperature value in the node in deg. Celsius."
+    ::= { temperature 2 }
+          
+greenFanStatus OBJECT-TYPE
+    SYNTAX      INTEGER {failed(0), working(1)}
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The status of the fan which is placed closest to the green LED.
+     For ESN310/ECN320/ECN330, green fan is the fan placed near the front.
+     Made deprecated. Use the greenFanPerfStatus parameter instead."
+    ::= { fansStatus 1 }
+
+redFanStatus OBJECT-TYPE
+    SYNTAX      INTEGER {failed(0), working(1)}
+    MAX-ACCESS  read-only
+    STATUS      deprecated
+    DESCRIPTION
+    "The status of the fan which is placed closest to the red LED.
+     For ESN310/ECN320/ECN330, red fan is the fan placed near the rear.
+     Made deprecated. Use the redFanPerfStatus parameter instead."
+    ::= { fansStatus 2 }
+
+greenFanSpeed OBJECT-TYPE
+    SYNTAX      Unsigned32 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The speed of the fan, which is placed closest to the
+     green LED, measured in rpm (revolutions per minute).
+     For ESN310/ECN320/ECN330, green fan is the fan placed near the front." 
+    ::= { fansStatus 3 } 
+    
+redFanSpeed OBJECT-TYPE
+    SYNTAX      Unsigned32 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The speed of the fan, which is placed closest to the
+     red LED, measured in rpm (revolutions per minute).
+     For ESN310/ECN320/ECN330, red fan is the fan placed near the rear." 
+    ::= { fansStatus 4 }
+
+greenFanPerfStatus OBJECT-TYPE
+    SYNTAX      INTEGER {failed(1), poor(2), good (3)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The performance status of the fan which is placed closest to the green LED.
+     For ESN310/ECN320/ECN330, green fan is the fan placed near the front."
+    ::= { fansStatus 5 }
+
+redFanPerfStatus OBJECT-TYPE
+    SYNTAX      INTEGER {failed(1), poor(2), good (3)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The performance status of the fan which is placed closest to the red LED.
+     For ESN310/ECN320/ECN330, red fan is the fan placed near the rear."
+    ::= { fansStatus 6 }
+    
+
+--************************************************************************
+-- Actions
+--************************************************************************
+
+hideInternalInterfaces OBJECT-TYPE
+    SYNTAX      INTEGER { off (0), on (1) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The management system can chose to hide all interfaces (RFC1233/RFC2233)
+    that are irrelevant in the PEM network view (HP OpenView issue).
+     If 0, Don't hide any interfaces.
+     If 1, Hide internal interfaces (for example loopback and ATM interfaces)."  
+    ::= { commonObjects 8} 
+
+restart OBJECT-TYPE
+    SYNTAX      INTEGER {restart(1)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "When set to 'restart' the node restarts, which includes 
+    loading the SW image and configuration data from the server. 
+    In this way a new SW version can be loaded and/or the configu-
+    ration data can be updated." 
+    ::= { commonObjects 9 }    
+
+ledsAltBlink OBJECT-TYPE
+    SYNTAX      INTEGER {on(1), off(0)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "When the ledsAltBlink is set to ON(1) the
+     LEDs will start to blink alternatively."
+    ::= { commonObjects 10 }
+
+startCfgVerification OBJECT-TYPE
+    SYNTAX      INTEGER {success(0), verify(1), verificationInProgress(2), noAnswerFromDHCP(3), noAnswerFromTFTP(4)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "When startCfgVerification is set to verify(1) the node makes a DHCP renew and retrieves
+    the configuration file from the address of the server just received from DHCP.
+    The parameters contained in the configuration file overwrites the current settings.
+    The status of the last issued verification can be read out by reading this MIB variable." 
+    ::= { commonObjects 11 }
+
+saveCfgToNvm OBJECT-TYPE
+    SYNTAX      INTEGER { success (0), start(1), saveInProgress (2), failure (3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "When saveCfgToNvm is set to start(1) the device saves the configuration data parameters to NVM.
+     Using GET command the current (inProgress) or last known state (success or failure) are 
+     displayed." 
+    ::= { commonObjects 12 }    
+
+cfgVerificationInterval OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This is the time in minutes between configuration file verification.
+     If the value is zero the configuration verification is disabled." 
+    ::= { commonObjects 13 }
+
+notifyType OBJECT-TYPE
+    SYNTAX      INTEGER { trap(1), inform (2)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Set the type of the notify sent by the node:
+     1. Trap
+     2. Inform" 
+    ::= { commonObjects 14 }
+
+sntpServerIP OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The IP address of SNTP server used for time synchronization." 
+    ::= { commonObjects 16 }                        
+
+snmpKeepAliveTimerTime OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The interval between SNMP KeepAlive checks." 
+    ::= { commonObjects 17 }                        
+    
+allowBroadcastToDux OBJECT-TYPE
+    SYNTAX      INTEGER { false(0), true(1) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Enables/disables broadcast to DUX (broadcast beacons).
+     When the IP DSLAM is restarted one broadcast to DUX is always sent, hereafter
+     allowBroadcastToDux determines whether broadcast to DUX are sent on a regular
+     basis. In default settings the broadcast to DUX is enabled.
+     
+     Note: It is not recommended to disable broadcast to DUX because it might result in reboot of
+           EDA nodes due to expire of the 'Keep-alive Timer'. For more details consult the Users
+           Guide."
+    ::= { commonObjects 18 }
+
+comboConnector OBJECT-TYPE
+    SYNTAX      INTEGER { mounted (1), notMounted (2) }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Tell if a combo connector is mounted for this board."  
+    ::= { commonObjects 21} 
+
+blockUnit OBJECT-TYPE
+    SYNTAX      INTEGER { block (1), unblock (2) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Block this unit. When blocked:
+      - no user traffic is carried out
+      - no alarms are issued
+      - it does not allow any configuration
+
+     Getting a card out of blocked state can be done by either
+     sending a restart request to it (MIB or Reset-On-Lan) or
+     by dismouting and mounting it again.
+     Setting state to unblock will be ignored.
+    "  
+    ::= { commonObjects 22} 
+    
+--************************************************************************
+-- alarm filter parameters
+--************************************************************************
+comAlarmFilter  OBJECT-TYPE
+    SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This alarm filter will filter out all communication 
+     alarms with lower severity than the selected.
+     For example: Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    ::= { alarmFilter 1 }
+
+envAlarmFilter  OBJECT-TYPE
+    SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This alarm filter will filter out all environment 
+     alarms with lower severity than the selected.
+     For example: Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    ::= { alarmFilter 2 }
+
+equipAlarmFilter  OBJECT-TYPE
+    SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This alarm filter will filter out all equipment 
+     alarms with lower severity than the selected.
+     For example: Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    ::= { alarmFilter 3 }
+    
+processAlarmFilter  OBJECT-TYPE
+    SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This alarm filter will filter out all processing 
+     alarms with lower severity than the selected.
+     For example: Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    DEFVAL { major }
+    ::= { alarmFilter 4 }
+    
+qosAlarmFilter  OBJECT-TYPE
+    SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This alarm filter will filter out all quality 
+     alarms with lower severity than the selected.
+     For example: Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    DEFVAL { major }
+    ::= { alarmFilter 5 }      
+
+alarmFilterThres OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      obsolete
+    DESCRIPTION
+    "The threshold value indicates how many alarms that can be filtered by the
+     node in the time interval indicated by the alarmFilterInterval parameter
+     before an alarm is sent. If set to 0, the functionality is disabled."
+    ::= { alarmFilter 6 } 
+
+alarmFilterInterval OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS   "sec"
+    MAX-ACCESS  read-write
+    STATUS      obsolete
+    DESCRIPTION
+    "The value of this parameter indicates the time interval in which the node
+     can filter a number of alarms indicated by the alarmFilterThres parameter
+     before an alarm is sent. If set to 0, the functionality is disabled."
+    ::= { alarmFilter 7 } 
+
+--************************************************************************
+-- Configuration Data
+--************************************************************************
+
+localMacAddr OBJECT-TYPE
+    SYNTAX      MacAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Unique MAC address of the node."
+    ::= { configurationData 1 }
+
+phyMode OBJECT-TYPE
+    SYNTAX      PhyModeType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Ethernet PHY Mode setting.
+     The Phy Mode is coded as a bitfield:
+     *  Bit 0: Auto-negotiation. If set, auto-negotiation is OFF else ON.
+     *  Bit 2: Full Duplex control. If set, full duplex operation is NOT allowed.
+     *  Bit 3: 100 Mbit/s control. If set, 100 Mbit/s operation is NOT allowed.
+     *  Bit 4: Half Duplex control. If set, half duplex operation is NOT allowed
+     *  Bit 5: 10 Mbit/s control. If set, 10 Mbit/s operation is NOT allowed.
+     Examples of PHY Mode values:
+     *  0x00: Full auto-negotiation.
+     *  0x20: 100 Mbit/s only. Auto-negotiation between half & full duplex.
+     *  0x31: Fixed 100 Mbit/s, full duplex only operation.
+     *  0x25: Fixed 100 Mbit/s, half duplex only operation
+    "
+    ::= { configurationData 2 }
+ 
+watchDogEnable OBJECT-TYPE
+    SYNTAX      INTEGER { off (0), on (1) }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Enabling of the HW Watchdog.
+     If 0 (zero), the watchdog is OFF, 
+     else the watchdog is ON."
+    ::= { configurationData 3 }
+
+vlanId OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..4095)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The VLAN ID setting for the management VLAN."  
+    ::= { configurationData 5 }     
+    
+vlanPrio OBJECT-TYPE
+    SYNTAX      Unsigned32 (0..7)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Specifies the IEEE 802.1Q priority used for the management VLAN."  
+    ::= { configurationData 6 }     
+      
+vlanTagging OBJECT-TYPE
+    SYNTAX      INTEGER { off (0), on (1) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "If 0, VLAN tagging is off, meaning that VLAN is not used.
+     If 1, VLAN tagging is used, with the given ID and Prio."  
+    ::= { configurationData 7 } 
+    
+bootString OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (0..255))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Text commands for the bootloader."
+    ::= { configurationData 8 }
+
+    
+--************************************************************************
+-- Upgrade Software
+--************************************************************************
+
+swFileName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The filename to upload to the node.
+     The path to this file is in the root directory that is specified in the FTP server"
+    ::= { upgradeSW 1 }    
+
+uploadSW OBJECT-TYPE
+    SYNTAX      INTEGER {  success (0), uploadSwWithRestart (1), uploadSwWithoutRestart (2),
+                           uploadInProgress (3), failure (4) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Upload new application software to device.
+    The file which is loaded is indicated by the swFileName parameter.
+    1 - upload SW to the device and restart afterwards.
+    2 - upload SW to the device without restarting.
+    Using GET command the current (inProgress) or last known state (success or failure) are 
+    displayed."
+    ::= { upgradeSW 2 }    
+
+bootSwFileName OBJECT-TYPE
+    SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The filename of a boot sw image located on the domain file server. This file
+     name is used by the uploadBootSw."
+    ::= { upgradeSW 3 }
+
+uploadBootSw OBJECT-TYPE
+    SYNTAX      INTEGER { success (0), start (1), uploadInProgress (2), failure (3) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Upload new boot software to this device. The boot sw image must be named by the
+     bootSwFileName parameter and located on the domain file server, which is the next-server
+     in the DHCP offer.
+     Using GET command the current (inProgress) or last known state (success or failure) are 
+     displayed."
+    ::= { upgradeSW 4 }    
+  
+    
+--************************************************************************
+-- Device identification data
+--************************************************************************
+
+productNumber OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Index number that identifies the node."
+    ::= { deviceIdData 1 }    
+          
+revisionState OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     For example: different types of components or new boot SW."
+    ::= { deviceIdData 2 }    
+    
+functionDesignation OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { deviceIdData 3 }    
+
+dateOfProduction OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { deviceIdData 4 }
+    
+dateOfRepair OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+   ::= { deviceIdData 5 }
+
+productionSerialNumber OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { deviceIdData 6 }
+    
+layoutVersionCode OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { deviceIdData 7 }  
+    
+idCheckSum OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "CRC32 Checksum of identification data structure 
+     of the node."
+    ::= { deviceIdData 8 }
+     
+--************************************************************************
+-- MicroProcessor board identification data
+--************************************************************************
+
+productNumberMicroProcessor OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Index number that identifies the MicroProcessor board."
+    ::= { microProcessorIdData 1 }    
+          
+revisionStateMicroProcessor OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     For example: different types of components or new boot SW."
+    ::= { microProcessorIdData 2 }    
+    
+functionDesignationMicroProcessor OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { microProcessorIdData 3 }    
+
+dateOfProductionMicroProcessor OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { microProcessorIdData 4 }
+    
+dateOfRepairMicroProcessor OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { microProcessorIdData 5 }
+
+productionSerialNumberMicroProcessor OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { microProcessorIdData 6 }
+    
+layoutVersionCodeMicroProcessor OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { microProcessorIdData 7 }  
+    
+idCheckSumMicroProcessor OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "CRC32 Checksum of identification data structure
+     for the MicroProcessor board."
+    ::= { microProcessorIdData 8 }        
+
+--************************************************************************
+-- Analogue Front End board identification data
+--************************************************************************
+productNumberAnalogueFrontEnd OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Index number that identifies the AFE board."
+    ::= { analogueFrontEndIdData 1 }    
+          
+revisionStateAnalogueFrontEnd OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     For example: different types of components or new boot SW."
+    ::= { analogueFrontEndIdData 2 }    
+    
+functionDesignationAnalogueFrontEnd OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { analogueFrontEndIdData 3 }    
+
+dateOfProductionAnalogueFrontEnd OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { analogueFrontEndIdData 4 }
+    
+dateOfRepairAnalogueFrontEnd OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { analogueFrontEndIdData 5 }
+
+productionSerialNumberAnalogueFrontEnd OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { analogueFrontEndIdData 6 }
+    
+layoutVersionCodeAnalogueFrontEnd OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { analogueFrontEndIdData 7 }  
+    
+idCheckSumAnalogueFrontEnd OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "CRC32 Checksum of identification data structure
+     for the Analogue Front End board."
+    ::= { analogueFrontEndIdData 8 }        
+
+--************************************************************************
+-- DC-DC Converter board identification data
+--************************************************************************
+productNumberDcDcConverter OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Index number that identifies the DC-DC Converter board."
+    ::= { dcDcConverterIdData 1 }    
+          
+revisionStateDcDcConverter OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     For example: different types of components or new boot SW."
+    ::= { dcDcConverterIdData 2 }    
+    
+functionDesignationDcDcConverter OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { dcDcConverterIdData 3 }    
+
+dateOfProductionDcDcConverter OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { dcDcConverterIdData 4 }
+    
+dateOfRepairDcDcConverter OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+        Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+        Month (1..12)- 1 byte
+        Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { dcDcConverterIdData 5 }
+
+productionSerialNumberDcDcConverter OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { dcDcConverterIdData 6 }
+    
+layoutVersionCodeDcDcConverter OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { dcDcConverterIdData 7 }  
+    
+idCheckSumDcDcConverter OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "CRC32 Checksum of identification data for the DC-DC Converter board."
+    ::= { dcDcConverterIdData 8 } 
+
+--************************************************************************
+-- Multilink parameters (not supported by all units)
+--************************************************************************  
+peaMultilinkMode OBJECT-TYPE
+    SYNTAX       INTEGER { singleLink(1), linkAggregation(2), 
+                           redundantConfiguration(3) }
+    MAX-ACCESS   read-write
+    STATUS       current
+    DESCRIPTION
+    "
+     This defines the mode the multiple network-side links operate in.
+
+     singleLink(1)             - only one link is used for active data 
+                                 transfer. This is the only possible 
+                                 value for devices with a single 
+                                 network-side link.  
+
+     linkAggregation(2)        - the multiple links are used as one trunk 
+                                 aggregating the traffic.
+
+     redundantConfiguration(3) - only one of the the multiple links is 
+                                 used for active data transfer, but the
+                                 other are kept stand by for resilience 
+                                 (uses RSTP protocol). 
+
+     Note: the read value may not match the actual mode during switch over. 
+    "
+    ::= { peaMultilink 1 }
+
+peaMultilinkPreferredInterface OBJECT-TYPE
+    SYNTAX      Integer32 (0..2147483646)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "
+     Shows the index of the interface (link) selected for traffic forwarding
+     whenever there is no other explicit indication on which one to choose. 
+     The interface is selected during boot - it is the interface the device 
+     was booted from. The value is the same as used for interfaces in the 
+     IF-MIB (1-based).
+    "
+    ::= { peaMultilink 2 }
+
+peaMultilinkInterfaceTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF PeaMultilinkInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "
+     This is a table of interfaces (links) on the network-side. The table 
+     is indexed by the same interface numbers as used in the IF-MIB (1-based).
+    "
+    ::= { peaMultilink 3 }
+
+
+peaMultilinkInterfaceEntry OBJECT-TYPE
+    SYNTAX      PeaMultilinkInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "
+     This is an entry of the multilinkInterfaceTable 
+    "
+    INDEX  { peaMultilinkInterfaceIndex }
+    ::= { peaMultilinkInterfaceTable 1 }
+
+PeaMultilinkInterfaceEntry ::=
+    SEQUENCE {
+              peaMultilinkInterfaceIndex InterfaceIndex,
+              peaMultilinkIsForwarding   TruthValue,
+              peaMultilinkIsUp           TruthValue
+             }
+
+peaMultilinkInterfaceIndex OBJECT-TYPE
+    SYNTAX      InterfaceIndex
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+    "
+     This is the index to the multilinkInterfaceTable. The values
+     are the same as used in the IF-MIB (1-based).
+    "
+    ::= { peaMultilinkInterfaceEntry 1 }
+
+peaMultilinkIsForwarding OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "
+     This shows if the corresponding interface (link) is forwarding 
+     traffic - true(1) or not - false(2). An interface that is not 
+     forwarding may still carry some service data (e.g. PDUs).
+    "
+    ::= { peaMultilinkInterfaceEntry 2 }
+        
+peaMultilinkIsUp OBJECT-TYPE
+    SYNTAX      TruthValue
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "
+     This shows if the corresponding interface (link) is up 
+     true(1) or down - false(2). The true(1) value is returned
+     if the ifOperState of the corresponding port is up. 
+     The false(1) value is returned if the ifOperState of the 
+     corresponding port is NOT up (e.g. down, testing, etc.).
+    "
+    ::= { peaMultilinkInterfaceEntry 3 }
+    
+    
+peaMultilinkForceManagementToUsePreferredInterface OBJECT-TYPE
+    SYNTAX      INTEGER { enabled (1), disabled (2) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "
+	 Setting this value to 'enabled (1)' forces the management traffic to be sent on
+     the interface towards the Active ECN thereby overruling the RSTP protocol
+     for management traffic towards this node.
+     This enables the node controller to stay in contact with the DSLAM, even if the
+     link is switched to the other interface by RSTP.
+    "
+    ::= { peaMultilink 4 }
+  
+
+--************************************************************************
+-- special operands for event report operations
+--************************************************************************
+-- 
+-- taskId OBJECT-TYPE
+--     SYNTAX      DisplayString
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "The name of the task, which sent the alarm."
+--     ::= { trapsParameters 1 }   
+--     
+-- taskState OBJECT-TYPE
+--     SYNTAX      Unsigned32
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "The state of the task, which sent the alarm."
+--     ::= { trapsParameters 2 }
+-- 
+-- taskFileName OBJECT-TYPE
+--     SYNTAX      DisplayString
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "The file name from where the alarm was sent"
+--     ::= { trapsParameters 3 }   
+-- 
+-- lineNumber OBJECT-TYPE
+--     SYNTAX      Unsigned32
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "The line number in the file indicated by taskFileName,
+--      from where the alarm was sent"
+--     ::= { trapsParameters 4 }  
+--     
+-- msgSenderTask OBJECT-TYPE
+--     SYNTAX      DisplayString
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "Indicates the name of the task which sent the message 
+--      causing a stateEventError."
+--     ::= { trapsParameters 5 }   
+-- 
+-- errCode OBJECT-TYPE
+--     SYNTAX      DisplayString
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "Additional error information."
+--     ::= { trapsParameters 6 }  
+-- 
+-- postMortemInfo OBJECT-TYPE
+--     SYNTAX      DisplayString
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "Indicates the reason of the restart."
+--     ::= { trapsParameters 7 }   
+--     
+-- errData OBJECT-TYPE
+--     SYNTAX      OCTET STRING
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "Additional data related to the error."
+--     ::= { trapsParameters 8 }       
+--     
+-- msgId OBJECT-TYPE
+--     SYNTAX      Unsigned32
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "Message ID of the last received message. 
+--      For example: the ID of the message causing a state event error."
+--     ::= { trapsParameters 9 }
+-- 
+-- msgData OBJECT-TYPE
+--     SYNTAX      OCTET STRING
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "Message content of the last received message. For example 
+--      the content of the message causing a state event error."
+--     ::= { trapsParameters 10 } 
+-- 
+-- hwUnitId OBJECT-TYPE
+--     SYNTAX      INTEGER { device (1), microProcessor (2), analogueFrontEnd (3), dcDcConverter (4), integratedFilter (5)}
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "Identifies the HW unit which has the identification
+--      data corrupted into FLASH."
+--     ::= { trapsParameters 11 }  
+-- 
+-- configData OBJECT-TYPE
+--     SYNTAX      INTEGER { localMacAddr (1), phyMode (2), watchdogEnable (3), 
+--                           vlanInfo (4), bootString (5)}
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "Identifies the corrupted configuration data read from FLASH ."
+--     ::= { trapsParameters 12 }          
+--     
+-- idOrConfigData OBJECT-TYPE
+--     SYNTAX      INTEGER { deviceIdData (1), microProcessorIdData (2), analogueFrontEndIdData (3),
+--                           dcDcConverterIdData (4), localMacAddr (5), phyMode (6), 
+--                           watchdogEnable (7), vlanInfo (8), bootString (9), integratedFilterIdData (10)}
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "Identifies during which data writing occured an error."
+--     ::= { trapsParameters 13 }
+-- 
+-- timeInUnmanagedMode OBJECT-TYPE
+--     SYNTAX      Unsigned32
+--     MAX-ACCESS  accessible-for-notify
+--     STATUS      current
+--     DESCRIPTION
+--     "The device time in Unmanaged mode value(in seconds)"
+--     ::= { trapsParameters 14 }
+--     
+-- 
+-- 
+--     
+-- ==************************************************************************
+-- == Trap definitions
+-- ==************************************************************************
+-- 
+-- tempTooHigh      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               tempControlState, tempValue }
+--     STATUS  current            
+--     DESCRIPTION
+--     "The temperature is too high and has increased above a fixed threshold
+--      value. The high temperature value is probably caused by a fan failure or
+--      high environment temperature.
+-- 
+--      For the IP DSLAM  the lines are stopped in order to reduce the power
+--      consumption and avoid damage to the node.
+-- 
+--      Corrective Actions:
+--      - Ensure that the fans for the node are working properly.
+--      - Ensure that the environment temperature is acceptable.
+--      - For the IPDSLAM it might help to reduce the numbers of  subscribers.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN330, MSAN POTS
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Critical
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         temperatureUnacceptable
+--       8: Temp control state     [Low, Normal, High or TooHigh]
+--       9: Temp value             [Value in degree Celsius]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.2 # tempTooHighCeasing
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Temperature is too high from: $2; Probable cause: $7; Temperature Value : $9; Temperature control state : $8; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+-- 
+--     ::= { traps 1 }
+-- 
+-- tempTooHighCeasing      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               tempControlState, tempValue }
+--     STATUS  current
+--     DESCRIPTION
+--     "The too high temperature condition has ceased. The temperature has decreased 
+--      below a fixed threshold value within the specified safe operational range. 
+--  
+--      For the IP DSLAM the lines are brought into service again, which will lead 
+--      to increasing power consumption and possibly an increased temperature.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN330, MSAN POTS
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         ThresholdCrossed
+--       8: Temp control state     [Low, Normal, High or TooHigh]
+--       9: Temp value             [Value in degree Celsius]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Ceasing: Temperature is normal again from: $2; Probable cause: $7; Temperature Value: $9; Temperature control state: $8; Sequence Number: $3;
+--     
+--     ::= { traps 2 }  
+-- 
+-- greenFanFailure      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               greenFanStatus, greenFanSpeed}
+--     STATUS  deprecated
+--     DESCRIPTION
+--     "Indicates that the fan located near to the green LED has failed, for 
+--      ESN310/ECN320/ECN330, the green fan is the fan located near the front. 
+--      This means that the fan control cannot secure that the temperature is 
+--      kept in the normal state in the worst-case scenario (for example 
+--      high environmental temperature, high traffic).
+--      
+--      Corrective Actions:
+--      - Replace the fan.
+-- 
+--      Made deprecated. Use the greenFanFailed instead.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      Deprecated from:           EDA 1.2 R3A
+-- 
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Green fan status       Failed
+--       9: Green fan speed        [The speed of the fan measured in revolutions per minute]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.4 # greenFanCeasing
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The fan closest to the green LED failed from: $2; Probable cause: $7; GreenFan status: 8; GreenFan speed: $9 rpm; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+-- 
+--     ::= { traps 3 }      
+-- 
+-- greenFanCeasing      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               greenFanStatus, greenFanSpeed }
+--     STATUS  deprecated
+--     DESCRIPTION
+--     "Indicates the ceasing of the fan, which is located near to the green LED.
+--      For ESN310/ECN320/ECN330, green fan is the fan placed near the front.
+-- 
+--      Made deprecated. Use the greenFanPoorPerformance instead.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      Deprecated from:           EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Green fan status       Failed
+--       9: Green fan speed        [The speed of the fan measured in revolutions per minute]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Ceasing: Green fan failure from: $2; Probable cause: $7; GreenFan status: $8; GreenFan speed: $9 rpm; Sequence Number: $3;
+-- 
+--     ::= { traps 4 }      
+-- 
+-- redFanFailure      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               redFanStatus, redFanSpeed }
+--     STATUS  deprecated
+--     DESCRIPTION   
+--     "Indicates that the fan located near to the red LED has failed, for 
+--      ESN310/ECN320/ECN330 the red fan is the fan located on the rear.
+--      This means that the fan control cannot secure that the temperature 
+--      is kept in the normal state in the worst-case scenario (for example
+--      high environmental temperature, high traffic).
+--      
+--      Corrective Actions:
+--      - Replace the fan.
+-- 
+--      Made deprecated. Use the redFanFailed instead.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      Deprecated from:           EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Red fan status         Failed
+--       9: Red fan speed          [The speed of the fan measured in revolutions per minute]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.6 # redFanCeasing
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The fan closest to the red LED failed from: $2; Probable cause: $7; RedFan status: $8; RedFan speed: $9 rpm; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+--     
+--     ::= { traps 5 }      
+-- 
+-- redFanCeasing      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               redFanStatus, redFanSpeed }
+--     STATUS  deprecated
+--     DESCRIPTION
+--     "Indicates the ceasing of the fan which is located near to the red LED.
+--      For ESN310/ECN320/ECN330, red fan is the fan placed to the rear.
+--      
+--      Made deprecated. Use the redFanPoorPerformance instead.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      Deprecated from:           EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Red fan status         Failed
+--       9: Red fan speed          [The speed of the fan measured in revolutions per minute]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Ceasing: Red fan failure from: $2; Probable cause: $7; RedFan status: $8; RedFan speed: $9 rpm; Sequence Number: $3;
+--     
+--     ::= { traps 6 }
+-- 
+-- restartAlarm      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               postMortemInfo, sysId  }
+--     STATUS  current
+--     DESCRIPTION
+--     "The node has restarted. The post mortem information will indicate the
+--      reason for the restart.
+-- 
+--      Corrective Actions:
+--      If the node has restarted from an unknown reason, it is recommended 
+--      to contact Ericsson support.  
+--      
+--      Valid from:                EDA 1.1 R2A
+-- 
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN320, ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         Other
+--       8: Post mortem info       [reason for the restart]
+--       9: Sysid                  [release version and date]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Device Restart Alarm from: $2; Probable cause: $7; Post Mortem information: $8; sysId: $9; Sequence Number: $3;
+--     
+--    ::= { traps 7 } 
+--     
+-- stateEventErr      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber,perceivedSeverity, 
+--               eventTime, eventTypePem, probableCause, taskId, taskState, 
+--               taskFileName, lineNumber, msgSenderTask, msgId, msgData }
+--     STATUS  current
+--     DESCRIPTION
+--     "This trap is seen if the node is discarding a message that could not be processed
+--      This kind of problem is sometimes related to an unforeseen state in the
+--      node.
+-- 
+--      Corrective Actions:
+--      - Save the alarm information to a file, for example by using a screen dump. It has to show
+--        all the trap parameters.
+--      - Give a brief explanation to how the error was provoked. If it can be provoked
+--        again, then it is important for the Ericsson support team to know how this is done. 
+--      - Create a trouble report, which includes the log files, and send it to Ericsson support.
+-- 
+--      Valid from:                EDA 1.1 R2A
+-- 
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             ProcessingErrorAlarm
+--       7: Probable cause         SoftwareError
+--       8: TaskId                 [Name of DMAPI task]
+--       9: TaskState              [DMAPI task state]
+--      10: TaskFileName           [The file name from where the alarm was sent]
+--      11: LineNumber             [The line number in the specified file]
+--      12: MsgSenderTask          [The task name of the task sending the message]
+--      13: MsgId                  [Internal message number]
+--      14: MsgData                [Message content - hex bytes]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: State/Event SW error detected from: $2; Probable cause: $7; ProcessName: $8; ProcessState: $9; Filename: $10; LineNo: $11; SenderTask: $12; MessageId: $13; MessageData: $14; Sequence Number: $3;
+--     
+--     ::= { traps 8 }    
+--     
+-- nonFatalSoftwareErr      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, perceivedSeverity, 
+--               eventTime, eventTypePem, probableCause, taskId, taskState, 
+--               taskFileName, lineNumber, errCode, errData }
+--     STATUS  current
+--     DESCRIPTION
+--     "A software error has been detected on the node. This type of software
+--      error is not fatal for the node. It could be a configuration error
+--      or a minor problem in the software. 
+--     
+--      Corrective Actions:
+--      - Save the alarm information to a file, for example by using a screen dump. It has to show
+--        all the trap parameters.
+--      - Give a brief explanation to how the error was provoked. If it can be provoked
+--        again, then it is important for the Ericsson support team to know how this is done. 
+--      - Create a trouble report, which includes the log files, and send it to Ericsson support.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--     
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN320, ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Minor
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             ProcessingErrorAlarm
+--       7: Probable cause         SoftwareError
+--       8: TaskId                 [Name of DMAPI task]
+--       9: TaskState              [DMAPI task state]
+--      10: TaskFileName           [The file name from where the alarm was sent]
+--      11: LineNumber             [The line number in the specified file]
+--      12: ErrCode                [Additional error information]
+--      13: ErrData                [Additional data related to the error - hex bytes]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Nonfatal SW error detected from: $2;  Probable cause: $7; ProcessName: $8; ProcessState: $9; Filename: $10; LineNo: $11; ErrorCode: $12; ErrorData: $13; Sequence Number: $3;
+--     
+--     ::= { traps 9 } 
+--     
+-- fatalSoftwareErr      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               taskId, taskState, taskFileName, lineNumber, errCode }
+--     STATUS  current
+--     DESCRIPTION
+--     "A fatal SW error has been detected in the node. The node will now restart
+--      in order to recover. This type of error must be handled immediately.
+-- 
+--      Corrective Actions:
+--      - Save the alarm information to a file, for example by using a scree dump. It has
+--        to show all the trap parameters.
+--      - Give a brief explanation to how the error was provoked. If it can be provoked
+--        again, then it is important for the Ericsson support team to know how this is done. 
+--      - Create a trouble report, which includes the log files, and send it to Ericsson support.
+--     
+--      Valid from:                EDA 1.1 R2A
+--     
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Critical
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             ProcessingErrorAlarm
+--       7: Probable cause         SoftwareError
+--       8: TaskId                 [Name of DMAPI task]
+--       9: TaskState              [DMAPI task state]
+--      10: TaskFileName           [The file name from where the alarm was sent]
+--      11: LineNumber             [The line number in the specified file]
+--      12: ErrCode                [Additional error information]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Fatal SW error detected - Device SW will restart from: $2; Probable cause: $7; ProcessName: $8; ProcessState: $9; Filename: $10; LineNo: $11; ErrorCode: $12; Sequence Number: $3;
+--     
+--     ::= { traps 10 }  
+--     
+-- configurationFileErr      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               errCode }
+--     STATUS  current
+--     DESCRIPTION
+--     "The configuration file failed to pass or load.
+--      NOTE:
+--      For this alarm the ceasing alarm configurationFileErrCeasing is not 
+--      issued by ECN320 and ECN330. 
+--     
+--      Corrective Actions:
+--      - Ensure that the node can reach the server where the configuration file is located.
+--      - Ensure that the configuration file is physically located on the server.
+--      - Ensure that the configuration file does not contain any syntax errors.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--     
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN320, ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             ProcessingErrorAlarm
+--       7: Probable cause         FileError
+--       8: ErrCode                [Additional error information]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.34 # configurationFileErrCeasing
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Configuration file unavailable or contains errors from: $2; Probable cause: $7; ErrorCode: $8; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+--     
+--     ::= { traps 11 }  
+-- 
+-- idDataReadErr      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               hwUnitId }
+--     STATUS  current
+--     DESCRIPTION
+--     "This alarm indicates that identification data that the node has in 
+--      flash memory are corrupted. Identification data are parameters like 
+--      'product number', 'revision state' and 'date of repair'. This is 
+--      data that are loaded into the node during manufacturing.
+-- 
+--      The 'hwUnitId' parameter in the alarm shows which type of data that 
+--      is corrupted in the flash memory.
+--     
+--      Corrective Actions:
+--      - Save the alarm information to a file, for example by using a screen dump. It has to show
+--        all the trap parameters.
+--      - Give a brief explanation to how the error was provoked. If it can be provoked
+--        again, then it is important for the Ericsson support team to know how this is done.
+--      - Send the trouble report and the physical node to Ericsson support for further
+--        investigations.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         InformationMissing
+--       8: HwUnitId               [device, MicroProcessorBoard, FrontAnalogueBoard or ddcBoard]
+--     "
+--     
+--     ==Ericsson Diax additional information:
+--     ==Format: Id data read from FLASH is corrupted from: $2; HwUnit: $8; Probable cause: $7; Sequence Number: $3;
+-- 
+--     ::= { traps 12 }  
+--     
+-- cfgDataReadErr      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               configData }
+--     STATUS  current
+--     DESCRIPTION
+--     "This alarm indicates that the configuration data in flash are corrupted.
+--      Configuration data are parameters like 'local mac address', 'vlan id' and
+--      'vlan tagging'. 
+-- 
+--      The 'configData' parameter in the alarm shows which data that are corrupted. 
+-- 
+--      Corrective Actions:
+--      - Replace the node.
+--      
+--      Valid from:                EDA 1.1 R2A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         InformationMissing
+--       8: ConfigData             [localMacAddr, phyMode, watchdogEnable, vlanInfo or bootString]
+--     "
+--     
+--     ==Ericsson Diax additional information:
+--     ==Format: The $8 configuration data read from FLASH is corrupted from: $2; Probable cause: $7; Sequence Number: $3;
+-- 
+--     ::= { traps 13 }  
+--     
+-- writeFlashErr      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               idOrConfigData}
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that writing to the flash memory failed.
+-- 
+--      Corrective Actions:
+--      - Restart the node. Replace the node if the problem still appears.
+--     
+--      Valid from:                EDA 1.1 R2A
+--     
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CorruptData
+--       8: IdOrConfigData         [The configuration item, which failed writing to FLASH]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: An error occured while writing $8 to FLASH from: $2; Probable cause: $7; Sequence Number: $3;
+--     
+--     ::= { traps 14 }   
+--     
+-- bothFansFailed      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               greenFanStatus, redFanStatus, greenFanSpeed, redFanSpeed }
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that both fans on the node have failed. The node is no longer able
+--      to control its temperature.
+--      
+--      Corrective Actions:
+--      - Replace the fans.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--     
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Critical
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: greenFanStatus         Failed
+--       9: redFanStatus           Failed
+--      10: greenFanSpeed          [The speed of the fan measured in revolutions per minute]
+--      11: redFanSpeed            [The speed of the fan measured in revolutions per minute]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.16 # bothFansFailedCeasing
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Both fans failed from: $2; Probable cause: $7; GreenFan status: $8; RedFan status: $9; GreenFan speed: $10 rpm; RedFan speed: $11 rpm; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+--     
+--     ::= { traps 15 }      
+-- 
+-- bothFansFailCeasing      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               greenFanStatus, redFanStatus, greenFanSpeed, redFanSpeed }
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that at least one of the fans is working again. If the ceasing alarm is
+--      seen frequently on the node, the fan should be replaced. 
+-- 
+--      Valid from:                EDA 1.1 R2A
+--     
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: greenFanStatus         [Failed, Working]
+--       9: redFanStatus           [Failed, Working]
+--      10: greenFanSpeed          [The speed of the fan measured in revolutions per minute]
+--      11: redFanSpeed            [The speed of the fan measured in revolutions per minute]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Ceasing: Both fans failure from: $2; Probable cause: $7;  GreenFan status: $8; RedFan status: $9; GreenFan speed: $10 rpm; RedFan speed: $11 rpm; Sequence Number: $3;
+--     
+--     ::= { traps 16 }
+-- 
+-- 
+-- deviceTypeUnknown      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               productNumber, revisionState }
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that the node type can not be identified. The product number and
+--      revision state are either unknown or corrupted. The application software cannot handle
+--      the hardware correctly.
+-- 
+--      Corrective Actions:
+--      - Replace the node.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Critical
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         Other
+--       8: ProductNumber          Product number of the node
+--       9: RevisionState          Revision state of the node
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Device type unknown from: $2; Probable cause: $7; Product number: $8; Revision state: $9; Sequence Number: $3;
+-- 
+--     ::= { traps 17 }
+--     
+-- greenFanLowPerformance      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               greenFanStatus, greenFanSpeed }
+--     STATUS  deprecated
+--     DESCRIPTION
+--     "Indicates that the fan located near the green LED has a low performance. 
+--      For ESN310/ECN320/ECN330, the green fan is the fan located near the front. 
+--      This means that the fan control cannot secure that the temperature is 
+--      kept in the normal state in the worst-case scenario (for example high 
+--      environmental temperature, high traffic).
+-- 
+--      Corrective Actions:
+--      - Replace the fan next time you get near the node, since it will soon break.
+-- 
+--      Made deprecated. Use the greenFanPoorPerformance instead.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      Deprecated from:           EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Green fan status       [Failed, Working]
+--       9: Green fan speed        [The speed of the fan measured in revolutions per minute]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.19 # greenFanLowPerformanceCeasing
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The fan closest to the green LED has a low performance from: $2; Probable cause: $7; GreenFan status: $8; GreenFan speed: $9 rpm; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+--     
+--     ::= { traps 18 }      
+--           
+-- greenFanLowPerformanceCeasing      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               greenFanStatus, greenFanSpeed }
+--     STATUS  deprecated
+--     DESCRIPTION
+--     "Indicates that the low performance of the green fan, which is the one located
+--      near the green LED, has ceased. If this ceasing alarm is seen frequently on a node
+--      in your system, then you should find a way to replace the fan, which causes problems. 
+-- 
+--      Made deprecated. Use the greenFanGoodPerformance instead.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      Deprecated from:           EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Green fan status       Working
+--       9: Green fan speed        [The speed of the fan measured in revolutions per minute]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Ceasing: Low performance of the green fan from: $2; Probable cause: $7; GreenFan status: $8; GreenFan speed: $9 rpm; Sequence Number: $3;
+--      
+--     ::= { traps 19 }      
+-- 
+-- redFanLowPerformance      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               redFanStatus, redFanSpeed }
+--     STATUS  deprecated
+--     DESCRIPTION   
+--     "Indicates that the fan located near the red LED has a low performance. 
+--      For ESN310/ECN320/ECN330, the red fan is the fan located near the rear. 
+--      This means that the fan control cannot secure that the temperature 
+--      is kept in the normal state in the worst-case scenario (for example 
+--      high environmental temperature, high traffic).
+-- 
+-- 
+--      Corrective Actions:
+--      - Replace the fan next time you get near the node, since it will soon break.
+-- 
+--      Made deprecated. Use the redFanPoorPerformance instead.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      Deprecated from:           EDA 1.2 R3A
+-- 
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Red fan status         [Failed, Working]
+--       9: Red fan speed          [The speed of the fan measured in revolutions per minute]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.21 # redFanLowPerformanceCeasing
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The fan closest to the red LED has a low performance from: $2; Probable cause: $7; RedFan status: $8; RedFan speed: $9 rpm; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+-- 
+--     ::= { traps 20}      
+--           
+-- redFanLowPerformanceCeasing      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               redFanStatus, redFanSpeed }
+--     STATUS  deprecated
+--     DESCRIPTION
+--     "Indicates that the low performance of the red fan, which is the one located near
+--      the red LED, has ceased. If this ceasing alarm is seen frequently on a node in
+--      your system, then you should find a way to replace the fan, which causes problems.
+--      
+--      Made deprecated. Use the redFanGoodPerformance instead.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      Deprecated from:           EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Red fan status         Working
+--       9: Red fan speed          [The speed of the fan measured in revolutions per minute]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Ceasing: Low performance of the red fan from: $2; Probable cause: $7; RedFan status: $8; RedFan speed: $9 rpm; Sequence Number: $3;
+-- 
+--     ::= { traps 21 }   
+-- 
+-- tempCloseToTooHigh      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               tempValue }
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates the temperature is close to the too high value. This alarm should be
+--      considered as a warning alarm that is received a while before the high temperature
+--      is reached.
+-- 
+--      Corrective Actions:
+--      - Ensure that the fans for the node are working properly.
+--      - Ensure that the environment temperature is acceptable.
+--      - Remove some subscribers from the line. On POTS, all non-preferential subscribers
+--        are removed.
+-- 
+--      Valid from:                EDA 3.0 R1B20
+--     
+--      Parameters
+--       1: Managed object class   MSAN POTS
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         temperatureUnacceptable
+--       8: Temp value             [Value in degree Celsius]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.23 # tempCloseToTooHighCeasing 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+--     
+--     ==Ericsson Diax additional information:
+--     ==Format: Temperature is close to the threshold, where the subscriber lines will be shut down from: $2; Probable cause: $7; Temperature Value : $8; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+-- 
+--     ::= { traps 22 }    
+--     
+-- tempCloseToTooHighCeasing      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               tempValue }
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that the tempCloseToTooHigh alarm is no longer active. The temperature
+--      has been successfully reduced to level where the node can work normal. 
+-- 
+--      Valid from:                EDA 3.0 R1B20
+--     
+--      Parameters
+--       1: Managed object class   MSAN POTS
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         temperatureUnacceptable
+--       8: Temp value             [Value in degree Celsius]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Ceasing: Temperature close too high from: $2; Probable cause: $7; Sequence Number: $3;
+--     
+--     ::= { traps 23 }          
+-- 
+-- configurationMismatch NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause, errCode}
+--     STATUS  obsolete
+--     DESCRIPTION
+--     "This alarm has a higher severity than configurationItemMismatch and is only
+--      sent once no matter how many parameter mismatches that is detected. This can
+--      be considered as one general alarm instead of using several configurationItemMismatch
+--      alarms. From this trap it is possible to see how many items that had a mismatch
+-- 
+--      The trap is sent if for example the trap notification is set to 'inform' and that it
+--      was expected to be 'trap' then a configurationMismatch will be sent to the management
+--      system.
+-- 
+--      Corrective Actions:
+--      - Once the node is up and running this alarm is no longer important, so it is advised
+--        that this alarm is ignored. The reason why this alarm is received could be that the
+--        node configuration file was modified behind the management system. 
+-- 
+--      Status changed to obsolete: the alarm is sent only when the debug is active.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      Obsoleted from:            EDA 1.3 R2A
+--     
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Minor
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             ProcessingErrorAlarm
+--       7: Probable cause         InformationModificationDetected
+--       8: Err Code               [Additional error information]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Configuration Mismatch from: $2; Probable cause: $7; ErrorCode: $8; Sequence Number: $3;
+--     
+--     ::= { traps 24 }          
+-- 
+-- configurationItemMismatch NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause, errCode}
+--     STATUS  obsolete
+--     DESCRIPTION
+--     "This alarm is sent for each parameter where a mismatch is detected. If for example
+--      the trap notification is set to 'inform' and that it was expected to be 'trap'
+--      then a configurationItemMismatch will be sent to the management system.
+--     
+--      Corrective Actions:
+--      - Once the node is up and running this alarm is no longer important, so it
+--        is advised that this alarm is ignored. The reason why this alarm is received
+--        could be that the node configuration file was modified behind the management
+--        system. 
+-- 
+--      Status changed to obsolete: the alarm is sent only when the debug is active.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--      Obsoleted from:            EDA 1.3 R2A for FE-E1, IPDSLAM & ESN108
+--     
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN320, ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Warning
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             ProcessingErrorAlarm
+--       7: Probable cause         InformationModificationDetected
+--       8: Err Code               [Additional error information]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Configuration Item Mismatch from: $2; Probable cause: $7; ErrorCode: $8; Sequence Number: $3;
+-- 
+--     ::= { traps 25 }
+-- 
+-- swUploadErr NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause, errCode }
+--     STATUS  current
+--     DESCRIPTION
+--     "An error occured during software upload.
+-- 
+--      Corrective Actions:
+--      - Ensure that the node can reach the server where the software file is located.
+--      - Ensure that the software is physically located on the server at the expected 
+--        location and with the expected name.
+-- 
+--      Valid from:                EDA 1.1 R2A
+--     
+--      Parameters
+--       1: Managed object class   FE-E1, ESN108, ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Minor
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             ProcessingErrorAlarm
+--       7: Probable cause         [Given as parameter from sending task]
+--       8: Err Code               [Additional error information]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The Software failed to upload from: $2; Probable cause: $7; ErrorCode: $8; Sequence Number: $3;
+--     
+--     ::= { traps 26 }
+-- 
+-- programStartFailure NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,
+--               errCode }
+--     STATUS  current
+--     DESCRIPTION
+--     "When no valid flash memory can be found on the node this trap is sent.
+-- 
+--      Corrective Actions:
+--      - Reinstall the node in the management system. 
+-- 
+--      Valid from:                EDA 1.1 R2A
+--     
+--      Parameters
+--       1: Managed object class   FE-E1, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Critical
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         [Given as parameter from sending task]
+--       8: Err Code               [Additional error information]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The program failed to start from: $2; Probable cause: $7; Sequence Number: $3;
+--     
+--     ::= { traps 27 }    
+-- 
+-- greenFanFailed      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               greenFanPerfStatus, greenFanSpeed}
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that the fan located near to the green LED has failed. The node may not
+--      be able to keep its temperature within the safe operational range.
+-- 
+--      For ESN310/ECN320/ECN330, the green fan is the fan located near the front. 
+--      
+--      Corrective Actions:
+--      - Replace the fan.
+-- 
+--      Valid from:                EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Green fan perf. status Failed
+--       9: Green fan speed        [The speed of the fan measured in rotations per minute]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.30 # greenFanGoodPerformance
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The fan closest to the green LED failed from: $2; Probable cause: $7; GreenFan performance status: $8; GreenFan speed: $9 rpm; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+--     
+--     ::= { traps 28 }      
+-- 
+-- greenFanPoorPerformance      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               greenFanPerfStatus, greenFanSpeed }
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that the fan located near the green LED will probably soon fail. The
+--      fan is unable to reach maximum speed. The node may not be able to keep its 
+--      temperature within the safe operational range during high load or when the 
+--      environment temperature is high.
+-- 
+--      Corrective Actions:
+--      - Replace the fan.
+-- 
+--      Valid from:                EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Minor
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Green fan perf. status Poor
+--       9: Green fan speed        [The speed of the fan measured in revolutions per minute]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.30 # greenFanGoodPerformance
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The fan closest to the green LED has a poor performance from: $2; Probable cause: $7; GreenFan performance status: $8; GreenFan speed: $9 rpm; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+--     
+--     ::= { traps 29 }
+-- 
+-- greenFanGoodPerformance      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               greenFanPerfStatus, greenFanSpeed }
+--     STATUS  current
+--     DESCRIPTION
+--     "Ceasing of either greenFanFailed or greenLowPerformance alarm.
+-- 
+--      Valid from:                EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Green fan perf. status Good
+--       9: Green fan speed        [The speed of the fan measured in revolutions per minute]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The fan closest to the green LED has a good performance from: $2; Probable cause: $7; GreenFan performance status: $8; GreenFan speed: $9 rpm; Sequence Number: $3;
+--     
+--     ::= { traps 30 }   
+--      
+-- redFanFailed      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               redFanPerfStatus, redFanSpeed }
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that the fan located near to the red LED has failed. 
+--      For ESN310/ECN320/ECN330, the red fan is the fan located near the rear. 
+--      
+--      Corrective Actions:
+--      - Replace the fan.
+-- 
+--      Valid from:                EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Major
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Red fan perf. status   Failed
+--       9: Red fan speed          [The speed of the fan measured in revolutions per minute]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.33 # redFanGoodPerformance
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The fan closest to the red LED failed from: $2; Probable cause: $7; RedFan performance status: $8; RedFan speed: $9 rpm; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+--     ::= { traps 31 }      
+--     
+-- redFanPoorPerformance      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               redFanPerfStatus, redFanSpeed }
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that the fan located near the red LED will probably soon fail.
+--      The fan is unable to reach maximum speed. The node may not be able to keep its 
+--      temperature within the safe operational range during high load or when the 
+--      environment temperature is high.
+--     
+--      Corrective Actions:
+--      - Replace the fan.
+-- 
+--      Valid from:                EDA 1.2 R3A
+-- 
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Minor
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Red fan perf. status   Poor
+--       9: Red fan speed          [The speed of the fan measured in revolutions per minute]
+-- 
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.33 # redFanGoodPerformance
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The fan closest to the red LED has a poor performance from: $2; Probable cause: $7; RedFan performance status: $8; RedFan speed: $9 rpm; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+--     
+--     ::= { traps 32}      
+--     
+-- redFanGoodPerformance      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,  
+--               redFanPerfStatus, redFanSpeed }
+--     STATUS  current
+--     DESCRIPTION
+--     "Ceasing of either redFanFailed or redLowPerformance alarms.
+-- 
+--      Valid from:                EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108, ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         CoolingFanFailure
+--       8: Red fan perf. status   Good
+--       9: Red fan speed          [The speed of the fan measured in revolutions per minute]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: The fan closest to the red LED has a good performance from: $2; Probable cause: $7; RedFan performance status: $8; RedFan speed: $9 rpm; Sequence Number: $3;
+-- 
+--     ::= { traps 33 }   
+-- 
+-- configurationFileErrCeasing      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause }
+--     STATUS  current
+--     DESCRIPTION
+--     "Ceasing of configuration file load error. The configuration file is
+--      now available.
+--      
+--      Valid from:                EDA 1.2 R3A
+--      
+--      Parameters
+--       1: Managed object class   FE-E1, IPDSLAM, ESN108
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             ProcessingErrorAlarm
+--       7: Probable cause         FileError
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Ceasing: Configuration file unavailable or contains errors from: $2; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+-- 
+--     ::= { traps 34 }
+-- 
+-- comboConnectorMounted      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause }
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that the comboConnector has been connected.
+--          
+--      Valid from:                EDA 3.0 R1A
+--      
+--      Parameters
+--       1: Managed object class   MSAN POTS, MSAN ADSL
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Warning
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         Other
+--     "
+--     ::= { traps 35 }
+-- 
+-- comboConnectorUnmounted      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause }
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that the comboConnector has been disconnected.
+--          
+--      Valid from:                EDA 3.0 R1A
+--      
+--      Parameters
+--       1: Managed object class   MSAN POTS, MSAN ADSL
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Warning
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         Other
+--     "
+--     ::= { traps 36 }
+--     
+-- changedToManagedModeAlarm      NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,
+--               timeInUnmanagedMode }
+--     STATUS  current
+--     DESCRIPTION
+--     "Indicates that the the device has changed from unmanaged to managed mode.
+--      Valid from:                EDA 2.1 SP1
+--      
+--      Parameters
+--       1: Managed object class   IPDSLAM
+--       2: Managed object ID      (MAC)
+--       3: Sequence number        (Alarm sequence number)
+--       4: Perceived severity     Warning
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         other
+--       8: TimeInUnmanagedMode    [Time in unmanaged Mode [sec]]
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Node is now managed at $2. Have been unmanaged for $8 secondes; Sequence Number:$3;
+-- 
+--     ::= { traps 37 }
+--     
+-- == PETH (PoE) notifications
+-- ==pethPsePortFailureNotification NOTIFICATION-TYPE
+-- ==    OBJECTS     { managedObjectClass, managedObjectInstance, sequenceNumber, 
+-- ==                  perceivedSeverity, eventTime, eventTypePem, probableCause }
+-- ==    STATUS      current
+-- ==    DESCRIPTION
+-- ==    "This notification is sent when the port detects a permanent power failure. It
+-- ==     is not specified if the notification is triggered by a malfunction on the
+-- ==     Power Sourcing Equipment (PSE), Powered node (for example the IPDSLAM).
+-- ==
+-- ==     It could be that the power for the port has been short circuted due to a failure
+-- ==     on the IP DSLAM.
+-- ==
+-- ==     Corrective Actions:
+-- ==     - Replace the device connected to the port. Check if the power is back.
+-- ==     - If the problem keeps appearing, replace the node from where the
+-- ==       alarm is sent with a new unit.
+-- ==
+-- ==     Valid from:                EDA 1.3 R2A   for ESN108
+-- ==     Valid from:                EDA 2.2 R2A for ECN330
+-- ==     
+-- ==     Parameters
+-- ==      1: Managed object class   ESN108 Port, ECN330 Port
+-- ==      2: Managed object ID      [MAC + PortNo]
+-- ==      3: Sequence number        [Alarm sequence number]
+-- ==      4: Perceived severity     Major
+-- ==      5: Event time             [The local timestamp of the device]
+-- ==      6: Event type             Equipment
+-- ==      7: Probable cause         Other
+-- ==
+-- ==     Ceasing OID:               1.3.6.1.4.1.193.72.600.1.4.0.2 # pethPsePortFailureCeasingNotification
+-- ==     Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm
+-- ==    "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Permanent Power Failure is detected on $2
+--     ==CeasingId: "agent-addr", 0
+--     ==CeasingId: "agent-addr", 0
+-- 
+-- ==    ::= { pethNotificationTypes 1 }
+-- 
+-- ==pethPsePortFailureCeasingNotification NOTIFICATION-TYPE
+-- ==    OBJECTS     { managedObjectClass, managedObjectInstance, sequenceNumber, 
+-- ==                  perceivedSeverity, eventTime, eventTypePem, probableCause }
+-- ==    STATUS      current
+-- ==    DESCRIPTION
+-- ==    "The power is now active on the node and the pethPsePortFailureNotification is ceased. 
+-- ==
+-- ==     Valid from:                EDA 1.3 R2A for ESN108
+-- ==     Valid from:                EDA 2.2 R2A for ECN330
+-- ==    
+-- ==     Parameters
+-- ==      1: Managed object class   ESN108 Port, ECN330 port
+-- ==      2: Managed object ID      [MAC + PortNo]
+-- ==      3: Sequence number        [Alarm sequence number]
+-- ==      4: Perceived severity     Ceasing
+-- ==      5: Event time             [The local timestamp of the device]
+-- ==      6: Event type             Equipment
+-- ==      7: Probable cause         Other
+-- ==    "
+-- ==
+--     ==Ericsson Diax additional information:
+--     ==Format: Permanent Power Failure has ceased on $2
+-- 
+-- ==    ::= { pethNotificationTypes 2 }
+-- 
+-- == peaPethMainPowerUsageOnNotification NOTIFICATION-TYPE
+-- ==     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+-- ==               perceivedSeverity, eventTime, eventTypePem, probableCause,
+-- ==               pethMainPseConsumptionPower  }
+-- ==     STATUS      current
+-- ==     DESCRIPTION 
+-- ==     "This is a private substitution for the rfc3621:pethMainPowerUsageOnNotification
+-- ==      inform with the X.733 header added.
+-- ==      This notification indicates that the total amount of power delivered to embedded 
+-- ==      elements connected to the switch' ports exceeds the present threshold.       
+-- ==      
+-- ==      Corrective Actions:
+-- ==      - Find out if a certain embedded element causes the trouble or other obvious 
+-- ==        reasons exist for the overload.
+-- ==      - If the problem keeps appearing, replace the node from where the
+-- ==        alarm is sent with a new unit.
+-- ==      
+-- ==      Valid from:                EDA 2.2 R1A
+-- ==      
+-- ==      Parameters
+-- ==       1: Managed object class   ECN330
+-- ==       2: Managed object ID      [MAC]
+-- ==       3: Sequence number        [Alarm sequence number]
+-- ==       4: Perceived severity     Warning
+-- ==       5: Event time             [The local timestamp of the device]
+-- ==       6: Event type             Equipment
+-- ==       7: Probable cause         ThresholdCrossed 
+-- ==       8: Power Consumtion       [Measured power expressed in Watts]   
+-- ==       
+-- ==      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.4.0.4  # pethMainPowerUsageOffTrap
+-- ==      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7  # restartAlarm    
+-- ==     "   
+--                      
+--     ==Ericsson Diax additional information:
+--     ==Format: Power usage above threshold from: $2; Power Consumtion: $8; Probable cause: $7; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 2
+--     ==CeasingId: "agent-addr", 0 
+-- 
+-- ==    ::= { pethNotificationTypes 3 }
+-- 
+-- == peaPethMainPowerUsageOffNotification NOTIFICATION-TYPE
+-- ==     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+-- ==               perceivedSeverity, eventTime, eventTypePem, probableCause,
+-- ==               pethMainPseConsumptionPower }
+-- ==     STATUS      current
+-- ==     DESCRIPTION
+-- ==     "This is a private substitution for the rfc3621:pethMainPowerUsageOffNotification
+-- ==      inform with the X.733 header added.    
+-- ==      This notification indicates that the power consumption is below the threshold. 
+-- ==      
+-- ==      Corrective Actions:
+-- ==      - None.
+-- ==      
+-- ==      Valid from:                EDA 2.2 R1A
+-- ==      
+-- ==      Parameters
+-- ==       1: Managed object class   ECN330
+-- ==       2: Managed object ID      [MAC]
+-- ==       3: Sequence number        [Alarm sequence number]
+-- ==       4: Perceived severity     Ceasing
+-- ==       5: Event time             [The local timestamp of the device]
+-- ==       6: Event type             Equipment
+-- ==       7: Probable cause         ThresholdCrossed 
+-- ==       8: Power Consumtion       [Measured power expressed in Watts]
+-- ==     "   
+--                      
+--     ==Ericsson Diax additional information:
+--     ==Format: Ceasing: Power usage below threshold from: $2; Power Consumtion: $8; Probable cause: $7; Sequence Number: $3;
+-- 
+-- ==     ::= { pethNotificationTypes 4 }
+-- 
+-- == IF (interfaces) notifications
+-- ifLinkDown NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,
+--               ifIndex}
+--     STATUS  current
+--     DESCRIPTION
+--     "This is a private substitution for the rfc2233:linkDown inform with
+--      the X.733 header added.    
+--      
+--      Corrective Actions:
+--      - Ensure that the connecting LAN cable is intact and of right type and that the 
+--        embedded element is working properly.
+-- 
+--      Valid from:                EDA 1.3 R2A for ESN108
+--      Valid from:                EDA 2.2 R1A for ECN330
+--                                      
+--      Parameters
+--       1: Managed object class   ESN108 Port, ECN330 Port
+--       2: Managed object ID      [MAC + PortNo]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Warning
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             CommunicationsAlarm
+--       7: Probable cause         ExternalPointFailure
+--       8: Index                  [The interface number]
+--       
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.6.0.4 # ifLinkUp
+--      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7 # restartAlarm   
+--     "
+--     ==Ericsson Diax additional information:
+--     ==Format: LinkDown received from: $2; Interface number: $8; Probable cause: $7; Sequence Number: $3;
+--     ==CeasingId: "agent-addr", 2
+--     ==CeasingId: "agent-addr", 0 
+-- 
+--     ::= { ifNotificationTypes 3 }   
+-- 
+-- ifLinkUp NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause,
+--               ifIndex}
+--     STATUS  current
+--     DESCRIPTION
+--     "This is a private substitution for the rfc2233:linkUp inform with
+--      the X.733 header added.
+-- 
+--      Valid from:                EDA 1.3 R2A for ESN108
+--      Valid from:                EDA 2.2 R1A for ECN330   
+--   
+--      Parameters
+--       1: Managed object class   ESN108 Port, ECN330 Port
+--       2: Managed object ID      [MAC + PortNo]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Ceasing
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             CommunicationsAlarm  
+--       7: Probable cause         ExternalPointFailure
+--       8: Index                  [The port number]
+--     "
+--     ==Ericsson Diax additional information:
+--     ==Format: LinkUp received from: $2; Interface number: $8; Probable cause: $7; Sequence Number: $3;
+-- 
+--     ::= { ifNotificationTypes 4 }     
+--     
+-- == SNMP v2 notifications 
+-- peaAuthenticationFailure NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause }
+--     STATUS  current
+--     DESCRIPTION 
+--     "This is a private substitution for the rfc1450:authenticationFailure trap with
+--      the X.733 header added.     
+--      An authenticationFailure trap signifies that the SNMPv2 entity, acting in an 
+--      agent role, has received a protocol message that is not properly authenticated.  
+--      The snmpEnableAuthenTraps object indicates  whether this trap will be generated.  
+--      
+--      Corrective Actions:
+--      - Check the community strings to be used for read-only or read-write access for SNMP v1 & v2c.
+--      - Check the community strings, context name, security level and view configuration for SNMP v3.
+--             
+--      Valid from:                EDA 2.2 R1A
+--      
+--      Parameters
+--       1: Managed object class   ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Warning
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             SecurityServiceOrMechanismViolation
+--       7: Probable cause         AuthenticationFailure 
+--     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: SNMP authentification failure from: $2; Probable cause: $7; Sequence Number: $3;
+--                                  
+--     ::= { snmpv2NotificationsTypes 1 }
+-- 
+-- == BRIDGE notifications     
+-- peaNewRoot NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause }
+--     STATUS  current
+--     DESCRIPTION 
+--     "This is a private substitution for the rfc1493:newRoot trap with
+--      the X.733 header added.  
+--      The newRoot trap indicates that the sending agent has become the new 
+--      root of the Spanning Tree; the trap is sent by a bridge soon after 
+--      its election as the new root, e.g., upon expiration of the
+--      Topology Change Timer immediately subsequent to election.    
+--      
+--      Corrective Actions:
+--      - None.
+--                       
+--      Valid from:                EDA 2.2 R1A
+--      
+--      Parameters
+--       1: Managed object class   ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Warning
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         Other 
+--     " 
+--     
+--     ==Ericsson Diax additional information:
+--     ==Format: New elected root of the Spanning Tree: $2; Probable cause: $7; Sequence Number: $3;  
+--                       
+--     ::= { bridgeNotificationsTypes 1 }    
+-- 
+-- peaTopologyChange NOTIFICATION-TYPE
+--     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+--               perceivedSeverity, eventTime, eventTypePem, probableCause }
+--     STATUS  current
+--     DESCRIPTION 
+--     "This is a private substitution for the rfc1493:topologyChange trap with
+--      the X.733 header added. 
+--      A topologyChange trap is sent by a bridge when any of its configured 
+--      ports transitions from the Learning state to the Forwarding state, or 
+--      from the Forwarding state to the Blocking state.  
+--      The trap is not sent if a newRoot trap is sent for the same transition.  
+--      
+--      Corrective Actions:
+--      - None.
+--                       
+--      Valid from:                EDA 2.2 R1A
+--      
+--      Parameters
+--       1: Managed object class   ECN330
+--       2: Managed object ID      [MAC]
+--       3: Sequence number        [Alarm sequence number]
+--       4: Perceived severity     Warning
+--       5: Event time             [The local timestamp of the device]
+--       6: Event type             Equipment
+--       7: Probable cause         Other 
+--     " 
+--     
+--     ==Ericsson Diax additional information:
+--     ==Format: Topology change from: $2; Probable cause: $7; Sequence Number: $3; 
+--                           
+--     ::= { bridgeNotificationsTypes 2 }
+-- 
+-- == RMON notifications     
+-- == peaRisingAlarm NOTIFICATION-TYPE
+-- ==     OBJECTS  { managedObjectClass, managedObjectInstance, sequenceNumber, 
+-- ==                perceivedSeverity, eventTime, eventTypePem, probableCause, 
+-- ==                alarmIndex, alarmVariable, alarmSampleType, alarmValue, 
+-- ==                alarmRisingThreshold }
+-- ==     STATUS   current
+-- ==     DESCRIPTION 
+-- ==     "This is a private substitution for the rfc2819:risingAlarm trap with
+-- ==      the X.733 header added.    
+-- ==      The trap is generated when an alarm entry crosses its rising 
+-- ==      threshold and generates an event that is configured for sending SNMP traps.
+-- ==      
+-- ==      Corrective Actions:
+-- ==      - Check network configuration to load balance the network traffic
+-- ==      - Make sure no potential network attack.
+-- ==                 
+-- ==      Valid from:                EDA 2.2 R1A
+-- ==      
+-- ==      Parameters
+-- ==       1: Managed object class    ECN330
+-- ==       2: Managed object ID       [MAC]
+-- ==       3: Sequence number         [Alarm sequence number]
+-- ==       4: Perceived severity      Warning
+-- ==       5: Event time              [The local timestamp of the device]
+-- ==       6: Event type              Equipment
+-- ==       7: Probable cause          Other 
+-- ==       8: Alarm index             [An index that uniquely identifies an entry in the alarm table]
+-- ==       9: Alarm variable          [The object identifier of the particular variable to be sampled]
+-- ==       10: Alarm sample type      [AbsoluteValue, DeltaValue]
+-- ==       11: Alarm rising threshold [A threshold for the sampled statistic]  
+-- ==       
+-- ==      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.10.0.2 # peaFallingAlarm
+-- ==      Ceasing OID:               1.3.6.1.4.1.193.72.600.1.2.0.7  # restartAlarm 
+-- ==     "        
+-- ==     
+--     ==Ericsson Diax additional information:
+--     ==Format: Rising alarm from: $2; Alarm index: $8; Alarm variable: $9; Alarm sample type: $10; Threshold: $11; Probable cause: $7; Sequence Number: $3;    
+--     ==CeasingId: "agent-addr", 2
+--     ==CeasingId: "agent-addr", 0 
+-- 
+-- ==    ::= { rmonNotificationsTypes 1 }
+-- 
+-- == peaFallingAlarm NOTIFICATION-TYPE
+-- ==     OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+-- ==               perceivedSeverity, eventTime, eventTypePem, probableCause, 
+-- ==               alarmIndex, alarmVariable, alarmSampleType, alarmValue, 
+-- ==               alarmFallingThreshold }
+-- ==     STATUS    current
+-- ==     DESCRIPTION 
+-- ==     "This is a private substitution for the rfc1493:fallingAlarm trap with
+-- ==      the X.733 header added.     
+-- ==      The trap is generated when an alarm entry crosses its falling 
+-- ==      threshold and generates an event that is configured for sending SNMP traps.
+-- == 
+-- ==      Corrective Actions:
+-- ==      - None.
+-- ==               
+-- ==      Valid from:                EDA 2.2 R1A
+-- ==      
+-- ==      Parameters
+-- ==       1: Managed object class      ECN330
+-- ==       2: Managed object ID         [MAC]
+-- ==       3: Sequence number           [Alarm sequence number]
+-- ==       4: Perceived severity        Ceasing
+-- ==       5: Event time                [The local timestamp of the device]
+-- ==       6: Event type                Equipment
+-- ==       7: Probable cause            Other 
+-- ==       8: Alarm index               [An index that uniquely identifies an entry in the alarm table]
+-- ==       9: Alarm variable            [The object identifier of the particular variable to be sampled]
+-- ==       10: Alarm sample type        [AbsoluteValue, DeltaValue]
+-- ==       11: Alarm falling threshold  [A threshold for the sampled statistic]
+-- ==     "
+-- 
+--     ==Ericsson Diax additional information:
+--     ==Format: Ceasing: Falling alarm from: $2; Alarm index: $8; Alarm variable: $9; Alarm sample type: $10; Threshold: $11; Probable cause: $7; Sequence Number: $3;    
+--                     
+-- ==    ::= { rmonNotificationsTypes 2 }
+--        
+--        
+       
+           
+END
+
+

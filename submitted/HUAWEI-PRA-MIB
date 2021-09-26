@@ -1,0 +1,289 @@
+HUAWEI-PRA-MIB DEFINITIONS ::= BEGIN
+IMPORTS
+	MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE, private
+		FROM SNMPv2-SMI
+	MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+		FROM SNMPv2-CONF
+	TEXTUAL-CONVENTION
+		FROM SNMPv2-TC
+	RowStatus
+		FROM SNMPv2-TC
+         hwFrameIndex, hwSlotIndex , hwPortIndex                     
+                FROM HUAWEI-DEVICE-MIB		
+;
+
+hwMD5500PRAPort OBJECT IDENTIFIER ::= { hwMD5500PortAdminMIB 8 }
+
+
+
+enterprises OBJECT IDENTIFIER ::= { private 1 }
+
+huawei OBJECT IDENTIFIER ::= { enterprises 2011 }
+
+products OBJECT IDENTIFIER ::= { huawei 2 }
+
+musa OBJECT IDENTIFIER ::= { products 6 }
+
+hwMd5500Mib OBJECT IDENTIFIER ::= { musa 4 }
+
+hwMD5500PortAdminMIB OBJECT IDENTIFIER ::= { hwMd5500Mib 4 }
+
+
+  hwPraPhyPortDataTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF HwPraPhyPortDataEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      "    "
+    ::= { hwMD5500PRAPort 1 }
+
+  hwPraPhyPortDataEntry OBJECT-TYPE
+    SYNTAX      HwPraPhyPortDataEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      ""
+    INDEX    {  
+              hwFrameIndex,
+              hwSlotIndex,
+              hwPortIndex
+             }
+    ::= { hwPraPhyPortDataTable 1 }
+
+  HwPraPhyPortDataEntry ::=
+    SEQUENCE
+    {
+      hwPhyPraV5ID	INTEGER,
+      hwPhyPraEfAddr	INTEGER,
+      hwPhyPraPortGrpNo	INTEGER,
+      hwPhyPraServiceType	INTEGER,
+      hwPhyPraFSMState	INTEGER,
+      hwPhyPraPortState	INTEGER,
+      hwPhyPraOperate	INTEGER,
+      hwPhyPraRowStatus	RowStatus,
+      hwPhyPortService	INTEGER
+    }
+
+  hwPhyPraV5ID OBJECT-TYPE
+    SYNTAX      INTEGER(0..16777215)
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "  v5 interface ID
+          V5接口ID "
+    ::= { hwPraPhyPortDataEntry 1 }
+
+  hwPhyPraEfAddr OBJECT-TYPE
+    SYNTAX      INTEGER(0..8175)
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "  User port EF address
+          用户端口EF地址 "
+    ::= { hwPraPhyPortDataEntry 2 }
+
+  hwPhyPraPortGrpNo OBJECT-TYPE
+    SYNTAX      INTEGER(0..254)
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "  ISDN port Group No.
+          ISDN端口群号 "
+    ::= { hwPraPhyPortDataEntry 3 }
+
+  hwPhyPraServiceType OBJECT-TYPE
+    SYNTAX      INTEGER{normalService(1),anSpc(2),v5Spc(3),v5PreConnection(4),anPrivateLine(5)}
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "  User port Service type
+          用户端口业务类型 "
+    ::= { hwPraPhyPortDataEntry 4 }
+
+  hwPhyPraFSMState OBJECT-TYPE
+    SYNTAX      INTEGER{an101(1),an102(2),an11(3),an121(4),an122(5),an20(6),an30(7)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "  User port FSM state
+          用户端口FSM状态机
+          AN101,    // 阻塞1       
+          AN102,    // 阻塞2       
+          AN11,     // 本地解阻塞  
+          AN121,    // 远端解阻塞1 
+          AN122,    // 远端解阻塞2 
+          AN20,     // 接入已激活  
+          AN30,     // PL工作状态 "
+    ::= { hwPraPhyPortDataEntry 5 }
+
+  hwPhyPraPortState OBJECT-TYPE
+    SYNTAX      INTEGER{fault(1),maintain(2),oamBlock(3),peerBlock(4),idle(5),busy(6)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "  User port physical state
+          用户端口状态 "
+    ::= { hwPraPhyPortDataEntry 6 }
+
+  hwPhyPraOperate OBJECT-TYPE
+    SYNTAX      INTEGER{block(1),delayBlock(2),unblock(3)}
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "  Operate Type
+          对端口的阻塞操作 "
+    ::= { hwPraPhyPortDataEntry 7 }
+
+  hwPhyPraRowStatus OBJECT-TYPE
+    SYNTAX      RowStatus
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "  Row status
+          行状态 "
+    ::= { hwPraPhyPortDataEntry 8 }
+
+  hwPhyPortService OBJECT-TYPE
+    SYNTAX      INTEGER{Idle(1),PRA(2),V5TK(3),PV8(4),RSP(5),Spc(6),Cas(7),RSU(8)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "  All E1 port Service type
+          所有E1端口业务类型 "
+    ::= { hwPraPhyPortDataEntry 9 }
+
+  hwPraV5PortDataTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF HwPraV5PortDataEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      "    "
+    ::= { hwMD5500PRAPort 2 }
+
+  hwPraV5PortDataEntry OBJECT-TYPE
+    SYNTAX      HwPraV5PortDataEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+      ""
+    INDEX    {  
+              hwPraV5ID,
+              hwPraEfAddr
+             }
+    ::= { hwPraV5PortDataTable 1 }
+
+  HwPraV5PortDataEntry ::=
+    SEQUENCE
+    {
+      hwPraV5ID	INTEGER,
+      hwPraEfAddr	INTEGER,
+      hwPraFrameIndex	INTEGER,
+      hwPraSlotIndex	INTEGER,
+      hwPraPortIndex	INTEGER,
+      hwPraPortGrpNo	INTEGER,
+      hwPraServiceType	INTEGER,
+      hwPraFSMState	INTEGER,
+      hwPraPortState	INTEGER,
+      hwPraOperate	INTEGER
+    }
+
+  hwPraV5ID OBJECT-TYPE
+    SYNTAX      INTEGER(0..16777215)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "   v5 interface ID
+          V5接口ID "
+    ::= { hwPraV5PortDataEntry 1 }
+
+  hwPraEfAddr OBJECT-TYPE
+    SYNTAX      INTEGER(0..8175)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+        "   User port EF address
+          用户端口EF地址 "
+    ::= { hwPraV5PortDataEntry 2 }
+
+  hwPraFrameIndex OBJECT-TYPE
+    SYNTAX      INTEGER(0..240)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "   Frame ID
+          框号 "
+    ::= { hwPraV5PortDataEntry 3 }
+
+  hwPraSlotIndex OBJECT-TYPE
+    SYNTAX      INTEGER(0..63)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "   Slot ID
+          槽号 "
+    ::= { hwPraV5PortDataEntry 4 }
+
+  hwPraPortIndex OBJECT-TYPE
+    SYNTAX      INTEGER(0..63)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "   Port ID
+          端口号 "
+    ::= { hwPraV5PortDataEntry 5 }
+
+  hwPraPortGrpNo OBJECT-TYPE
+    SYNTAX      INTEGER(0..254)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "  ISDN port Group No.
+          ISDN端口群号 "
+    ::= { hwPraV5PortDataEntry 6 }
+
+  hwPraServiceType OBJECT-TYPE
+    SYNTAX      INTEGER{normalService(1),anSpc(2),v5Spc(3),v5PreConnection(4),anPrivateLine(5)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "   User port Service type
+          用户端口业务类型 "
+    ::= { hwPraV5PortDataEntry 7 }
+
+  hwPraFSMState OBJECT-TYPE
+    SYNTAX      INTEGER{an101(1),an102(2),an11(3),an121(4),an122(5),an20(6),an30(7)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "  User port FSM state
+          用户端口FSM状态机
+          AN101,    // 阻塞1       
+          AN102,    // 阻塞2       
+          AN11,     // 本地解阻塞  
+          AN121,    // 远端解阻塞1 
+          AN122,    // 远端解阻塞2 
+          AN20,     // 接入已激活  
+          AN30,     // PL工作状态 "
+    ::= { hwPraV5PortDataEntry 8 }
+
+  hwPraPortState OBJECT-TYPE
+    SYNTAX      INTEGER{fault(1),maintain(2),oamBlock(3),peerBlock(4),idle(5),busy(6)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "   User port physical state
+          用户端口状态 "
+    ::= { hwPraV5PortDataEntry 9 }
+
+  hwPraOperate OBJECT-TYPE
+    SYNTAX      INTEGER{block(1),delayBlock(2),unblock(3)}
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+        "   Operate Type
+          对端口的阻塞操作 "
+    ::= { hwPraV5PortDataEntry 10 }
+
+
+
+END

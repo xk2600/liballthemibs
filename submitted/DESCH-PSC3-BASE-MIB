@@ -1,0 +1,1373 @@
+-- file: DESCH-PSC3-BASE-MIB.mib
+
+DESCH-PSC3-BASE-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+        DisplayString
+                FROM SNMPv2-TC
+        OBJECT-GROUP,
+        NOTIFICATION-GROUP,
+        MODULE-COMPLIANCE
+                FROM SNMPv2-CONF
+        deschModules,
+        deschPsc3
+                FROM DESCH-GLOBAL-REG
+        enterprises,
+        MODULE-IDENTITY,
+        OBJECT-TYPE,
+        NOTIFICATION-TYPE,
+        Gauge32,
+        Integer32,
+        IpAddress
+                FROM SNMPv2-SMI;
+
+deschPsc3BaseMibModule MODULE-IDENTITY
+        LAST-UPDATED "200802211439Z"
+        ORGANIZATION "Delta Energy Systems (Switzerland) AG"
+        CONTACT-INFO
+                "postal: Delta Energy Systems (Switzerland) AG
+                         Freiburgstrasse 251,
+                         CH-3018 Bern-Buempliz
+                 web:     www.deltaenergysystems.com
+                email:   stefan.rothaermel@delta-es.com"
+        DESCRIPTION
+                "MIB for managing a DC power system with PSC 3."
+
+        REVISION "200909040952Z"
+        DESCRIPTION
+                "Rev V1.6 - PSC 3 V2.50
+                - Generic Alarm table added
+                - Trap Destination table added"
+                
+        REVISION "200802211439Z"
+        DESCRIPTION
+                "Rev V1.5 - PSC  V2.20
+                - support of write access
+                - added battery parameters"
+                
+        REVISION "200801180835Z"
+        DESCRIPTION
+                "Rev V1.4 - PSC 3 V2.10
+                - added event controlled charge state"
+
+        REVISION "200607271026Z"
+        DESCRIPTION
+                "Rev V1.3 - PSC 3 V1.70
+                - corrected Oid comment for dcTcLow, dcTcHigh 
+          and dcTotalBatteryCapacity"
+
+        REVISION "200603020855Z"
+        DESCRIPTION
+                "Rev V1.2
+                - added various parameters.
+        - added additional TRAP parameter."
+
+        REVISION "200602230932Z"
+        DESCRIPTION
+                "Rev V1.1 - PSC 3 V1.60
+                - extended dcChargeState with new sepCharge state."
+
+        REVISION "200506031107Z"
+        DESCRIPTION
+                "Rev V1.0 - PSC 3 V1.5 and older
+                - added dcCurrentLimit parameter.
+                - renamed module.
+        - increased dcSoftwareVersion string size.
+        - added recharge state to dcChargeState parameter.
+        - added max. number of entries in comment for event history."
+
+ -- 1.3.6.1.4.1.20246.2.1.1.2 --  
+ ::= { deschModules 2 }
+
+
+-- root for items in the controller MIB module
+
+deschPsc3BaseMib OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1 --  
+ ::= { deschPsc3 1 }
+
+-- conformance area, containing groups and compliance specifications
+
+deschControllerConfs OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1 --  
+ ::= { deschPsc3BaseMib 1 }
+
+deschControllerGroups OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1 --  
+ ::= { deschControllerConfs 1 }
+
+deschControllerCompl OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.2 --  
+ ::= { deschControllerConfs 2 }
+
+-- sub-tree for objects, and for each functional area
+
+deschControllerObjects OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2 --  
+ ::= { deschPsc3BaseMib 2 }
+
+dcSystemInfo OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.1 --  
+ ::= { deschControllerObjects 1 }
+
+dcSystemAlarms OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2 --  
+ ::= { deschControllerObjects 2 }
+
+dcSystemMonitor OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.3 --  
+ ::= { deschControllerObjects 3 }
+
+dcRectifier OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.4 --  
+ ::= { deschControllerObjects 4 }
+
+dcBattery OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5 --  
+ ::= { deschControllerObjects 5 }
+
+  dcFloatCharge OBJECT IDENTIFIER 
+   -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.1 --  
+   ::= { dcBattery 1 }
+
+  dcBatteryTest OBJECT IDENTIFIER 
+   -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2 --  
+   ::= { dcBattery 2 }
+
+    dcBatteryTestParameter OBJECT IDENTIFIER 
+     -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.1 --  
+     ::= { dcBatteryTest 1 }
+
+    dcBatteryTestResult OBJECT IDENTIFIER 
+     -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.2 --  
+     ::= { dcBatteryTest 2 }
+
+  dcBatteryParameter OBJECT IDENTIFIER 
+   -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.3 --  
+   ::= { dcBattery 3 }  
+
+  dcEqualize OBJECT IDENTIFIER 
+   -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.4 --  
+   ::= { dcBattery 4 }
+                          
+  dcBoostCharge OBJECT IDENTIFIER 
+   -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.5 --  
+   ::= { dcBattery 5 }
+
+dcInputOutput OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.6 --  
+ ::= { deschControllerObjects 6 }
+                                    
+dcMisc OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.7 --  
+ ::= { deschControllerObjects 7 }
+                                    
+-- sub-tree for notifications
+
+deschControllerEvents OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.3 --  
+ ::= { deschPsc3BaseMib 3 }
+
+deschControllerEventObjects OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.3.1 --  
+ ::= { deschControllerEvents 1 }
+
+-- The following OBJECT IDENTIFIER is used to define SNMPv2 notifications
+-- that are backward compatible with SNMPv1 traps
+
+deschControllerEventsV2 OBJECT IDENTIFIER 
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.3.1.0 --  
+ ::= { deschControllerEventObjects 0 }
+
+-- ================================
+-- Scalar objects
+-- ================================
+
+dcSiteName OBJECT-TYPE
+        SYNTAX DisplayString (SIZE (1..16))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "An administratively-assigned site name for this
+                DC-power system."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.1.1 --  
+ ::= { dcSystemInfo 1 }
+
+dcSystemName OBJECT-TYPE
+        SYNTAX DisplayString (SIZE (1..16))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "An administratively-assigned system name for this
+                DC-power system."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.1.2 --  
+ ::= { dcSystemInfo 2 }
+
+dcSystemDateTime OBJECT-TYPE
+        SYNTAX DisplayString (SIZE (19))
+        MAX-ACCESS read-write
+        STATUS current
+        DESCRIPTION
+                "ISO 8601 representation of controller´s local date/time. 
+        The value is in the format YYYY-MM-DDThh:mm:ss. 
+                An example of a valid string is: '2004-10-04T13:45:00'."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.1.3 --  
+ ::= { dcSystemInfo 3 }
+
+dcSoftwareVersion OBJECT-TYPE
+        SYNTAX DisplayString (SIZE (1..25))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "The controller´s software version e.g V2.50Build1."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.1.4 --  
+ ::= { dcSystemInfo 4 }
+
+dcNumberUrgentAlarms OBJECT-TYPE
+        SYNTAX Gauge32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Number of currently active urgent alarm sources. A zero 
+        value indicates that urgent alarm is not active."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.3 --  
+ ::= { dcSystemAlarms 3 }
+
+dcNumberNonUrgentAlarms OBJECT-TYPE
+        SYNTAX Gauge32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Number of currently active non urgent alarm sources. A zero 
+        value indicates that non urgent alarm is not active."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.4 --  
+ ::= { dcSystemAlarms 4 }
+
+dcMainsFailureAlarm OBJECT-TYPE
+        SYNTAX INTEGER {
+                inactive(1),
+                active(2) 
+        }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Mains failure alarm."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.5 --  
+ ::= { dcSystemAlarms 5 }
+
+dcUrgentAlarmIdentifier OBJECT-TYPE
+        SYNTAX Gauge32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Current unique urgent alarm event identifier. A zero value 
+        indicates that urgent alarm is not active."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.6 --  
+ ::= { dcSystemAlarms 6 }
+
+dcUrgentAlarmValue OBJECT-TYPE
+        SYNTAX INTEGER {
+                false(1),
+                indeterminate(2),  -- deprecated, not used anymore
+                true(3) 
+    }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Current urgent alarm event status that corresponds to the 
+        urgent alarm identifier. If the urgent alarm identifier is zero 
+        then the alarm value is false."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.7 --  
+ ::= { dcSystemAlarms 7 }
+
+dcNonUrgentAlarmIdentifier OBJECT-TYPE
+        SYNTAX Gauge32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Current unique non urgent alarm event identifier. A zero value 
+        indicates that non urgent alarm is not active."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.8 --  
+ ::= { dcSystemAlarms 8 }
+
+dcNonUrgentAlarmValue OBJECT-TYPE
+        SYNTAX INTEGER {
+                false(1),
+                indeterminate(2),  -- deprecated, not used anymore
+        true(3) 
+    }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Current non urgent alarm event status that corresponds to non urgent 
+        alarm identifier. If the non urgent alarm identifier is zero then 
+        the alarm value is false."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.9 --  
+ ::= { dcSystemAlarms 9 }
+
+dcUrgentAlarmName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE (0..255))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Current alarm name for urgent alarm that corresponds to urgent 
+        alarm identifier."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.10 --  
+ ::= { dcSystemAlarms 10 }
+
+dcNonUrgentAlarmName OBJECT-TYPE
+    SYNTAX DisplayString (SIZE (0..255))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Current alarm name for active non urgent alarm that corresponds 
+        to non urgent alarm identifier."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.11 --  
+ ::= { dcSystemAlarms 11 }
+
+dcSystemVoltage OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "10 mV"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "The measured system voltage. The max. value 2147483647 
+        is used to indicate an invalid value."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.3.1 --  
+ ::= { dcSystemMonitor 1 }
+
+dcLoadCurrent OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "100 mA"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "The measured load current. The max. value 2147483647 
+        is used to indicate an invalid value."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.3.2 --  
+ ::= { dcSystemMonitor 2 }
+
+dcBatteryCurrent OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "100 mA"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION           
+                "The measured battery current. The max. value 2147483647 
+        is used to indicate an invalid value."  
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.3.3 --  
+ ::= { dcSystemMonitor 3 }
+
+dcBatteryTemperature OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "0.1 °C"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "The measured battery temperature. The max. value 2147483647 
+        is used to indicate an invalid value."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.3.4 --  
+ ::= { dcSystemMonitor 4 }
+
+dcChargeState OBJECT-TYPE
+        SYNTAX INTEGER {
+                float(1),
+                discharge(2),
+                equalize(3),
+                boost(4),
+                battTest(5), 
+        recharge(6),
+        sepCharge(7),
+        evCtrlCharge(8)
+    }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Battery charge state."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.3.5 --  
+ ::= { dcSystemMonitor 5 }
+
+dcCurrentLimit OBJECT-TYPE
+        SYNTAX INTEGER {
+                inactive(1),
+                active(2) 
+        }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Battery current limit."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.3.6 --  
+ ::= { dcSystemMonitor 6 }
+
+dcRectifierCurrent OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "100 mA"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION           
+                "Total current of all working rectifier modules.
+        The maximum value 2147483647 is used to indicate
+        an invalid value."      
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.3.7 --  
+ ::= { dcSystemMonitor 7 }
+
+dcSystemPower OBJECT-TYPE
+        SYNTAX Gauge32
+        UNITS "1 W"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION           
+                "Calculated system power. The maximum value 
+        4294967295 is used to indicate an invalid value."       
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.3.8 --  
+ ::= { dcSystemMonitor 8 }
+
+-- Rectifier
+dcNumberRectifiers OBJECT-TYPE
+        SYNTAX Gauge32 (0..128)
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "The configured number of rectifiers plugged into
+                the system. The maximum number of rectifiers
+        is 128."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.4.1 --  
+ ::= { dcRectifier 1 }
+
+dcNumberRectifiersFailure OBJECT-TYPE
+        SYNTAX Gauge32 (0..128)
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Number of rectifiers that are not properly working."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.4.2 --  
+ ::= { dcRectifier 2 }
+
+dcNumberRectifiersOkay OBJECT-TYPE
+        SYNTAX Gauge32 (0..128)
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Number of rectifiers that are properly working."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.4.3 --  
+ ::= { dcRectifier 3 }
+                      
+-- Battery - FloatCharge                      
+dcUsys20 OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "10 mV"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Voltage to regulate to at 20°C. If temperature 
+                compensation is used, this voltage will vary. The 
+                maximum value 2147483647 is used to indicate an invalid 
+                value."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.1.1 --  
+ ::= { dcFloatCharge 1 }      
+ 
+dcTcoeff OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "-mV/°C"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Temperature compensation coefficient for system voltage.
+        The maximum value 2147483647 is used to indicate
+        an invalid value."      
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.1.2 --  
+ ::= { dcFloatCharge 2 }  
+ 
+dcTcLow OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "0.1 °C"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Low limit for the area in which the temperature compensation 
+        is active. The maximum value 2147483647 is used to indicate
+        an invalid value."      
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.1.3 --  
+ ::= { dcFloatCharge 3 }  
+
+dcTcHigh OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "0.1 °C"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "High limit for the area in which the temperature compensation 
+        is active. The maximum value 2147483647 is used to indicate
+        an invalid value."      
+
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.1.4 --  
+ ::= { dcFloatCharge 4 }  
+ 
+-- Battery - BatteryTest - BatteryTestParameter
+dcUsupport OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "10 mV"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Support charge voltage for the battery. The maximum 
+                value 2147483647 is used to indicate an invalid value."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.1.1 --  
+ ::= { dcBatteryTestParameter 1 }      
+
+dcDuration OBJECT-TYPE
+        SYNTAX Gauge32
+        UNITS "minute"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Battery test duration. Zero indicates that this value 
+                is not set."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.1.2 --  
+ ::= { dcBatteryTestParameter 2 }      
+               
+dcInterval OBJECT-TYPE
+        SYNTAX Gauge32
+        UNITS "day"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Minimal time between programmed battery tests. Zero 
+                indicates that this value is not set."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.1.3 --  
+ ::= { dcBatteryTestParameter 3 }      
+               
+dcDischargeCurrent OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "100 mA"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Battery discharge current. The maximum value 2147483647 
+                is used to indicate an invalid value."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.1.4 --  
+ ::= { dcBatteryTestParameter 4 }      
+
+-- Battery - BatteryTest - BatteryTestResult
+dcTestDateTime OBJECT-TYPE
+        SYNTAX DisplayString (SIZE (19))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "ISO 8601 representation of the last performed battery test. 
+                The value is in the format YYYY-MM-DDThh:mm:ss. This parameter 
+                is valid only if there is a test result available."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.2.1 --  
+ ::= { dcBatteryTestResult 1 }      
+
+dcTestResult OBJECT-TYPE
+        SYNTAX INTEGER {
+        none(1),
+                failed(2),
+                aborted(3),
+                loadFailure(4),
+                okay(5)
+        }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Result of last performed battery test."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.2.2 --  
+ ::= { dcBatteryTestResult 2 }      
+
+dcTestEndVoltage OBJECT-TYPE
+        SYNTAX Integer32
+        UNITS "10 mV"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "System voltage at the end of the last performed battery test. 
+                The maximum value 2147483647 is used to indicate an invalid 
+                value."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.2.3 --  
+ ::= { dcBatteryTestResult 3 } 
+
+dcBatteryTestControl OBJECT-TYPE
+        SYNTAX INTEGER {
+                start(1),
+                stop(2)
+    }
+        MAX-ACCESS read-write
+        STATUS current
+        DESCRIPTION
+                "Start/stop of battery test. This special charge mode is used 
+                to check the capacity of a battery.
+                Please not that a battery test can be started even if the battery 
+                is not fully charged. In this case the test result is ambiguous 
+                and the set failure event will become active."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.3 --  
+ ::= { dcBatteryTest 3 } 
+
+dcBatteryTestStatus OBJECT-TYPE
+        SYNTAX INTEGER {
+                inactive(1),
+                starting(2),
+                stopping(3),
+                constantCurrent(4),
+                timeBased(5),
+                energyBased(6),
+                recovery(7),
+                realLoad(8),
+        stop(9)
+    }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Current status of battery test."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.4 --  
+ ::= { dcBatteryTest 4 }
+
+dcBatteryTestFailureEvent OBJECT-TYPE
+        SYNTAX INTEGER {
+                reset(1)
+    }
+        MAX-ACCESS read-write
+        STATUS current
+        DESCRIPTION
+                "Reset battery test failure event."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.2.5 --  
+ ::= { dcBatteryTest 5 }
+  
+-- Battery - BatteryParameter
+dcTotalBatteryCapacity OBJECT-TYPE
+        SYNTAX Gauge32
+        UNITS "100 mAh"
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Total battery capacity for all available batteries."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.3.1 --  
+ ::= { dcBatteryParameter 1 }      
+
+-- Battery - Equalize
+dcEqualizeControl OBJECT-TYPE
+        SYNTAX INTEGER {
+                start(1),
+                stop(2)
+    }
+        MAX-ACCESS read-write
+        STATUS current
+        DESCRIPTION
+                "Start/stop of battery equalize which is a special charge 
+                mode that applies a higher voltage to the batteries than 
+                the float charge. This ensures that the cells are all 
+                equally charged."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.4.1 --  
+ ::= { dcEqualize 1 } 
+
+dcEqualizeStatus OBJECT-TYPE
+        SYNTAX INTEGER {
+                inactive(1),
+                starting(2),
+                stopping(3),
+                preparing(4),
+                cooking(5),
+                recovering(6)
+    }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Current status of battery equalize."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.4.2 -- 
+ ::= { dcEqualize 2 }
+
+-- Battery - BoostCharge
+dcBoostChargeControl OBJECT-TYPE
+        SYNTAX INTEGER {
+                start(1),
+                stop(2)
+    }
+        MAX-ACCESS read-write
+        STATUS current
+        DESCRIPTION
+                "Start/stop of boost charge which is a special charge mode 
+                that applies a higher voltage to the batteries than the float 
+                charge. This mode is started after a discharge phase to 
+                recharge the batteries faster."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.5.1 --  
+ ::= { dcBoostCharge 1 } 
+
+dcBoostChargeStatus OBJECT-TYPE
+        SYNTAX INTEGER {
+                inactive(1),
+                starting(2),
+                stopping(3),
+                cooking(4),
+                recovering(5)
+    }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Current status of boost charge."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.5.5.2 -- 
+ ::= { dcBoostCharge 2 }
+
+dcFileProcessingStatus OBJECT-TYPE
+        SYNTAX INTEGER {
+                idle(1),
+                inProgress(2),
+                successful(3),
+                error(4),
+                unknown(5)
+    }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "File processing status for software and setup up/downloads."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.7.2 -- 
+ ::= { dcMisc 2 }
+ 
+ dcSetupConfiguration OBJECT-TYPE
+        SYNTAX INTEGER {
+                save(1)
+    }
+        MAX-ACCESS read-write
+        STATUS current
+        DESCRIPTION
+                "Save current setup configuration to non-volatile memory."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.7.3 --  
+ ::= { dcMisc 3 }
+
+                                                   
+-- ====================================================================
+-- Event History table
+-- ====================================================================
+
+dcEventHistoryTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF DcEventHistoryEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Controller´s event history table that shows the content of the
+                default log file."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.1 --  
+ ::= { dcSystemAlarms 1 }
+
+dcEventHistoryEntry OBJECT-TYPE
+        SYNTAX DcEventHistoryEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "A particular Event History entry."
+        INDEX {
+                dcEventHistoryIndex }
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.1.1 --  
+ ::= { dcEventHistoryTable 1 }
+
+DcEventHistoryEntry ::= SEQUENCE {
+
+        dcEventHistoryIndex     Integer32,
+        dcEventHistoryTimestamp DisplayString,
+        dcEventHistoryMessage   DisplayString }
+
+dcEventHistoryIndex OBJECT-TYPE
+        SYNTAX Integer32 (1..10000)
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table index."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.1.1.1 --  
+ ::= { dcEventHistoryEntry 1 }
+
+dcEventHistoryTimestamp OBJECT-TYPE
+        SYNTAX DisplayString (SIZE (19))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "ISO8601 timestamp representation of a particular entry
+                in the form YYYY-MM-DDThh:mm:ss."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.1.1.2 --  
+ ::= { dcEventHistoryEntry 2 }
+
+dcEventHistoryMessage OBJECT-TYPE
+        SYNTAX DisplayString (SIZE (0..255))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Event message of a particular entry."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.1.1.3 --  
+ ::= { dcEventHistoryEntry 3 }
+
+
+-- ====================================================================
+-- Active Alarm table
+-- ====================================================================
+
+dcAlarmTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF DcAlarmEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table that shows all currently active alarm sources 
+         causing urgent or non-urgent alarm(s)."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.2 --  
+ ::= { dcSystemAlarms 2 }
+
+dcAlarmEntry OBJECT-TYPE
+        SYNTAX DcAlarmEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "A particular active alarm source entry."
+        INDEX {
+                dcAlarmIndex }
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.2.1 --  
+ ::= { dcAlarmTable 1 }
+
+DcAlarmEntry ::= SEQUENCE {
+        dcAlarmIndex           Integer32,
+    dcAlarmEventCategory   INTEGER,
+        dcAlarmEventName       DisplayString,
+        dcAlarmEventIdentifier Gauge32, 
+        dcAlarmEventValue      INTEGER }
+
+dcAlarmIndex OBJECT-TYPE
+        SYNTAX Integer32 (1..16)
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table index."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.2.1.1 --  
+ ::= { dcAlarmEntry 1 }
+
+dcAlarmEventCategory OBJECT-TYPE
+        SYNTAX INTEGER {
+                unknown(1),
+                urgent(2),
+                nonUrgent(3) }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Specifies the type of alarm source."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.2.1.2 --  
+ ::= { dcAlarmEntry 2 }
+
+dcAlarmEventName OBJECT-TYPE
+        SYNTAX DisplayString (SIZE (0..255))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Name of a particular alarm source entry."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.2.1.3 --  
+ ::= { dcAlarmEntry 3 }
+
+dcAlarmEventIdentifier OBJECT-TYPE
+        SYNTAX Gauge32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Unique alarm event identifier."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.2.1.4 --  
+ ::= {  dcAlarmEntry 4 }
+
+dcAlarmEventValue OBJECT-TYPE
+        SYNTAX INTEGER {
+                false(1),
+                indeterminate(2),  -- deprecated, not used anymore
+        true(3) }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Event status that corresponds to alarm event identifier."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.2.1.5 --  
+ ::= {  dcAlarmEntry 5 }
+
+-- ====================================================================
+-- Rectifier table
+-- ====================================================================
+
+dcRectifierTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF DcRectifierEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table that shows all currently active rectifier 
+        modules."
+-- 1.3.6.1.4.1.20246.2.3.1.1.1.2.4.4 -- 
+ ::= { dcRectifier 4 }
+
+dcRectifierEntry OBJECT-TYPE
+        SYNTAX DcRectifierEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "A particular rectifier entry."
+        INDEX {
+                dcRectifierIndex }
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.4.4.1 --  
+ ::= { dcRectifierTable 1 }
+
+DcRectifierEntry ::= SEQUENCE {
+        dcRectifierIndex        Integer32, 
+        dcRectifierIdentifier   DisplayString, 
+        dcRectifierStatus       INTEGER }
+
+dcRectifierIndex OBJECT-TYPE
+        SYNTAX Integer32 (1..128)
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table index."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.4.4.1.1 --  
+ ::= { dcRectifierEntry 1 }
+                               
+dcRectifierIdentifier OBJECT-TYPE
+        SYNTAX DisplayString (SIZE (0..50))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Unique rectifier identifier. If positioning active the 
+                position number scheme is used otherwise the rectifier 
+                instance is used to identify a rectifier."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.4.4.1.2 --  
+ ::= { dcRectifierEntry 2 }
+
+dcRectifierStatus OBJECT-TYPE
+        SYNTAX INTEGER {
+                unknown(1),
+                off(2),
+                on(3) 
+        }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Specifies status of rectifiers."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.4.4.1.3 --  
+ ::= { dcRectifierEntry 3 }
+
+-- ====================================================================
+-- Generic Alarm table
+-- ====================================================================
+
+dcGenericAlarmTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF DcGenericAlarmEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table that shows ten alarm event assignments that can be 
+                 configured via WEB interface."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12 --  
+ ::= { dcSystemAlarms 12 }
+
+dcGenericAlarmEntry OBJECT-TYPE
+        SYNTAX DcGenericAlarmEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "A particular generic alarm entry."
+        INDEX {
+                dcGenericAlarmIndex }
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12.1 --  
+ ::= { dcGenericAlarmTable 1 }
+
+DcGenericAlarmEntry ::= SEQUENCE {
+        dcGenericAlarmIndex           Integer32,
+        dcGenericAlarmEventName       DisplayString,
+        dcGenericAlarmEventIdentifier Gauge32, 
+        dcGenericAlarmEventValue      INTEGER }
+
+dcGenericAlarmIndex OBJECT-TYPE
+        SYNTAX Integer32 (1..16)
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table index."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12.1.1 --  
+ ::= { dcGenericAlarmEntry 1 }
+                                                
+dcGenericAlarmEventName OBJECT-TYPE
+        SYNTAX DisplayString (SIZE (0..255))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Plain text name of the assigned alarm event. Empty if not
+                configured."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12.1.2 --  
+ ::= { dcGenericAlarmEntry 2 }
+
+dcGenericAlarmEventIdentifier OBJECT-TYPE
+        SYNTAX Gauge32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Unique numeric identifier of the assigned alarm event. Zero
+                if not configured."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12.1.3 --  
+ ::= {  dcGenericAlarmEntry 3 }
+
+dcGenericAlarmEventValue OBJECT-TYPE
+        SYNTAX INTEGER {
+                false(1),
+        true(2) 
+    }
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Current value of the assigned alarm event. Value is false if
+                not configured."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12.1.4 --  
+ ::= {  dcGenericAlarmEntry 4 }      
+            
+-- ====================================================================
+-- Control Event table
+-- ====================================================================
+
+dcControlEventTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF DcControlEventEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table that shows ten output event assignments that can be 
+                 configured via WEB interface."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12 --  
+ ::= { dcInputOutput 1 }
+
+dcControlEventEntry OBJECT-TYPE
+        SYNTAX DcControlEventEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "A particular generic output entry."
+        INDEX {
+                dcControlEventIndex }
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12.1 --  
+ ::= { dcControlEventTable 1 }
+
+DcControlEventEntry ::= SEQUENCE {
+        dcControlEventIndex      Integer32,
+        dcControlEventName       DisplayString,
+        dcControlEventIdentifier Gauge32, 
+        dcControlEventValue      INTEGER }
+
+dcControlEventIndex OBJECT-TYPE
+        SYNTAX Integer32 (1..16)
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table index."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12.1.1 --  
+ ::= { dcControlEventEntry 1 }
+
+dcControlEventName OBJECT-TYPE
+        SYNTAX DisplayString (SIZE (0..255))
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Plain text name of the assigned control event. Empty if not 
+                configure."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12.1.2 --  
+ ::= { dcControlEventEntry 2 }
+
+dcControlEventIdentifier OBJECT-TYPE
+        SYNTAX Gauge32
+        MAX-ACCESS read-only
+        STATUS current
+        DESCRIPTION
+                "Unique numeric identifier of the assigned control event. Zero
+                if not configured."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12.1.3 --  
+ ::= {  dcControlEventEntry 3 }
+
+dcControlEventValue OBJECT-TYPE
+        SYNTAX INTEGER {
+                false(1),
+        true(2) 
+    }
+        MAX-ACCESS read-write
+        STATUS current
+        DESCRIPTION
+                "Current value of the assigned control event. Value is false if
+                not configured."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.2.12.1.4 --  
+ ::= {  dcControlEventEntry 4 }      
+        
+
+-- ====================================================================
+-- Trap Destinations table
+-- ====================================================================
+
+dcTrapDestinationTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF DcTrapDestinationEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Trap table that shows all configured trap destinations."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.7 --  
+ ::= { dcMisc 1 }
+
+dcTrapDestinationEntry OBJECT-TYPE
+        SYNTAX DcTrapDestinationEntry
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "A particular trap destination entry."
+        INDEX {
+                dcTrapDestinationIndex }
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.7.1 --  
+ ::= { dcTrapDestinationTable 1 }
+
+DcTrapDestinationEntry ::= SEQUENCE {
+        dcTrapDestinationIndex      Integer32,
+        dcTrapDestinationIp         IpAddress,   
+        dcTrapDestinationPort       Gauge32 }
+
+dcTrapDestinationIndex OBJECT-TYPE
+        SYNTAX Integer32 (1..10)
+        MAX-ACCESS not-accessible
+        STATUS current
+        DESCRIPTION
+                "Table index."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.7.1.1 --  
+ ::= { dcTrapDestinationEntry 1 }
+
+dcTrapDestinationIp OBJECT-TYPE
+        SYNTAX IpAddress
+        MAX-ACCESS read-write
+        STATUS current
+        DESCRIPTION
+                "IP address of the trap destination. Value is 0.0.0.0 if IP
+                address is not configured."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.7.1.2 --  
+ ::= { dcTrapDestinationEntry 2 }
+
+dcTrapDestinationPort OBJECT-TYPE
+        SYNTAX Gauge32
+        MAX-ACCESS read-write
+        STATUS current
+        DESCRIPTION
+                "Port number of the trap destination. By default port 162
+                is used."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.2.7.1.3 --  
+ ::= {  dcTrapDestinationEntry 3 }
+   
+       
+-- ====================================================================
+-- Notifications
+-- ====================================================================
+
+systemNonUrgentAlarm NOTIFICATION-TYPE
+        OBJECTS {
+                dcSystemDateTime,
+                dcNumberNonUrgentAlarms,
+        dcNonUrgentAlarmIdentifier,
+        dcNonUrgentAlarmValue,
+        dcNonUrgentAlarmName }
+        STATUS current
+        DESCRIPTION
+                "The controller reports that one or more elements have changed
+                into none urgent alarm state."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.3.1.0.1 --  
+ ::= { deschControllerEventsV2 1 }
+
+systemUrgentAlarm NOTIFICATION-TYPE
+        OBJECTS {
+                dcSystemDateTime,
+                dcNumberUrgentAlarms,
+        dcUrgentAlarmIdentifier,
+        dcUrgentAlarmValue,
+        dcUrgentAlarmName }
+        STATUS current
+        DESCRIPTION
+                "The controller reports that one or more elements have changed
+                into urgent alarm state."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.3.1.0.2 --  
+ ::= { deschControllerEventsV2 2 }
+                                       
+-- ====================================================================
+-- Conformance area, containing groups and compliance specifications
+-- ====================================================================
+
+deschSystemInfoGroup OBJECT-GROUP
+        OBJECTS {
+                dcSiteName,
+                dcSystemName,
+                dcSystemDateTime,
+                dcSoftwareVersion }
+        STATUS current
+        DESCRIPTION
+                "The collection of system info scalar objects."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.1 --  
+ ::= { deschControllerGroups 1 }
+
+deschSystemAlarmGroup OBJECT-GROUP
+        OBJECTS {
+                dcNumberUrgentAlarms,
+                dcNumberNonUrgentAlarms,
+                dcMainsFailureAlarm,
+        dcUrgentAlarmIdentifier,
+        dcUrgentAlarmValue,
+        dcNonUrgentAlarmIdentifier,
+        dcNonUrgentAlarmValue,
+        dcUrgentAlarmName,
+        dcNonUrgentAlarmName }
+        STATUS current
+        DESCRIPTION
+                "The collection of system alarm scalar objects."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.2 --  
+ ::= { deschControllerGroups 2 }
+
+deschSystemMonitorGroup OBJECT-GROUP
+        OBJECTS {
+                dcSystemVoltage,
+                dcLoadCurrent,
+                dcBatteryCurrent,
+                dcBatteryTemperature,
+                dcChargeState,
+        dcCurrentLimit,
+        dcRectifierCurrent,
+        dcSystemPower }
+        STATUS current
+        DESCRIPTION
+                "The collection of system monitor scalar objects."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.3 --  
+ ::= { deschControllerGroups 3 }
+
+deschRectifiersGroup OBJECT-GROUP
+        OBJECTS {
+                dcNumberRectifiers,
+                dcNumberRectifiersFailure,
+                dcNumberRectifiersOkay }
+        STATUS current
+        DESCRIPTION
+                "The collection of rectifier scalar objects."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.4 --  
+ ::= { deschControllerGroups 4 }
+
+deschEventHistoryTableGroup OBJECT-GROUP
+        OBJECTS {
+                dcEventHistoryTimestamp,
+                dcEventHistoryMessage }
+        STATUS current
+        DESCRIPTION
+                "The collection of event history table objects."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.5 --  
+ ::= { deschControllerGroups 5 }
+
+deschAlarmTableGroup OBJECT-GROUP
+        OBJECTS {
+                dcAlarmEventCategory,
+                dcAlarmEventName,
+        dcAlarmEventIdentifier,
+        dcAlarmEventValue }
+        STATUS current
+        DESCRIPTION
+                "The collection of alarm table objects."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.6 --  
+ ::= { deschControllerGroups 6 }
+
+deschRectifierTableGroup OBJECT-GROUP
+        OBJECTS {
+            dcRectifierIdentifier,
+            dcRectifierStatus }
+        STATUS current
+        DESCRIPTION
+                "The collection of rectifier table objects."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.7 --  
+ ::= { deschControllerGroups 7 }
+
+deschNotificationsGroup NOTIFICATION-GROUP
+        NOTIFICATIONS {
+                systemNonUrgentAlarm,
+                systemUrgentAlarm }
+        STATUS current
+        DESCRIPTION
+                "The group of all controller notifications."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.8 --  
+ ::= { deschControllerGroups 8 }   
+ 
+deschGenericAlarmTableGroup OBJECT-GROUP
+        OBJECTS {
+                dcGenericAlarmEventIdentifier,
+                dcGenericAlarmEventName,
+                dcGenericAlarmEventValue }
+        STATUS current
+        DESCRIPTION
+                "Assignment of events to alarm table entries."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.9 --  
+ ::= { deschControllerGroups 9 }        
+ 
+deschBatteryGroup OBJECT-GROUP
+        OBJECTS {
+            dcUsys20,
+            dcTcoeff,
+            dcTcLow,
+            dcTcHigh,
+            dcUsupport,
+            dcDuration,
+            dcInterval,
+            dcDischargeCurrent,
+            dcTestDateTime,
+            dcTestResult,
+            dcTestEndVoltage,
+        dcBatteryTestControl,
+        dcBatteryTestStatus,
+        dcBatteryTestFailureEvent,
+            dcTotalBatteryCapacity,
+        dcEqualizeControl,
+        dcEqualizeStatus,
+        dcBoostChargeControl,
+        dcBoostChargeStatus
+ }
+        STATUS current
+        DESCRIPTION
+                "The collection of battery scalar objects."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.10 --  
+ ::= { deschControllerGroups 10 }
+                                      
+deschControlEventTableGroup
+  OBJECT-GROUP
+        OBJECTS {
+                dcControlEventName,
+        dcControlEventIdentifier,
+        dcControlEventValue }
+        STATUS current
+        DESCRIPTION
+                "Assignment of control events to table entries."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.11 --  
+ ::= { deschControllerGroups 11 }
+                                   
+deschTrapDestinationTableGroup  
+  OBJECT-GROUP
+        OBJECTS {
+                dcTrapDestinationIp,
+        dcTrapDestinationPort }
+        STATUS current
+        DESCRIPTION
+                "Trap destionation table."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.12 --  
+ ::= { deschControllerGroups 12 }
+       
+deschMiscGroup OBJECT-GROUP
+        OBJECTS {
+                dcFileProcessingStatus,
+                dcSetupConfiguration }
+        STATUS current
+        DESCRIPTION
+                "The collection of miscellaneous objects."
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.1.13 --  
+ ::= { deschControllerGroups 13 }
+                               
+deschControllerBasicCompl MODULE-COMPLIANCE
+        STATUS current
+        DESCRIPTION
+                "The basic implementation requirements for the controller MIB."
+        MODULE 
+        MANDATORY-GROUPS {
+                deschSystemInfoGroup,
+                deschSystemAlarmGroup,
+                deschSystemMonitorGroup,
+                deschRectifiersGroup,
+                deschEventHistoryTableGroup,
+                deschAlarmTableGroup,
+                deschGenericAlarmTableGroup,
+                deschNotificationsGroup,
+                deschBatteryGroup }
+ -- 1.3.6.1.4.1.20246.2.3.1.1.1.1.2.1 --  
+ ::= { deschControllerCompl 1 }
+
+END

@@ -1,0 +1,1283 @@
+PEA_EQUIPMENT DEFINITIONS ::= BEGIN          
+
+
+IMPORTS
+    pea														  
+       FROM PEA-SMI 
+
+	-- standar X.733 header for the traps       
+    managedObjectClass, 
+    managedObjectInstance, 
+    sequenceNumber, 
+    perceivedSeverity, 
+    eventTime, 
+    eventTypePem, 
+    probableCause  
+       FROM PEM-STANDARD 
+    
+    MacAddress
+	   FROM SNMPv2-TC
+	;
+
+peaEquipment  MODULE-IDENTITY
+    LAST-UPDATED 
+   		 "0302271200Z"
+    ORGANIZATION
+		 "Ericsson Diax A/S - Denmark"
+    CONTACT-INFO
+		 "
+		 Ericsson Diax A/S
+		 Faelledvej 17
+		 DK-7600 Struer
+		 Denmark
+		 
+		 E-mail: support@dxd.ericsson.se
+		 "       
+   DESCRIPTION
+		 "
+		 The public ethernet access software supports a number of standard 
+		 and proprietary MIBs. This MIB module defines objects for reading/writing
+     	 common equipment information.  		 
+		 "                                                           
+		 
+    ::= { pea 1 }
+    
+commonObjects	   	      OBJECT IDENTIFIER ::= { peaEquipment  1 }
+commonTraps		   	      OBJECT IDENTIFIER ::= { peaEquipment  2 }
+pethObjects               OBJECT IDENTIFIER ::= { peaEquipment  3 }
+pethNotifications         OBJECT IDENTIFIER ::= { peaEquipment  4 }
+pethNotificationTypes     OBJECT IDENTIFIER ::= { pethNotifications 0 }
+
+traps 		   	          OBJECT IDENTIFIER ::= { commonTraps  0 }
+trapsParameters		   	  OBJECT IDENTIFIER ::= { commonTraps  1 }
+
+versions                  OBJECT IDENTIFIER ::= { commonObjects 1 }
+mainProcessor             OBJECT IDENTIFIER ::= { commonObjects 2 }
+temperature               OBJECT IDENTIFIER ::= { commonObjects 3 }
+fansStatus                OBJECT IDENTIFIER ::= { commonObjects 4 }
+alarmFilter               OBJECT IDENTIFIER ::= { commonObjects 5 }
+configurationData         OBJECT IDENTIFIER ::= { commonObjects 6 }
+upgradeSW                 OBJECT IDENTIFIER ::= { commonObjects 7 }
+
+-- commonObjects between 8 and 14 are used below
+identificationData OBJECT IDENTIFIER ::= { commonObjects 15 }
+
+deviceIdData 	   		OBJECT IDENTIFIER ::= { identificationData 1 }
+microProcessorIdData	OBJECT IDENTIFIER ::= { identificationData 2 }
+analogueFrontEndIdData  OBJECT IDENTIFIER ::= { identificationData 3 }
+dcDcConverterIdData	   	OBJECT IDENTIFIER ::= { identificationData 4 }
+
+
+-- commonObjects 15 used below
+
+PhyModeType ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT "1x"
+    STATUS       current
+    DESCRIPTION
+            "Represent the Ethernet PHY Mode."
+    SYNTAX       OCTET STRING (SIZE (1))
+
+--************************************************************************
+-- Equipment Information
+--************************************************************************
+
+sysId OBJECT-TYPE
+	SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "This value includes the full name and version
+ 	 identification of the device software."
+    ::= { versions 1 }    
+ 
+bootSwId OBJECT-TYPE
+	SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "This value includes the full name and version
+ 	 identification of the BOOT software."
+    ::= { versions 2 } 
+
+cfgVer OBJECT-TYPE
+	SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The CfgVer will initially be zero, but is set to
+     the version number defined in the configuration file 
+     received from the tftp server at system start-up. The 
+     management system may use this version number to verify 
+     that the unit contains the correct configuration 
+     parameter values. The management system may update the 
+     version number when configuration parameters are modified."
+    ::= { versions 3 }
+
+activeSwInfo OBJECT-TYPE
+	SYNTAX      DisplayString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "This value represents the software version of the active software part of the device."
+    ::= { versions 4 }
+
+passiveSwInfo OBJECT-TYPE
+	SYNTAX      DisplayString 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "This value represents the software version of the passive software part of the device."
+    ::= { versions 5 } 
+
+--************************************************************************
+-- common performance statistics
+--************************************************************************
+
+processorLoad OBJECT-TYPE
+	SYNTAX      Unsigned32 (0..100)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The percentage of time that the main processor was not idle.
+     Average over 10 seconds. (almost like hrProcessorLoad in RFC1514)."
+    ::= { mainProcessor 1 }
+
+memFree OBJECT-TYPE
+	SYNTAX      Unsigned32 (0..100)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The amount of free memory on main processor in percent."
+    ::= { mainProcessor 2 }
+    
+memFreeBytes OBJECT-TYPE
+	SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The amount of free memory on main processor in bytes."
+    ::= { mainProcessor 3 }
+    
+memBuffersUsed OBJECT-TYPE
+	SYNTAX      Unsigned32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The total number of memory buffers currently used (Ethernet, ATM & local IP-stack)."
+    ::= { mainProcessor 4 }    
+
+--************************************************************************
+-- temperature and state of fans
+--************************************************************************
+
+tempControlState OBJECT-TYPE
+	SYNTAX      INTEGER {low(0), normal(1), high(2), tooHigh(3)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The state of the temperature control can be:
+     0 - Low
+     1 - Normal
+     2 - High
+     3 - TooHigh"
+    ::= { temperature 1 }
+
+tempValue OBJECT-TYPE
+	SYNTAX      Integer32 (1..150)
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The temperature value in the device in grade Celsius."
+    ::= { temperature 2 }
+          
+greenFanStatus OBJECT-TYPE
+	SYNTAX      INTEGER {failed(0), working(1)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The status of the fan which is placed closest to the green LED.
+     For ESN310, green fan is the fan place to the front"
+    ::= { fansStatus 1 }
+
+redFanStatus OBJECT-TYPE
+	SYNTAX      INTEGER {failed(0), working(1)}
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The status of the fan which is placed closest to the red LED.
+     For ESN310, red fan is the fan place to the back"
+    ::= { fansStatus 2 }
+
+greenFanSpeed OBJECT-TYPE
+	SYNTAX      Unsigned32 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The speed of the fan, which is placed closest to the
+     green LED, measured in rpm (rotations per minute)." 
+    ::= { fansStatus 3 } 
+    
+redFanSpeed OBJECT-TYPE
+	SYNTAX      Unsigned32 
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The speed of the fan, which is placed closest to the
+     red LED, measured in rpm (rotations per minute)." 
+    ::= { fansStatus 4 }
+
+--************************************************************************
+-- Actions
+--************************************************************************
+
+hideInternalInterfaces OBJECT-TYPE
+	SYNTAX      INTEGER { off (0), on (1) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The management system can chose to hide all interfaces (RFC1233/RFC2233)
+    that are irrelevant in the PEM network view (HP OpenView issue).
+     If 0, Don't hide any interfaces.
+     If 1, Hide internal interfaces (e.g. loopback and ATM interfaces)."  
+    ::= { commonObjects 8} 
+
+restart OBJECT-TYPE
+	SYNTAX      INTEGER {restart(1)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "When set to 'restart' the device restarts, which includes 
+    loading the SW image and configuration data from the server. 
+    In this way a new SW version can be loaded and/or the configu-
+    ration data can be updated." 
+    ::= { commonObjects 9 }    
+
+ledsAltBlink OBJECT-TYPE
+	SYNTAX      INTEGER {on(1), off(0)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "When the ledsAltBlink is set to ON(1) the
+     LEDs will start to blink alternatively."
+    ::= { commonObjects 10 }
+
+startCfgVerification OBJECT-TYPE
+	SYNTAX      INTEGER {verify(1)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "When startCfgVerification is set to verify(1) the device retrieves the configuration file from a server and
+    overwrites its parameters with the parameters from the new file." 
+    ::= { commonObjects 11 }
+
+saveCfgToNvm OBJECT-TYPE
+	SYNTAX      INTEGER {start(1)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "When saveCfgToNvm is set to start(1) the device saves the configuration data parameters to NVM." 
+    ::= { commonObjects 12 }    
+
+cfgVerificationInterval OBJECT-TYPE
+	SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This is the time in minutes between configuration file verification.
+     If the value is zero the configuration verification is disabled." 
+    ::= { commonObjects 13 }
+
+notifyType OBJECT-TYPE
+    SYNTAX      INTEGER { trap(1), inform (2)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Set the type of the notify sent by the device:
+     1. Trap
+     2. Inform" 
+    ::= { commonObjects 14 }
+
+sntpServerIP OBJECT-TYPE
+	SYNTAX      IpAddress
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The IP address of SNTP server used for time synchronization." 
+    ::= { commonObjects 16 }                        
+
+--************************************************************************
+-- alarm filter parameters
+--************************************************************************
+comAlarmFilter  OBJECT-TYPE
+	SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This alarm filter will filter out all communication 
+     alarms with lower severity than the selected.
+     E.g. Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    ::= { alarmFilter 1 }
+
+envAlarmFilter  OBJECT-TYPE
+	SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This alarm filter will filter out all environment 
+     alarms with lower severity than the selected.
+     E.g. Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    ::= { alarmFilter 2 }
+
+equipAlarmFilter  OBJECT-TYPE
+	SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This alarm filter will filter out all equipment 
+     alarms with lower severity than the selected.
+     E.g. Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    ::= { alarmFilter 3 }
+    
+processAlarmFilter  OBJECT-TYPE
+	SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This alarm filter will filter out all processing 
+     alarms with lower severity than the selected.
+     E.g. Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    DEFVAL { major }
+    ::= { alarmFilter 4 }
+    
+qosAlarmFilter  OBJECT-TYPE
+	SYNTAX      INTEGER { warning (0), minor (1), major (2), critical (3)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "This alarm filter will filter out all quality 
+     alarms with lower severity than the selected.
+     E.g. Selecting minor (1) would filter out all
+     alarms with warning (0) severity."
+    DEFVAL { major }
+    ::= { alarmFilter 5 }      
+
+alarmFilterThres OBJECT-TYPE
+    SYNTAX      Unsigned32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The threshold value indicates how many alarms that can be filtered by the
+     device in the time interval indicated by the alarmFilterInterval parameter
+     before an alarm is sent. If set to 0, the functionality is disabled."
+    ::= { alarmFilter 6 } 
+
+alarmFilterInterval OBJECT-TYPE
+    SYNTAX      Unsigned32
+    UNITS	"sec"
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The value of this parameter indicates the time interval in which the device
+     can filter a number of alarms indicated by the alarmFilterThres parameter
+     before an alarm is sent. If set to 0, the functionality is disabled."
+    ::= { alarmFilter 7 } 
+
+--************************************************************************
+-- Configuration Data
+--************************************************************************
+
+localMacAddr OBJECT-TYPE
+	SYNTAX      MacAddress
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Unique MAC address of the device."
+    ::= { configurationData 1 }
+
+phyMode OBJECT-TYPE
+	SYNTAX      PhyModeType
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Ethernet PHY Mode setting.
+     The Phy Mode is coded as a bitfield:
+	 ·	Bit 0: Auto-negotiation. If set, auto-negotiation is OFF else ON.
+	 ·	Bit 2: Full Duplex control. If set, full duplex operation is NOT allowed.
+	 ·	Bit 3: 100 Mbit/s control. If set, 100 Mbit/s operation is NOT allowed.
+	 ·	Bit 4: Half Duplex control. If set, half duplex operation is NOT allowed
+	 ·	Bit 5: 10 Mbit/s control. If set, 10 Mbit/s operation is NOT allowed.
+	 Examples of PHY Mode values:
+	 ·	0x00: Full auto-negotiation.
+	 ·	0x20: 100 Mbit/s only. Auto-negotiation between half & full duplex.
+	 ·	0x31: Fixed 100 Mbit/s, full duplex only operation.
+	 ·	0x25: Fixed 100 Mbit/s, half duplex only operation
+	"
+    ::= { configurationData 2 }
+ 
+watchDogEnable OBJECT-TYPE
+	SYNTAX      INTEGER { off (0), on (1) }
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Enabling of the HW Watchdog.
+     If 0 (zero), the watchdog is OFF, 
+     else the watchdog is ON."
+    ::= { configurationData 3 }
+
+vlanId OBJECT-TYPE
+	SYNTAX      Unsigned32 (0..4095)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The VLAN ID setting for the management VLAN."  
+    ::= { configurationData 5 }     
+    
+vlanPrio OBJECT-TYPE
+	SYNTAX      Unsigned32 (0..7)
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Specifies the IEEE 802.1Q priority used for the management VLAN."  
+    ::= { configurationData 6 }     
+      
+vlanTagging OBJECT-TYPE
+	SYNTAX      INTEGER { off (0), on (1) }
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "If 0, VLAN tagging is off, meaning that VLAN is not used.
+     If 1, VLAN tagging is used, with the given ID and Prio."  
+    ::= { configurationData 7 } 
+    
+bootString OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (0..255))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Text commands for the bootloader."
+    ::= { configurationData 8 }
+
+    
+--************************************************************************
+-- Upgrade Software
+--************************************************************************
+
+swFileName OBJECT-TYPE
+	SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "The filename to upload to the device.
+     The path to this file is in the root directory that is specified in the FTP server"
+    ::= { upgradeSW 1 }    
+
+uploadSW OBJECT-TYPE
+	SYNTAX      INTEGER { uploadSwWithRestart (1), uploadSwWithoutRestart (2)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Upload new application software to device.
+    The file which is loaded is indicated by the swFileName parameter.
+    1 - upload SW to the device and restart afterwards.
+    2 - upload SW to the device without restarting."
+    ::= { upgradeSW 2 }    
+
+bootSwFileName OBJECT-TYPE
+	SYNTAX      DisplayString
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"The filename of a boot sw image located on the domain file server. This file
+     name is used by the uploadBootSw."
+    ::= { upgradeSW 3 }
+
+uploadBootSw OBJECT-TYPE
+	SYNTAX      INTEGER { start (1)}
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+    "Upload new boot software to this device. The boot sw image must be named by the
+     bootSwFileName parameter and located on the domain file server, which is the next-server
+     in the DHCP offer."
+    ::= { upgradeSW 4 }    
+    
+--************************************************************************
+-- Device identification data
+--************************************************************************
+
+productNumber OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Index number that identifies the device."
+    ::= { deviceIdData 1 }    
+          
+revisionState OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     E.g. different types of components or new boot SW."
+    ::= { deviceIdData 2 }    
+    
+functionDesignation OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { deviceIdData 3 }    
+
+dateOfProduction OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { deviceIdData 4 }
+    
+dateOfRepair OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+   ::= { deviceIdData 5 }
+
+productionSerialNumber OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { deviceIdData 6 }
+    
+layoutVersionCode OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { deviceIdData 7 }  
+    
+idCheckSum OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "CRC32 Checksum of identification data structure 
+     of the device."
+    ::= { deviceIdData 8 }
+     
+--************************************************************************
+-- MicroProcessor board identification data
+--************************************************************************
+
+productNumberMicroProcessor OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Index number that identifies the MicroProcessor board."
+    ::= { microProcessorIdData 1 }    
+          
+revisionStateMicroProcessor OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     E.g. different types of components or new boot SW."
+    ::= { microProcessorIdData 2 }    
+    
+functionDesignationMicroProcessor OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { microProcessorIdData 3 }    
+
+dateOfProductionMicroProcessor OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { microProcessorIdData 4 }
+    
+dateOfRepairMicroProcessor OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     he format is described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { microProcessorIdData 5 }
+
+productionSerialNumberMicroProcessor OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { microProcessorIdData 6 }
+    
+layoutVersionCodeMicroProcessor OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { microProcessorIdData 7 }  
+    
+idCheckSumMicroProcessor OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "CRC32 Checksum of identification data structure
+     for the MicroProcessor board."
+    ::= { microProcessorIdData 8 }        
+
+--************************************************************************
+-- Analogue Front End board identification data
+--************************************************************************
+productNumberAnalogueFrontEnd OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Index number that identifies the AFE board."
+    ::= { analogueFrontEndIdData 1 }    
+          
+revisionStateAnalogueFrontEnd OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     E.g. different types of components or new boot SW."
+    ::= { analogueFrontEndIdData 2 }    
+    
+functionDesignationAnalogueFrontEnd OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { analogueFrontEndIdData 3 }    
+
+dateOfProductionAnalogueFrontEnd OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { analogueFrontEndIdData 4 }
+    
+dateOfRepairAnalogueFrontEnd OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { analogueFrontEndIdData 5 }
+
+productionSerialNumberAnalogueFrontEnd OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { analogueFrontEndIdData 6 }
+    
+layoutVersionCodeAnalogueFrontEnd OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { analogueFrontEndIdData 7 }  
+    
+idCheckSumAnalogueFrontEnd OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "CRC32 Checksum of identification data structure
+     for the Analogue Front End board."
+    ::= { analogueFrontEndIdData 8 }        
+
+--************************************************************************
+-- DC-DC Converter board identification data
+--************************************************************************
+productNumberDcDcConverter OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..24))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Index number that identifies the DC-DC Converter board."
+    ::= { dcDcConverterIdData 1 }    
+          
+revisionStateDcDcConverter OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..7))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Revision State or 'R-state' declaring minor versions. 
+     E.g. different types of components or new boot SW."
+    ::= { dcDcConverterIdData 2 }    
+    
+functionDesignationDcDcConverter OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (0..12))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Number with reference to the handling and use of the product."
+    ::= { dcDcConverterIdData 3 }    
+
+dateOfProductionDcDcConverter OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Manufacturing date, describing when the unit has been manufactured,
+     in terms of a year, month and a day, as described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { dcDcConverterIdData 4 }
+    
+dateOfRepairDcDcConverter OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Repair date, declaring the year, month and day of the latest repair.
+     The format is described below:
+     	Year code(0000 ..9999) - 2 bytes (LSB,MSB)
+     	Month (1..12)- 1 byte
+     	Day (1 ..31)- 1 byte. 
+     For example, Wednesday June 12, 2002 would be displayed as: 
+     h'02, h'14, h'06, h'0C."
+    ::= { dcDcConverterIdData 5 }
+
+productionSerialNumberDcDcConverter OBJECT-TYPE
+	SYNTAX      DisplayString (SIZE (13))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "Unique serial number, describing the product in terms of a manufacturing
+     site code and a sequence number."
+    ::= { dcDcConverterIdData 6 }
+    
+layoutVersionCodeDcDcConverter OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "The data layout version that allows the possibility
+     to interpret stored data differently."
+    ::= { dcDcConverterIdData 7 }  
+    
+idCheckSumDcDcConverter OBJECT-TYPE
+	SYNTAX      OCTET STRING (SIZE (4))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+    "CRC32 Checksum of identification data for the DC-DC Converter board."
+    ::= { dcDcConverterIdData 8 } 
+
+--************************************************************************
+-- Trap definitions
+--************************************************************************
+
+tempTooHigh      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  tempControlState, tempValue }
+	STATUS  current
+    DESCRIPTION
+    "Temperature is too high. The temperature has increased 
+     above a fixed threshold value. The high temperature value is probably 
+     caused by fan failure or high environment temperature.
+
+	 For the IP DSLAM  the lines are stopped in order to reduce
+     the power consumption and avoid damage to the device."
+    ::= { traps 1 }
+
+tempTooHighCeasing      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  tempControlState, tempValue }
+	STATUS  current
+    DESCRIPTION
+    "Temperature too high ceasing. The temperature has decreased
+     below a fixed threshold value in the normal working area. 
+
+     For the IP DSLAM the lines are brought into service again, which will lead 
+     to increasing power consumption and possibly increased temperature."
+    ::= { traps 2 }  
+
+greenFanFailure      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  greenFanStatus, greenFanSpeed }
+	STATUS  current
+    DESCRIPTION
+    "Indicates a fan failure on the fan closest to the green LED.
+     For ESN310, green fan is the fan place to the front"
+    ::= { traps 3 }      
+
+greenFanCeasing      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  greenFanStatus, greenFanSpeed }
+	STATUS  current
+    DESCRIPTION
+    "Indicates the ceasing of the fan which is closest to the green LED.
+     For ESN310, green fan is the fan place to the front"
+    ::= { traps 4 }      
+
+redFanFailure      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  redFanStatus, redFanSpeed }
+	STATUS  current
+    DESCRIPTION
+    "Indicates a fan failure on the fan closest to the red LED.
+     For ESN310, red fan is the fan place to the back"
+    ::= { traps 5 }      
+
+redFanCeasing      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  redFanStatus, redFanSpeed }
+	STATUS  current
+    DESCRIPTION
+    "Indicates the ceasing of the fan which is closest to the red LED.
+     For ESN310, red fan is the fan place to the back"
+    ::= { traps 6 }
+
+restartAlarm      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+			  postMortemInfo, sysId  }
+	STATUS  current
+    DESCRIPTION
+    "Device restart alarm. The post mortem information
+     will indicate the reason for the restart."
+   ::= { traps 7 } 
+    
+stateEventErr      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber,perceivedSeverity, 
+			  eventTime, eventTypePem, probableCause, taskId, taskState, 
+			  taskFileName, lineNumber, msgSenderTask, msgId, msgData }
+	STATUS  current
+    DESCRIPTION
+    "State/Event SW error detected. Called by the 
+     Default Error Handler in DMAPI when a message
+     is discarded."
+    ::= { traps 8 }    
+    
+nonFatalSoftwareErr      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, perceivedSeverity, 
+			  eventTime, eventTypePem, probableCause, taskId, taskState, 
+			  taskFileName, lineNumber, errCode, errData }
+	STATUS  current
+    DESCRIPTION
+    "Non-fatal SW error detected."
+    ::= { traps 9 } 
+    
+fatalSoftwareErr      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+			  taskId, taskState, taskFileName, lineNumber, errCode }
+	STATUS  current
+    DESCRIPTION
+    "Fatal SW error detected - The device SW will restart."
+    ::= { traps 10 }  
+
+configurationFileErr      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+			  errCode }
+	STATUS  current
+    DESCRIPTION
+    "Configuration file load or pass error."
+    ::= { traps 11 }  
+
+idDataReadErr      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  hwUnitId }
+	STATUS  current
+    DESCRIPTION
+    "Indicates that the identification data read from FLASH for
+     the HW unit indicated by 'hwUnitId' parameter is corrupted."
+    ::= { traps 12 }  
+    
+cfgDataReadErr      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  configData }
+	STATUS  current
+    DESCRIPTION
+    "Indicates that the configuration data read from FLASH for
+     the device is corrupted.
+     The 'configData' parameter indicates the data corrupted."
+    ::= { traps 13 }  
+    
+writeFlashErr      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  idOrConfigData}
+	STATUS  current
+    DESCRIPTION
+    "Indicates that an error occured during FLASH writing."
+    ::= { traps 14 }   
+    
+bothFansFailed      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  greenFanStatus, redFanStatus, greenFanSpeed, redFanSpeed }
+	STATUS  current
+    DESCRIPTION
+    "Indicates that both fans failed."
+    ::= { traps 15 }      
+
+bothFansFailCeasing      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  greenFanStatus, redFanStatus, greenFanSpeed, redFanSpeed }
+	STATUS  current
+    DESCRIPTION
+    "Indicates the ceasing of both fans failure. 
+     At least one of the fans is working."
+    ::= { traps 16 }
+
+
+deviceTypeUnknown      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  productNumber, revisionState }
+	STATUS  current
+    DESCRIPTION
+    "Indicates that the device type can not be identified.
+     The product number and revision state are unkonwn or corrupted. 
+     The application software can not handle hardware correctly."
+    ::= { traps 17 }
+    
+greenFanLowPerformance      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  greenFanStatus, greenFanSpeed }
+	STATUS  current
+    DESCRIPTION
+    "Indicates that the fan, which is close to the green LED, 
+     has a low performance."
+    ::= { traps 18 }      
+          
+greenFanLowPerformanceCeasing      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  greenFanStatus, greenFanSpeed }
+	STATUS  current
+    DESCRIPTION
+    "Indicates the ceasing of the low performance  of the fan, 
+     which is close to the green LED."
+    ::= { traps 19 }      
+
+redFanLowPerformance      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  redFanStatus, redFanSpeed }
+	STATUS  current
+    DESCRIPTION
+    "Indicates that the fan, which is close to the red LED, 
+     has a low performance."
+    ::= { traps 20}      
+          
+redFanLowPerformanceCeasing      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  redFanStatus, redFanSpeed }
+	STATUS  current
+    DESCRIPTION
+    "Indicates the ceasing of the low performace of the fan, 
+     which is close to the red LED."
+    ::= { traps 21 }   
+
+tempCloseToTooHigh      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  tempValue }
+	STATUS  current
+    DESCRIPTION
+    "Indicates the temperature is close to the too high value,
+     when the subscriber lines are shut down."
+    ::= { traps 22 }    
+    
+tempCloseToTooHighCeasing      NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause,  
+ 			  tempValue }
+	STATUS  current
+    DESCRIPTION
+    "Indicates that the temperatureCloseToTooHigh alarm is ceased."
+    ::= { traps 23 }          
+
+configurationMismatch NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause, errCode}
+	STATUS  current
+    DESCRIPTION
+    "This alarm has a higher severity than configurationItemMismatch and is only sent
+    once no matter how many parameter mismatches that is detected. This can be considered
+    as one generel alarm instead of using several configurationItemMismatch alarms. From
+    this trap it is possible to see how many items that had a mismatch
+
+	The trap is sent if e.g. the trap notification is set to 'inform' and that it was expected
+    to be 'trap' then a configurationMismatch will be sent to the management system"
+    ::= { traps 24 }          
+
+configurationItemMismatch NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause, errCode}
+	STATUS  current
+    DESCRIPTION
+    "This alarm is sent for each parameter where a mismatch is detected. If e.g. the
+    trap notification is set to 'inform' and that it was expected to be 'trap' then a
+    configurationItemMismatch will be sent to the management system"
+    ::= { traps 25 }
+
+swUploadErr NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause }
+	STATUS  current
+    DESCRIPTION
+    "An error occured during software upload."
+    ::= { traps 26 }
+
+programStartFailure NOTIFICATION-TYPE
+	OBJECTS { managedObjectClass, managedObjectInstance, sequenceNumber, 
+    		  perceivedSeverity, eventTime, eventTypePem, probableCause }
+	STATUS  current
+    DESCRIPTION
+    "When no valid flash part can be found on the device this trap is sent."
+    ::= { traps 27 }    
+
+
+-- PETH (PoE) notifications
+
+pethPsePortFailureNotification NOTIFICATION-TYPE
+
+    OBJECTS     { managedObjectClass,
+                  managedObjectInstance,
+                  sequenceNumber, 
+    		          perceivedSeverity,
+                  eventTime,
+                  eventTypePem,
+                  probableCause }
+
+    STATUS      current
+
+    DESCRIPTION
+    "
+     This notification is sent when the port detects a permanent
+     power failure. It is not specified if the notification is triggered
+     by a malfunction on the PSE, PD or the MAIN PSE HW.
+    "
+
+    ::= { pethNotificationTypes 1 }
+
+
+pethPsePortFailureCeasingNotification NOTIFICATION-TYPE
+
+    OBJECTS     { managedObjectClass,
+                  managedObjectInstance,
+                  sequenceNumber, 
+    		          perceivedSeverity,
+                  eventTime,
+                  eventTypePem,
+                  probableCause }
+
+    STATUS      current
+
+    DESCRIPTION
+    "
+     The CEASING counterpart of pethPsePortFailureNotification.
+    "
+
+    ::= { pethNotificationTypes 2 }
+
+    
+--************************************************************************
+-- special operands for event report operations
+--************************************************************************
+
+taskId OBJECT-TYPE
+	SYNTAX      DisplayString
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "The name of the task, which sent the alarm."
+    ::= { trapsParameters 1 }   
+    
+taskState OBJECT-TYPE
+	SYNTAX      Unsigned32
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "The state of the task, which sent the alarm."
+    ::= { trapsParameters 2 }
+
+taskFileName OBJECT-TYPE
+	SYNTAX      DisplayString
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "The file name from where the alarm was sent"
+    ::= { trapsParameters 3 }   
+
+lineNumber OBJECT-TYPE
+	SYNTAX      Unsigned32
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "The line number in the file indicated by taskFileName,
+     from where the alarm was sent"
+    ::= { trapsParameters 4 }  
+    
+msgSenderTask OBJECT-TYPE
+	SYNTAX      DisplayString
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "Indicates the name of the task which sent the message 
+     causing a stateEventError."
+    ::= { trapsParameters 5 }   
+
+errCode OBJECT-TYPE
+	SYNTAX      DisplayString
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "Additional error information."
+    ::= { trapsParameters 6 }  
+
+postMortemInfo OBJECT-TYPE
+	SYNTAX      DisplayString
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "Indicates the reason of the restart."
+    ::= { trapsParameters 7 }   
+    
+errData OBJECT-TYPE
+	SYNTAX      OCTET STRING
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "Additional data related to the error."
+    ::= { trapsParameters 8 }       
+    
+msgId OBJECT-TYPE
+	SYNTAX      Unsigned32
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "Message ID of the last received message. 
+     E.g. the ID of the message causing a state event error."
+    ::= { trapsParameters 9 }
+
+msgData OBJECT-TYPE
+	SYNTAX      OCTET STRING
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "Message content of the last received message. E.g. 
+     the content of the message causing a state event error."
+    ::= { trapsParameters 10 } 
+
+hwUnitId OBJECT-TYPE
+	SYNTAX      INTEGER { device (1), microProcessor (2), analogueFrontEnd (3), dcDcConverter (4)}
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "Identifies the HW unit which has the identification
+     data corrupted into FLASH."
+    ::= { trapsParameters 11 }  
+
+configData OBJECT-TYPE
+	SYNTAX      INTEGER { localMacAddr (1), phyMode (2), watchdogEnable (3), 
+						  vlanInfo (4), bootString (5)}
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "Identifies the corrupted configuration data read from FLASH ."
+    ::= { trapsParameters 12 }          
+    
+idOrConfigData OBJECT-TYPE
+	SYNTAX      INTEGER { deviceIdData (1), microProcessorIdData (2), analogueFrontEndIdData (3),
+	 					  dcDcConverterIdData (4), localMacAddr (5), phyMode (6), 
+	 					  watchdogEnable (7), vlanInfo (8), bootString (9)}
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+    "Identifies during which data writing occured an error."
+    ::= { trapsParameters 13 }
+
+
+END
+    

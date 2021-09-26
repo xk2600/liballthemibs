@@ -1,0 +1,5896 @@
+-- MibName=cacucsextensiona
+--
+-- ========================================================================
+--
+--               CA, INC.
+--               Proprietary and Confidential Information
+--
+-- This material contains, and is part of a computer software program
+-- which is, proprietary and confidential information owned by COMPUTER
+-- ASSOCIATES INTERNATIONAL, INC.  The program, including this material,
+-- may not be duplicated, disclosed or reproduced in whole or in part for
+-- any purpose without the express written authorization of COMPUTER
+-- ASSOCIATES. All authorized reproductions must be marked with this
+-- legend.
+--                 Computer Associates International, Inc      
+--
+--                          Copyright (c) 2009
+--                       The Software that Manages eBusiness
+--                          All rights reserved
+--
+--
+-- ------------------------------------------------------------------------
+-- Mib name: cacucsextensiona
+
+EMPIRE-CACUCSEXTENSIONA-MIB DEFINITIONS ::= BEGIN
+
+
+IMPORTS
+--	enterprises
+--		FROM RFC1155-SMI
+--	empire, applications, traps
+--		FROM EMPIRE
+	MODULE-IDENTITY, NOTIFICATION-TYPE, enterprises, 
+	Integer32, Gauge32, Unsigned32, Counter32, Counter64, 
+	TimeTicks, IpAddress
+		FROM SNMPv2-SMI
+	InetAddressType, InetAddress
+		FROM INET-ADDRESS-MIB
+	OBJECT-TYPE
+		FROM RFC-1212
+	PhysAddress
+		FROM RFC1213-MIB
+	IANAifType
+		FROM IANAifType-MIB
+	TruthValue, DisplayString, TEXTUAL-CONVENTION
+		FROM SNMPv2-TC;
+
+caUcsExtensions MODULE-IDENTITY
+	LAST-UPDATED "201007131200Z"  
+	ORGANIZATION "CA, Inc."
+	CONTACT-INFO "http://www.ca.com"
+	DESCRIPTION  "This MIB module defines the 
+                      Cisco Universal Computing System Aim extension tables."
+--	REVISION     "201001131200Z" 
+--	DESCRIPTION  "mib name change from cacucsext to cacucsextensiona"
+	REVISION     "201007131200Z" 
+	DESCRIPTION  "InetAddress usage for future IPv6 support capability"
+	::= { cadatacentera 3 }
+
+
+cadatacentera			OBJECT IDENTIFIER ::= { applications 58 }
+empire				OBJECT IDENTIFIER ::= { enterprises 546 }
+unix            		      OBJECT IDENTIFIER ::= { empire 1 }
+sysmgmt         		      OBJECT IDENTIFIER ::= { unix 1 }
+
+traps		                 OBJECT IDENTIFIER ::= { empire 9 }
+applications			OBJECT IDENTIFIER ::= { empire 16 }
+
+-- caUcsExtensions			OBJECT IDENTIFIER ::= { cadatacentera 3 }
+	
+
+
+-- *****************************************************************************
+-- caUcsExtensions Groups
+-- *****************************************************************************
+caUcsChassisExt			OBJECT IDENTIFIER ::= { caUcsExtensions 1 }
+caUcsBladeExt			OBJECT IDENTIFIER ::= { caUcsExtensions 2 }
+caUcsSwitchExt			OBJECT IDENTIFIER ::= { caUcsExtensions 3 }
+caUcsManager			OBJECT IDENTIFIER ::= { caUcsExtensions 4 }
+caUcsServiceProfile		OBJECT IDENTIFIER ::= { caUcsExtensions 5 }
+
+-- *****************************************************************************
+-- caUcsChassisExt Groups
+-- *****************************************************************************
+caUcsChassis			OBJECT IDENTIFIER ::= { caUcsChassisExt 1 }
+caUcsChassisFan			OBJECT IDENTIFIER ::= { caUcsChassisExt 2 }
+caUcsChassisPower		      OBJECT IDENTIFIER ::= { caUcsChassisExt 3 }
+caUcsChassisFabricExtender	OBJECT IDENTIFIER ::= { caUcsChassisExt 4 }
+
+-- *****************************************************************************
+-- caUcsBladeExt Groups
+-- *****************************************************************************
+caUcsBlade			      OBJECT IDENTIFIER ::= { caUcsBladeExt 1 }
+caUcsBladeInterfaces		OBJECT IDENTIFIER ::= { caUcsBladeExt 2 }
+caUcsBladeServer		      OBJECT IDENTIFIER ::= { caUcsBladeExt 3 }
+
+-- *****************************************************************************
+-- caUcsBladeServer Groups
+-- *****************************************************************************
+caUcsBladeServerCpu		OBJECT IDENTIFIER ::= { caUcsBladeServer 1 }
+caUcsBladeServerMotherboard	OBJECT IDENTIFIER ::= { caUcsBladeServer 2 }
+caUcsBladeServerMemory		OBJECT IDENTIFIER ::= { caUcsBladeServer 3 }
+caUcsBladeServerStorage	OBJECT IDENTIFIER ::= { caUcsBladeServer 4 }
+
+-- *****************************************************************************
+-- caUcsSwitchExt Groups
+-- *****************************************************************************
+caUcsSwitch			OBJECT IDENTIFIER ::= { caUcsSwitchExt 1 }
+caUcsSwitchFan		OBJECT IDENTIFIER ::= { caUcsSwitchExt 2 }
+caUcsSwitchPower		OBJECT IDENTIFIER ::= { caUcsSwitchExt 3 }
+caUcsSwitchInterfaces	OBJECT IDENTIFIER ::= { caUcsSwitchExt 4 }
+
+
+
+
+Float ::= TEXTUAL-CONVENTION
+	DISPLAY-HINT "d-2"
+	STATUS current
+	DESCRIPTION "This data type represents a Float.
+		     9456 represents 94.56%..."
+	SYNTAX Integer32
+
+Uint64 ::= TEXTUAL-CONVENTION
+	STATUS current
+	DESCRIPTION "This data type represents an unsigned 64 bit
+		     Limited to use in OBJECT-TYPE where the 
+		     ACCESS clause is 'read-only' or 'accessible-for-notify'."
+	SYNTAX Counter64
+
+-- *****************************************************************************
+-- Ucs Chassis Table
+-- *****************************************************************************
+caUcsChassisTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsChassisRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsChassis table."
+	::= { caUcsChassis 1 }
+
+caUcsChassisTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Table tast refresh time"
+	::= { caUcsChassis 2 }
+	
+caUcsChassisEntry OBJECT-TYPE
+	SYNTAX CaUcsChassisRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsChassisUcsManagerId,
+		caUcsChassisId }
+	::= { caUcsChassisTable 1 }
+
+CaUcsChassisRow ::=
+	SEQUENCE {
+		caUcsChassisUcsManagerId		Integer32,
+		caUcsChassisId				Integer32,
+		caUcsChassisRedundancyCondition		INTEGER,
+		caUcsChassisInputPowerState		Integer32,
+		caUcsChassisOutputPowerState		Integer32,
+		caUcsChassisAdminState			INTEGER,
+		caUcsChassisOperState			INTEGER,
+		caUcsChassisConfigState			INTEGER,
+		caUcsChassisConnPath			INTEGER,
+		caUcsChassisConnStatus			INTEGER,
+		caUcsChassisManagingInst		INTEGER,
+		caUcsChassisOperability			INTEGER
+		}
+
+caUcsChassisUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsChassisEntry 1 }
+	
+caUcsChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure; corresponds to caChassisId."
+	::= { caUcsChassisEntry 2 }
+
+caUcsChassisRedundancyCondition OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), --default
+		ok(2),
+		failed(3),
+		degraded(4)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Overall condition of the redundancy of the powersubsystem in the chassis."
+	::= { caUcsChassisEntry 3 }
+
+caUcsChassisInputPowerState OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), --default
+		ok(2),
+		upperNonRecoverable(3),
+		upperNonCritical(4),		
+		lowerNonCritical(5),
+		lowerCritical(6),		
+		lowerNonRecoverable(7),
+		notSupported(8)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Overall condition of input power of the PSUs in this chassis."
+	::= { caUcsChassisEntry 4 }
+
+caUcsChassisOutputPowerState OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), --default
+		ok(2),
+		upperNonRecoverable(3),
+		upperNonCritical(4),		
+		lowerNonCritical(5),
+		lowerCritical(6),		
+		lowerNonRecoverable(7),
+		notSupported(8)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Overall condition of output power of the PSUs in this chassis."
+	::= { caUcsChassisEntry 5 }
+
+caUcsChassisAdminState OBJECT-TYPE
+	SYNTAX INTEGER {
+		acknowledged(1),  --default
+		reacknowledge(2),
+		remove(3)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Questioning Cisco on the meaning of the object mapped."
+	::= { caUcsChassisEntry 6 }
+
+caUcsChassisOperState OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), --default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+ 		hermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operational state of the chassis."
+	::= { caUcsChassisEntry 7 }
+
+caUcsChassisConfigState OBJECT-TYPE
+	SYNTAX INTEGER {
+		uninitialized(1),
+		unacknowledged(2),  -- default
+		unsupportedConnectivity(3),
+		ok(4),
+		removing(5),
+		ackInProgress(6)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Questioning Cisco on the meaning of the object mapped."
+	::= { caUcsChassisEntry 8 }
+
+caUcsChassisConnPath OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), --default
+		a(2),
+		b(3),
+		ab(4)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The configured switch to use for connectivity."
+	::= { caUcsChassisEntry 9 }
+
+caUcsChassisConnStatus OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), --default
+		a(2),
+		b(3)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The actual switch being used currently for connectivity."
+	::= { caUcsChassisEntry 10 }
+
+caUcsChassisManagingInst OBJECT-TYPE
+	SYNTAX INTEGER {
+		a(1), --default
+		b(2),
+		none(3)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The switch managing the chassis (actively running the UCS Manager)."
+	::= { caUcsChassisEntry 11 }
+	
+
+caUcsChassisOperability OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), --default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+ 		hermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operability of the chassis."
+	::= { caUcsChassisEntry 12 }
+
+
+
+-- *****************************************************************************
+-- Ucs Chassis Psu Table
+-- *****************************************************************************
+caUcsChassisPsuTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsChassisPsuRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsChassisPsu table."
+	::= { caUcsChassisPower 1 }
+
+caUcsChassisPsuEntry OBJECT-TYPE
+	SYNTAX CaUcsChassisPsuRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsChassisPsuUcsManagerId,
+		caUcsChassisPsuChassisId,
+		caUcsChassisPsuIndex }
+	::= { caUcsChassisPsuTable 1 }
+
+CaUcsChassisPsuRow ::=
+	SEQUENCE {
+		caUcsChassisPsuUcsManagerId		Integer32,	
+		caUcsChassisPsuChassisId		Integer32,
+		caUcsChassisPsuIndex			Integer32,
+		caUcsChassisPsuAmbientTemp		Float,
+		caUcsChassisPsuOperState		INTEGER,
+		caUcsChassisPsuInput210v		Float,
+		caUcsChassisPsuOutput12v		Float,
+		caUcsChassisPsuOutput3v3		Float,
+		caUcsChassisPsuOperability		INTEGER,
+		caUcsChassisPsuPerformance		DisplayString,
+		caUcsChassisPsuPower			DisplayString
+		
+		}
+
+caUcsChassisPsuUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The configured switch to use for connectivity."
+	::= { caUcsChassisPsuEntry 1 }
+
+caUcsChassisPsuChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure; corresponds to caChassisId."
+	::= { caUcsChassisPsuEntry 2 }
+
+caUcsChassisPsuIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Id unique within the context of the chassis."
+	::= { caUcsChassisPsuEntry 3 }
+
+caUcsChassisPsuAmbientTemp OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Temperature, in celsius, sensed by the PSU."
+	::= { caUcsChassisPsuEntry 4 }
+
+caUcsChassisPsuOperState OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operational state of the fan."
+	::= { caUcsChassisPsuEntry 5 }
+
+caUcsChassisPsuInput210v OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Actual voltage drawn by the PSU on the 210v input."
+	::= { caUcsChassisPsuEntry 6 }
+
+caUcsChassisPsuOutput12v OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Actual volage put out by the PSU on the 12 volt rail(s)."
+	::= { caUcsChassisPsuEntry 7 }
+
+caUcsChassisPsuOutput3v3 OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Actual volage put out by the PSU on the 3.3 volt rail(s)."
+	::= { caUcsChassisPsuEntry 8 }
+
+
+caUcsChassisPsuOperability OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operability of the fan."
+	::= { caUcsChassisPsuEntry 9 }
+	
+
+
+caUcsChassisPsuPerformance OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Chassis Psu performance"
+	::= { caUcsChassisPsuEntry 10 }
+	
+	
+caUcsChassisPsuPower OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Chassis Psu power status"
+	::= { caUcsChassisPsuEntry 11 }
+
+
+
+-- *****************************************************************************
+-- Ucs Chassis Fan Table
+-- *****************************************************************************
+caUcsChassisFanTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsChassisFanRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsChassisFan table."
+	::= { caUcsChassisFan 1 }
+
+caUcsChassisFanEntry OBJECT-TYPE
+	SYNTAX CaUcsChassisFanRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsChassisFanUcsManagerId,
+		caUcsChassisFanChassisId,
+		caUcsChassisFanIndex }
+	::= { caUcsChassisFanTable 1 }
+
+CaUcsChassisFanRow ::=
+	SEQUENCE {
+		caUcsChassisFanUcsManagerId		Integer32,	
+		caUcsChassisFanChassisId		Integer32,
+		caUcsChassisFanIndex			Integer32,
+		caUcsChassisFanAmbientTemp		Float,
+		caUcsChassisFanOperState		INTEGER,
+		caUcsChassisFanTray			Integer32,
+		caUcsChassisFanModule			Integer32,
+		caUcsChassisFanId			Integer32,
+		caUcsChassisFanOperability		INTEGER,
+		caUcsChassisFanPerformance		DisplayString,
+		caUcsChassisFanPower			DisplayString
+		}
+
+caUcsChassisFanUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsChassisFanEntry 1 }
+
+caUcsChassisFanChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure; corresponds to caChassisId."
+	::= { caUcsChassisFanEntry 2 }
+
+caUcsChassisFanIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a fan."
+	::= { caUcsChassisFanEntry 3 }
+
+caUcsChassisFanAmbientTemp OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Degrees celsius."
+	::= { caUcsChassisFanEntry 4 }
+
+caUcsChassisFanOperState OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operational state of the fan."
+	::= { caUcsChassisFanEntry 5 }
+
+caUcsChassisFanTray OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The chassis trap containing the fan."
+	::= { caUcsChassisFanEntry 6 }
+
+caUcsChassisFanModule OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"A module contained within a tray."
+	::= { caUcsChassisFanEntry 7 }
+
+caUcsChassisFanId OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The idntifier of the fan; may be the same as caChcssisFanIndex."
+	::= { caUcsChassisFanEntry 8 }
+
+caUcsChassisFanOperability OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operability of the chassis fan."
+	::= { caUcsChassisFanEntry 9 }
+	
+	
+	
+caUcsChassisFanPerformance OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Chassis fan performance"
+	::= {caUcsChassisFanEntry 10 }
+	
+	
+caUcsChassisFanPower OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Chassis fan power status"
+	::= {caUcsChassisFanEntry 11 }
+	
+	
+-- *****************************************************************************
+-- Ucs Chassis Fabric Extender
+--
+-- Ucs Chassis Fabric Extender Table
+-- *****************************************************************************
+caUcsChassisFabricExtenderTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of sysUpTime at the time of the last creation or deletion of an entry in the caUcsChassisFabricExtenderTable.  If the number of entries has been unchanged since the last re-initialization of the local network management subsystem, then this object contains a zero value."
+	::= { caUcsChassisFabricExtender 1 }
+
+caUcsChassisFabricExtenderTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsChassisFabricExtenderRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsChassisFabricExtender table."
+	::= { caUcsChassisFabricExtender 2 }
+
+caUcsChassisFabricExtenderEntry OBJECT-TYPE
+	SYNTAX CaUcsChassisFabricExtenderRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsChassisFabricExtenderUcsManagerId,
+		caUcsChassisFabricExtenderChassisId,
+		caUcsChassisFabricExtenderSlotId }
+	::= { caUcsChassisFabricExtenderTable 1 }
+
+CaUcsChassisFabricExtenderRow ::=
+	SEQUENCE {
+		caUcsChassisFabricExtenderUcsManagerId		Integer32,	
+		caUcsChassisFabricExtenderChassisId		Integer32,
+		caUcsChassisFabricExtenderSlotId 		Integer32,
+		caUcsChassisFabricExtenderModel			DisplayString,
+		caUcsChassisFabricExtenderSerialNumber		DisplayString,
+		caUcsChassisFabricExtenderVendor		DisplayString,
+		caUcsChassisFabricExtenderRevision		DisplayString,
+		caUcsChassisFabricExtenderSide			INTEGER,
+		caUcsChassisFabricExtenderAmbientTemp		Float,
+		caUcsChassisFabricExtenderOperState		INTEGER,
+		caUcsChassisFabricExtenderBootLoaderVersion	DisplayString,
+		caUcsChassisFabricExtenderFirmwareVersion	DisplayString,
+		caUcsChassisFabricExtenderStartupFirmwareVersion DisplayString,
+		caUcsChassisFabricExtenderBackupFirmwareVersion	DisplayString,
+		caUcsChassisFabricExtenderOperability		INTEGER,
+		caUcsChassisFabricExtenderProductName           DisplayString,
+		caUcsChassisFabricExtenderPid			DisplayString
+		}
+
+caUcsChassisFabricExtenderUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsChassisFabricExtenderEntry 1  }
+
+caUcsChassisFabricExtenderChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure; corresponds to caChassisId."
+	::= { caUcsChassisFabricExtenderEntry 2 }
+
+caUcsChassisFabricExtenderSlotId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a fabric extender and the slot in which it is installed."
+	::= { caUcsChassisFabricExtenderEntry 3 }
+
+caUcsChassisFabricExtenderModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the fabric extender."
+	::= { caUcsChassisFabricExtenderEntry 4 }
+
+caUcsChassisFabricExtenderSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the fabric extender."
+	::= { caUcsChassisFabricExtenderEntry 5 }
+
+caUcsChassisFabricExtenderVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the fabric extender."
+	::= { caUcsChassisFabricExtenderEntry 6 }
+
+caUcsChassisFabricExtenderRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the fabric extender."
+	::= { caUcsChassisFabricExtenderEntry 7 }
+
+caUcsChassisFabricExtenderSide OBJECT-TYPE
+	SYNTAX INTEGER {
+		left(1),  --default
+		right(2)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Side of the chassis in which the fabric extender is installed."
+	::= { caUcsChassisFabricExtenderEntry 8 }
+
+caUcsChassisFabricExtenderAmbientTemp OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Degrees celsius."
+	::= { caUcsChassisFabricExtenderEntry 9 }
+
+caUcsChassisFabricExtenderOperState OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operational state of the fabric extender."
+	::= { caUcsChassisFabricExtenderEntry 10 }
+
+caUcsChassisFabricExtenderBootLoaderVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the boot loader firmware that is running currently."
+	::= { caUcsChassisFabricExtenderEntry 11 }
+
+caUcsChassisFabricExtenderFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the firmware that is currently running."
+	::= { caUcsChassisFabricExtenderEntry 12 }
+
+caUcsChassisFabricExtenderStartupFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Startup version of the firmware."
+	::= { caUcsChassisFabricExtenderEntry 13 }
+
+caUcsChassisFabricExtenderBackupFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Backup version of the firmware."
+	::= { caUcsChassisFabricExtenderEntry 14 }
+
+caUcsChassisFabricExtenderOperability OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operability of the fabric extender."
+	::= { caUcsChassisFabricExtenderEntry 15 }
+	
+
+caUcsChassisFabricExtenderProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of the fabric extender."
+	::= { caUcsChassisFabricExtenderEntry 16 }
+	
+caUcsChassisFabricExtenderPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the fabric extender."
+	::= { caUcsChassisFabricExtenderEntry 17 }
+	
+-- *****************************************************************************
+-- Ucs Chassis Fabric Extender Port Table
+-- *****************************************************************************
+caUcsChassisFabricExtenderPortTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of sysUpTime at the time of the last creation or deletion of an entry in the caUcsChassisFabricExtenderPortTable.  If the number of entries has been unchanged since the last re-initialization of the local network management subsystem, then this object contains a zero value."
+	::= { caUcsChassisFabricExtender 3 }
+
+caUcsChassisFabricExtenderPortTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsChassisFabricExtenderPortRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsChassisFabricExtenderPort table."
+	::= { caUcsChassisFabricExtender 4 }
+
+caUcsChassisFabricExtenderPortEntry OBJECT-TYPE
+	SYNTAX CaUcsChassisFabricExtenderPortRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsChassisFabricExtenderPortUcsManagerId,
+		caUcsChassisFabricExtenderPortChassisId,
+		caUcsChassisFabricExtenderPortIndex }
+	::= { caUcsChassisFabricExtenderPortTable 1 }
+
+CaUcsChassisFabricExtenderPortRow ::=
+	SEQUENCE {
+		caUcsChassisFabricExtenderPortUcsManagerId		Integer32,
+		caUcsChassisFabricExtenderPortChassisId			Integer32,
+		caUcsChassisFabricExtenderPortIndex 			Integer32,
+		caUcsChassisFabricExtenderPortSlotId 			Integer32,
+		caUcsChassisFabricExtenderPortModel			DisplayString,
+		caUcsChassisFabricExtenderPortSerialNumber		DisplayString,
+		caUcsChassisFabricExtenderPortVendor			DisplayString,
+		caUcsChassisFabricExtenderPortRevision			DisplayString,
+		caUcsChassisFabricExtenderPortType			INTEGER,
+		caUcsChassisFabricExtenderDeviceIndex			Integer32,
+		caUcsChassisFabricExtenderConnectedPortIndex		Integer32,
+		caUcsChassisFabricExtenderPortOperState			DisplayString,
+		caUcsChassisFabricExtenderPortPeerSlotId		Integer32,
+		caUcsChassisFabricExtenderPortAcknowledge		INTEGER,
+		caUcsChassisFabricExtenderPortPeerDn			DisplayString,		
+		caUcsChassisFabricExtenderPortProductName		DisplayString,
+		caUcsChassisFabricExtenderPortPid			DisplayString,
+		caUcsChassisFabricExtenderPortPeerFullyQualifiedDn	DisplayString,
+		caUcsChassisFabricExtenderPortSwitchId			Integer32
+		}
+
+caUcsChassisFabricExtenderPortUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsChassisFabricExtenderPortEntry 1 }
+
+caUcsChassisFabricExtenderPortChassisId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a chassis/enclosure; corresponds to caChassisId."
+	::= { caUcsChassisFabricExtenderPortEntry 2 }
+
+caUcsChassisFabricExtenderPortIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a port on a fabric extender."
+	::= { caUcsChassisFabricExtenderPortEntry 3 }
+
+caUcsChassisFabricExtenderPortSlotId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a fabric extender and the slot in which it is installed."
+	::= { caUcsChassisFabricExtenderPortEntry 4 }
+
+caUcsChassisFabricExtenderPortModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the fabric extender port."
+	::= { caUcsChassisFabricExtenderPortEntry 5 }
+
+caUcsChassisFabricExtenderPortSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the fabric extender port."
+	::= { caUcsChassisFabricExtenderPortEntry 6 }
+
+caUcsChassisFabricExtenderPortVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the fabric extender port."
+	::= { caUcsChassisFabricExtenderPortEntry 7 }
+
+caUcsChassisFabricExtenderPortRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the fabric extender port."
+	::= { caUcsChassisFabricExtenderPortEntry 8 }
+
+caUcsChassisFabricExtenderPortType OBJECT-TYPE
+	SYNTAX INTEGER {
+		switch(1),
+		server(2),
+		unknown(3) --default
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"What type of port this represents."
+	::= { caUcsChassisFabricExtenderPortEntry 9 }
+
+caUcsChassisFabricExtenderDeviceIndex OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The device connected to this fabric extender port.  Connected devices, if known, are either a switch or a blade.
+
+If this is a switch port, this is the value of the caSwitchIndex of the caSwitchTable row of the switch.  If this is a server port, then this is the value of the caBladeIndex of the caBladeTable row of the blade.
+
+If the port is not connected or the connection is not known by the UCS Manager, then this will have the value of 0."
+	::= { caUcsChassisFabricExtenderPortEntry 10 }
+
+caUcsChassisFabricExtenderConnectedPortIndex OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The port of the device connected to this fabric extender port.
+
+If this is a switch port, then this is the index into the caSwitchInterfaceTable.  If this is a server port, then this is the index into the caBladeInterfaceTable.
+
+If the port is not connected or the connection is not known by the UCS Manager, then this will have the value of 0."
+	::= { caUcsChassisFabricExtenderPortEntry 11 }
+
+
+	
+caUcsChassisFabricExtenderPortOperState OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"operating state of the extender port"
+	::= { caUcsChassisFabricExtenderPortEntry 12 }
+
+caUcsChassisFabricExtenderPortPeerSlotId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Peer slot id of the fabric extender port"
+	::= { caUcsChassisFabricExtenderPortEntry 13 }
+
+caUcsChassisFabricExtenderPortAcknowledge OBJECT-TYPE
+	SYNTAX INTEGER{
+		unInitialized(1),  --default
+		unAcknowledged(2),
+		unsupportedConnectivity(3),
+		ok(4),
+		removing(5),
+		ackInProgress(6),
+		notAvailable(20)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Only available for fabric not for host port "
+	::= { caUcsChassisFabricExtenderPortEntry 14 }
+
+
+caUcsChassisFabricExtenderPortPeerDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Peer Dn"
+	::= { caUcsChassisFabricExtenderPortEntry 15 }
+	
+caUcsChassisFabricExtenderPortProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of the extender port"
+	::= { caUcsChassisFabricExtenderPortEntry 16 }
+
+caUcsChassisFabricExtenderPortPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the extender port"
+	::= { caUcsChassisFabricExtenderPortEntry 17 }
+	
+caUcsChassisFabricExtenderPortPeerFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Peer fully qualified Dn"
+	::= { caUcsChassisFabricExtenderPortEntry 18 }
+
+caUcsChassisFabricExtenderPortSwitchId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"switch id that port is connected to "
+	::= { caUcsChassisFabricExtenderPortEntry 19 }
+	
+-- *****************************************************************************
+-- UCS Blade Table
+-- *****************************************************************************
+caUcsBladeTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsBladeRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUCSBlade table."
+	::= { caUcsBlade 1 }
+
+caUcsBladeTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Table tast refresh time"
+	::= { caUcsBlade 2 }
+	
+caUcsBladeEntry OBJECT-TYPE
+	SYNTAX CaUcsBladeRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsBladeUcsManagerId,
+		caUcsBladeIndex }
+	::= { caUcsBladeTable 1 }
+
+CaUcsBladeRow ::=
+	SEQUENCE {
+		caUcsBladeUcsManagerId			Integer32,
+		caUcsBladeIndex				Integer32,
+		caUcsBladeOperState			INTEGER,
+		caUcsBladeBootLoaderFirmwareVersion	DisplayString,
+		caUcsBladeSystemFirmwareVersion		DisplayString,
+		caUcsBladeBackupFirmwareVersion		DisplayString,
+		caUcsBladeBiosVersion			DisplayString,
+		caUcsBladeRestartBiosVersion		DisplayString,
+		caUcsBladeBiosBootSequence 		DisplayString,
+		caUcsBladeNumOfAdaptors 		Integer32,
+		caUcsBladeNumOfCpus 			Integer32,
+		caUcsBladeNumOfCores 			Integer32,
+		caUcsBladeNumOfEthernetIfs 		Integer32,
+		caUcsBladeNumOfFcIfs	 		Integer32,
+		caUcsBladeAvailableMemory 		Unsigned32,
+		caUcsBladeCachedMemory 			Unsigned32,
+		caUcsBladeTotalMemory 			Unsigned32,
+		caUcsBladeAvailableSwapMemory 		Unsigned32,
+		caUcsBladeCachedSwapMemory 		Unsigned32,
+		caUcsBladeTotalSwapMemory 		Unsigned32,
+		caUcsBladeAssignedToDn			DisplayString,
+		caUcsBladeOperability			INTEGER,
+		caUcsBladeDiscovery			DisplayString,
+		caUcsBladeNumOfThreads			Integer32,
+		caUcsBladeOperPower			DisplayString,
+		caUcsBladeOperQualifier			DisplayString,
+		caUcsBladeAdminState			DisplayString,
+		caUcsBladeAvailableState		DisplayString,
+		caUcsBladeAssociateState		DisplayString,
+		caUcsBladeSlotStatus			DisplayString,
+		caUcsBladeCheckPoint			DisplayString,
+		caUcsBladeAssignedToFullyQualifiedDn	DisplayString,
+		caUcsBladeServiceProfileOid		OBJECT IDENTIFIER	
+		}
+
+caUcsBladeUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsBladeEntry  1  }
+	
+caUcsBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a blade in a chassis."
+	::= { caUcsBladeEntry  2}
+
+caUcsBladeOperState OBJECT-TYPE
+	SYNTAX INTEGER {
+		indeterminate(1),
+		unassociated(2), -- default
+		ok(10),
+		discovery(11),
+		config(12),
+		unconfig(13),
+		powerOff(14),
+		restart(15),
+		maintenance(20),
+		test(21),
+		computeMismatch(29),
+		computeFailed(30),
+		degraded(31),
+		discoveryFailed(32),
+		configFailure(33),
+		unconfigFailure(34),
+		testFailed(35),
+		maintenanceFailed(36),
+		removed(40),
+		disabled(41),
+		inaccessible(50),
+		thermalProblem(60),
+		powerProblem(61),
+		voltageProblem(62),
+		inoperable(63),
+		decommissioning(101),
+		biosRestore(201),
+		cmosReset(202),
+		diagnostics(203),
+		diagnosticsFailed(204),
+		pendingReboot(210),
+		pendingReassociation(211)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operational state of the blade."
+	::= { caUcsBladeEntry  3}
+
+caUcsBladeBootLoaderFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the boot loader firmware that is running currently."
+	::= { caUcsBladeEntry 4 }
+
+caUcsBladeSystemFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the system firmware."
+	::= { caUcsBladeEntry 5 }
+
+caUcsBladeBackupFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Backup version of the system firmware."
+	::= { caUcsBladeEntry 6 }
+
+caUcsBladeBiosVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Current running version of the BIOS."
+	::= { caUcsBladeEntry 7 }
+
+caUcsBladeRestartBiosVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the BIOS that will be loaded at reboot."
+	::= { caUcsBladeEntry 8 }
+
+caUcsBladeBiosBootSequence OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Sequence of devices the BIOS uses to find a boot image, separated by commas."
+	::= { caUcsBladeEntry 9 }
+
+caUcsBladeNumOfAdaptors OBJECT-TYPE
+	SYNTAX Integer32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of mezzanine cards in the blade."
+	::= { caUcsBladeEntry 10 }
+
+caUcsBladeNumOfCpus OBJECT-TYPE
+	SYNTAX Integer32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of CPUs installed on the blade."
+	::= { caUcsBladeEntry 11 }
+
+caUcsBladeNumOfCores OBJECT-TYPE
+	SYNTAX Integer32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total number of cores across all CPUs on the blade."
+	::= { caUcsBladeEntry 12 }
+
+caUcsBladeNumOfEthernetIfs OBJECT-TYPE
+	SYNTAX Integer32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total number of Ethernet interfaces as seen by software hosted on the blade."
+	::= { caUcsBladeEntry 13 }
+
+caUcsBladeNumOfFcIfs OBJECT-TYPE
+	SYNTAX Integer32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total number of Fibre Channel interfaces as seen by software hosted on the blade."
+	::= { caUcsBladeEntry 14 }
+
+caUcsBladeAvailableMemory OBJECT-TYPE
+	SYNTAX Unsigned32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Available memory in MBs."
+	::= { caUcsBladeEntry  15}
+
+caUcsBladeCachedMemory OBJECT-TYPE
+	SYNTAX Unsigned32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Cached memory in MBs."
+	::= { caUcsBladeEntry  16}
+
+caUcsBladeTotalMemory OBJECT-TYPE
+	SYNTAX Unsigned32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total memory in MBs."
+	::= { caUcsBladeEntry  17}
+
+caUcsBladeAvailableSwapMemory OBJECT-TYPE
+	SYNTAX Unsigned32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Available swap memory in MBs."
+	::= { caUcsBladeEntry  18}
+
+caUcsBladeCachedSwapMemory OBJECT-TYPE
+	SYNTAX Unsigned32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Cached swap memory in MBs."
+	::= { caUcsBladeEntry  19}
+
+caUcsBladeTotalSwapMemory OBJECT-TYPE
+	SYNTAX Unsigned32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total swap memory in MBs."
+	::= { caUcsBladeEntry  20 }
+
+caUcsBladeAssignedToDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"This DN is used for power up/down operation."
+	::= { caUcsBladeEntry 21 }
+	
+caUcsBladeOperability OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1),
+		operable(2), -- default
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decomissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operability of the blade."
+	::= { caUcsBladeEntry  22 }
+	
+	
+caUcsBladeDiscovery OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Discovery status of the blade"
+	::= { caUcsBladeEntry 23 }	
+	
+	
+caUcsBladeNumOfThreads OBJECT-TYPE
+	SYNTAX Integer32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total number of CPU threads"
+	::= { caUcsBladeEntry 24 }
+	
+caUcsBladeOperPower OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operating power of the blade."
+	::= { caUcsBladeEntry 25 }
+	
+	
+caUcsBladeOperQualifier OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Blade configuration error"
+	::= { caUcsBladeEntry 26 }	
+	
+caUcsBladeAdminState OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Admin state of the blade"
+	::= { caUcsBladeEntry 27 }
+	
+caUcsBladeAvailableState OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Availability of the blade"
+	::= { caUcsBladeEntry 28 }
+	
+caUcsBladeAssociateState OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Service profile association state"
+	::= { caUcsBladeEntry 29 }
+	
+caUcsBladeSlotStatus OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Slot status of the blade"
+	::= { caUcsBladeEntry 30 }
+	
+caUcsBladeCheckPoint OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Checkpoint"
+	::= { caUcsBladeEntry 31 }
+	
+	
+caUcsBladeAssignedToFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"This fully qualified DN"
+	::= { caUcsBladeEntry 32 }
+	
+
+caUcsBladeServiceProfileOid OBJECT-TYPE
+	SYNTAX  OBJECT IDENTIFIER
+	MAX-ACCESS  read-only
+	STATUS  current
+	DESCRIPTION
+      		"Reference service profile index <UCS Manager Id>,<Service Profile internal id> with full OID path"
+	::= { caUcsBladeEntry 33 }
+
+-- *****************************************************************************
+-- Ucs Blade Interfaces Table
+-- *****************************************************************************
+caUcsBladeIfTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsBladeIfRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsBladeIf table."
+	::= { caUcsBladeInterfaces 1 }
+
+caUcsBladeIfEntry OBJECT-TYPE
+	SYNTAX CaUcsBladeIfRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsBladeIfUcsManagerId,
+		caUcsBladeIfBladeIndex,
+		caUcsBladeIfIndex }
+	::= { caUcsBladeIfTable 1 }
+
+CaUcsBladeIfRow ::=
+	SEQUENCE {
+		caUcsBladeIfUcsManagerId			Integer32,
+		caUcsBladeIfBladeIndex				Integer32,
+		caUcsBladeIfIndex				Integer32,
+		caUcsBladeIfFirmwareVersion			DisplayString,
+		caUcsBladeIfStartupFirmwareVersion		DisplayString,
+		caUcsBladeIfFabricExtenderSlotId		Integer32,
+		caUcsBladeIfFabricExtenderPortIndex		Integer32
+
+		}
+
+caUcsBladeIfUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsBladeIfEntry 1  }
+
+caUcsBladeIfBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the blade from the caBladeTable."
+	::= { caUcsBladeIfEntry 2 }
+
+caUcsBladeIfIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of an interface on a blade; corresponds to caBladeIfIndex."
+	::= { caUcsBladeIfEntry 3 }
+
+caUcsBladeIfFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the firmware that is currently running or a zero-length string if the value is not known or does not apply."
+	::= { caUcsBladeIfEntry 4 }
+
+caUcsBladeIfStartupFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Startup version of the firmware or a zero-length string if the value is not known or does not apply."
+	::= { caUcsBladeIfEntry 5 }
+
+caUcsBladeIfFabricExtenderSlotId OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of caUcsFabricExtenderSlotId connected to this particular port or 0 if the port is not a backplane port."
+	::= { caUcsBladeIfEntry 6 }
+
+caUcsBladeIfFabricExtenderPortIndex OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of caUcsFabricExtenderPortIndex connected to this particular port or 0 if the port is not a backplane port."
+	::= { caUcsBladeIfEntry 7 }
+	
+	
+	
+	
+-- *****************************************************************************
+-- Ucs Blade Interfaces Table
+-- *****************************************************************************
+caUcsBladeIfEthStatsTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsBladeIfEthStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsBladeIfEthStats table."
+	::= { caUcsBladeInterfaces 2 }
+
+caUcsBladeIfEthStatsEntry OBJECT-TYPE
+	SYNTAX CaUcsBladeIfEthStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsBladeIfEthStatsUcsManagerId,
+		caUcsBladeIfEthStatsBladeIndex,
+		caUcsBladeIfEthStatsIfIndex }
+	::= { caUcsBladeIfEthStatsTable 1 }
+
+CaUcsBladeIfEthStatsRow ::=
+	SEQUENCE {
+	caUcsBladeIfEthStatsUcsManagerId			Integer32,	
+	caUcsBladeIfEthStatsBladeIndex				Integer32,
+	caUcsBladeIfEthStatsIfIndex				Integer32,
+	caUcsBladeIfEthStatsTxGreaterThanOrEqualTo9216		Counter64,
+	caUcsBladeIfEthStatsRxGreaterThanOrEqualTo9216		Counter64,
+	caUcsBladeIfEthStatsTxLessThan2048			Counter64,
+	caUcsBladeIfEthStatsRxLessThan2048			Counter64,
+	caUcsBladeIfEthStatsTxLessThan4096			Counter64,
+	caUcsBladeIfEthStatsRxLessThan4096			Counter64,
+	caUcsBladeIfEthStatsTxLessThan8192			Counter64,
+	caUcsBladeIfEthStatsRxLessThan8192			Counter64,
+	caUcsBladeIfEthStatsTxLessThan9216			Counter64,
+	caUcsBladeIfEthStatsRxLessThan9216			Counter64,
+	caUcsBladeIfEthStatsTxLessThanOrEqualTo1518		Counter64,
+	caUcsBladeIfEthStatsRxLessThanOrEqualTo1518		Counter64,
+	caUcsBladeIfEthStatsTxEquals64				Counter64,
+	caUcsBladeIfEthStatsRxEquals64				Counter64,
+	caUcsBladeIfEthStatsTxLessThan1024			Counter64,
+	caUcsBladeIfEthStatsRxLessThan1024			Counter64,
+	caUcsBladeIfEthStatsTxLessThan128			Counter64,
+	caUcsBladeIfEthStatsRxLessThan128			Counter64,
+	caUcsBladeIfEthStatsTxLessThan256			Counter64,
+	caUcsBladeIfEthStatsRxLessThan256			Counter64,
+	caUcsBladeIfEthStatsTxLessThan512			Counter64,
+	caUcsBladeIfEthStatsRxLessThan512			Counter64,
+	caUcsBladeIfEthStatsTxBadCrcPackets			Counter64,
+	caUcsBladeIfEthStatsRxBadCrcPackets			Counter64,
+	caUcsBladeIfEthStatsTxBadLengthPackets			Counter64,
+	caUcsBladeIfEthStatsRxBadLengthPackets			Counter64,
+	caUcsBladeIfEthStatsTxOversizedBadCrcPackets  		Counter64,
+	caUcsBladeIfEthStatsRxOversizedBadCrcPackets  		Counter64,
+	caUcsBladeIfEthStatsTxOversizedGoodCrcPackets  		Counter64,
+	caUcsBladeIfEthStatsRxOversizedGoodCrcPackets  		Counter64,
+	caUcsBladeIfEthStatsTxOversizedPackets  		Counter64,
+	caUcsBladeIfEthStatsRxOversizedPackets  		Counter64,
+	caUcsBladeIfEthStatsTxUndersizedBadCrcPackets  		Counter64,
+	caUcsBladeIfEthStatsRxUndersizedBadCrcPackets  		Counter64,
+	caUcsBladeIfEthStatsTxUndersizedGoodCrcPackets  	Counter64,
+	caUcsBladeIfEthStatsRxUndersizedGoodCrcPackets  	Counter64,
+	caUcsBladeIfEthStatsTxGoodPackets			Counter64,
+	caUcsBladeIfEthStatsRxGoodPackets			Counter64,
+	caUcsBladeIfEthStatsTxPausePackets			Counter64,
+	caUcsBladeIfEthStatsRxPausePackets			Counter64,
+	caUcsBladeIfEthStatsTxPerPriorityPausePackets		Counter64,
+	caUcsBladeIfEthStatsRxPerPriorityPausePackets		Counter64,
+	caUcsBladeIfEthStatsTxPppPackets			Counter64,
+	caUcsBladeIfEthStatsRxPppPackets			Counter64,
+	caUcsBladeIfEthStatsTxTotalPackets			Counter64,
+	caUcsBladeIfEthStatsRxTotalPackets			Counter64,
+	caUcsBladeIfEthStatsTxVlanPackets			Counter64,
+	caUcsBladeIfEthStatsRxVlanPackets			Counter64
+	}
+
+caUcsBladeIfEthStatsUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsBladeIfEthStatsEntry 1 }
+	
+caUcsBladeIfEthStatsBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the blade from the caBladeTable."
+	::= { caUcsBladeIfEthStatsEntry 2 }
+
+caUcsBladeIfEthStatsIfIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of an interface on a blade; corresponds to caBladeIfIndex."
+	::= { caUcsBladeIfEthStatsEntry 3 }
+
+caUcsBladeIfEthStatsTxGreaterThanOrEqualTo9216 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with length greater than or equal to 9216 bytes."
+	::= { caUcsBladeIfEthStatsEntry 4 }
+
+caUcsBladeIfEthStatsRxGreaterThanOrEqualTo9216 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with length greater than or equal to 9216 bytes."
+	::= { caUcsBladeIfEthStatsEntry 5 }
+
+caUcsBladeIfEthStatsTxLessThan2048 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with length greater than 1518 bytes and less than 2048."
+	::= { caUcsBladeIfEthStatsEntry 6 }
+
+caUcsBladeIfEthStatsRxLessThan2048 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with length greater than 1518 bytes and less than 2048."
+	::= { caUcsBladeIfEthStatsEntry 7 }
+
+caUcsBladeIfEthStatsTxLessThan4096 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with length greater than 2048 bytes and less than 4096 bytes."
+	::= { caUcsBladeIfEthStatsEntry 8 }
+
+caUcsBladeIfEthStatsRxLessThan4096 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with length greater than 2048 bytes  nd less than 4096 bytes."
+	::= { caUcsBladeIfEthStatsEntry 9 }
+
+caUcsBladeIfEthStatsTxLessThan8192 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with length greater than 4096 bytes and less tahn 8192 bytes."
+	::= { caUcsBladeIfEthStatsEntry 10 }
+
+caUcsBladeIfEthStatsRxLessThan8192 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with length greater than 4096 bytes and less tahn 8192 bytes."
+	::= { caUcsBladeIfEthStatsEntry 11 }
+
+caUcsBladeIfEthStatsTxLessThan9216 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with length greater than 8192 bytes and less than 9216 bytes."
+	::= { caUcsBladeIfEthStatsEntry 12 }
+
+caUcsBladeIfEthStatsRxLessThan9216 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with length greater than 8192 bytes and less than 9216 bytes."
+	::= { caUcsBladeIfEthStatsEntry 13 }
+
+caUcsBladeIfEthStatsTxLessThanOrEqualTo1518 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with length greater than or equal to 1518 bytes."
+	::= { caUcsBladeIfEthStatsEntry 14 }
+
+caUcsBladeIfEthStatsRxLessThanOrEqualTo1518 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with length greater than or equal to 1518 bytes."
+	::= { caUcsBladeIfEthStatsEntry 15 }
+
+caUcsBladeIfEthStatsTxEquals64 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with length equal to 64 bytes."
+	::= { caUcsBladeIfEthStatsEntry 16 }
+
+caUcsBladeIfEthStatsRxEquals64 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with length equal to 64 bytes."
+	::= { caUcsBladeIfEthStatsEntry 17 }
+
+caUcsBladeIfEthStatsTxLessThan1024 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with length greater than or equal to 512 bytes and less than 1024 bytes."
+	::= { caUcsBladeIfEthStatsEntry 18 }
+
+caUcsBladeIfEthStatsRxLessThan1024 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with length greater than or equal to 512 bytes and less than 1024 bytes."
+	::= { caUcsBladeIfEthStatsEntry 19 }
+
+caUcsBladeIfEthStatsTxLessThan128 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with length greater than 64 bytes and less than 128 bytes."
+	::= { caUcsBladeIfEthStatsEntry 20 }
+
+caUcsBladeIfEthStatsRxLessThan128 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with length greater than 64 bytes and less than 128 bytes."
+	::= { caUcsBladeIfEthStatsEntry 21 }
+
+caUcsBladeIfEthStatsTxLessThan256 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with length greater than or equal to 128 bytes and less than 256 bytes."
+	::= { caUcsBladeIfEthStatsEntry 22 }
+
+caUcsBladeIfEthStatsRxLessThan256 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with length greater than or equal to 128 bytes and less than 256 bytes."
+	::= { caUcsBladeIfEthStatsEntry 23 }
+
+caUcsBladeIfEthStatsTxLessThan512 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with length greater than or equal to 256 bytes and less than 512 bytes."
+	::= { caUcsBladeIfEthStatsEntry 24 }
+
+caUcsBladeIfEthStatsRxLessThan512 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with length greater than or equal to 256 bytes and less than 512 bytes."
+	::= { caUcsBladeIfEthStatsEntry 25 }
+
+caUcsBladeIfEthStatsTxBadCrcPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets which failed their CRC."
+	::= { caUcsBladeIfEthStatsEntry 26 }
+
+caUcsBladeIfEthStatsRxBadCrcPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets which failed their CRC."
+	::= { caUcsBladeIfEthStatsEntry 27 }
+
+caUcsBladeIfEthStatsTxBadLengthPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets with incorrect length values."
+	::= { caUcsBladeIfEthStatsEntry 28 }
+
+caUcsBladeIfEthStatsRxBadLengthPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received packets with incorrect length values."
+	::= { caUcsBladeIfEthStatsEntry 29 }
+
+caUcsBladeIfEthStatsTxOversizedBadCrcPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted oversized packets which failed their CRC."
+	::= { caUcsBladeIfEthStatsEntry 30 }
+
+caUcsBladeIfEthStatsRxOversizedBadCrcPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received oversized packets which failed their CRC."
+	::= { caUcsBladeIfEthStatsEntry 31 }
+
+caUcsBladeIfEthStatsTxOversizedGoodCrcPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted oversized packets with correct CRCs."
+	::= { caUcsBladeIfEthStatsEntry 32 }
+
+caUcsBladeIfEthStatsRxOversizedGoodCrcPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received oversized packets with correct CRCs."
+	::= { caUcsBladeIfEthStatsEntry 33 }
+
+caUcsBladeIfEthStatsTxOversizedPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted oversize packets."
+	::= { caUcsBladeIfEthStatsEntry 34 }
+
+caUcsBladeIfEthStatsRxOversizedPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received oversize packets."
+	::= { caUcsBladeIfEthStatsEntry 35 }
+
+caUcsBladeIfEthStatsTxUndersizedBadCrcPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted undersized packets which failed their CRC."
+	::= { caUcsBladeIfEthStatsEntry 36 }
+
+caUcsBladeIfEthStatsRxUndersizedBadCrcPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received undersized packets which failed their CRC."
+	::= { caUcsBladeIfEthStatsEntry 37 }
+
+caUcsBladeIfEthStatsTxUndersizedGoodCrcPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted undersized packets with correct CRCs."
+	::= { caUcsBladeIfEthStatsEntry 38 }
+
+caUcsBladeIfEthStatsRxUndersizedGoodCrcPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received undersized packets with correct CRCs."
+	::= { caUcsBladeIfEthStatsEntry 39 }
+
+caUcsBladeIfEthStatsTxGoodPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted good packets."
+	::= { caUcsBladeIfEthStatsEntry 40 }
+
+caUcsBladeIfEthStatsRxGoodPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received good packets."
+	::= { caUcsBladeIfEthStatsEntry 41 }
+
+caUcsBladeIfEthStatsTxPausePackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted pause packets."
+	::= { caUcsBladeIfEthStatsEntry 42 }
+
+caUcsBladeIfEthStatsRxPausePackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received pause packets."
+	::= { caUcsBladeIfEthStatsEntry 43 }
+
+caUcsBladeIfEthStatsTxPerPriorityPausePackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of pause packets transmitted per priority."
+	::= { caUcsBladeIfEthStatsEntry 44 }
+
+caUcsBladeIfEthStatsRxPerPriorityPausePackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of pause packets received per priority."
+	::= { caUcsBladeIfEthStatsEntry 45 }
+
+caUcsBladeIfEthStatsTxPppPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted PPP packets."
+	::= { caUcsBladeIfEthStatsEntry 46 }
+
+caUcsBladeIfEthStatsRxPppPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received PPP packets."
+	::= { caUcsBladeIfEthStatsEntry 47 }
+
+caUcsBladeIfEthStatsTxTotalPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets."
+	::= { caUcsBladeIfEthStatsEntry 48 }
+
+caUcsBladeIfEthStatsRxTotalPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted packets."
+	::= { caUcsBladeIfEthStatsEntry 49 }
+
+caUcsBladeIfEthStatsTxVlanPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of transmitted VLAN packets."
+	::= { caUcsBladeIfEthStatsEntry 50 }
+
+caUcsBladeIfEthStatsRxVlanPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of received VLAN packets."
+	::= { caUcsBladeIfEthStatsEntry 51 }
+
+
+	
+-- *****************************************************************************
+-- Ucs Blade If FC Server Table
+-- *****************************************************************************
+caUcsBladeIfFcStatsTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsBladeIfFcStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsBladeIfFcStats table."
+	::= { caUcsBladeInterfaces 3 }
+
+caUcsBladeIfFcStatsEntry OBJECT-TYPE
+	SYNTAX CaUcsBladeIfFcStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsBladeIfFcStatsUcsManagerId,
+		caUcsBladeIfFcStatsBladeIndex,
+		caUcsBladeIfFcStatsIfIndex }
+	::= { caUcsBladeIfFcStatsTable 1 }
+
+CaUcsBladeIfFcStatsRow ::=
+	SEQUENCE {
+	caUcsBladeIfFcStatsUcsManagerId			Integer32,	
+	caUcsBladeIfFcStatsBladeIndex			Integer32,
+	caUcsBladeIfFcStatsIfIndex			Integer32,
+	caUcsBladeIfFcStatsInvalidCRCCount		Counter64,
+	caUcsBladeIfFcStatsLinkFailureCount		Counter64,
+	caUcsBladeIfFcStatsLipCount			Counter64,
+	caUcsBladeIfFcStatsLossOfSignalCount		Counter64,
+	caUcsBladeIfFcStatsLossOfSyncCount		Counter64,
+	caUcsBladeIfFcStatsNOSCount			Counter64,
+	caUcsBladeIfFcStatsControlRequests		Counter64,
+	caUcsBladeIfFcStatsInputMegabytes		Counter64,
+	caUcsBladeIfFcStatsInputRequests		Counter64,
+	caUcsBladeIfFcStatsOutputMegabytes		Counter64,
+	caUcsBladeIfFcStatsOutputRequests		Counter64,
+	caUcsBladeIfFcStatsDumpedFrames			Counter64,
+	caUcsBladeIfFcStatsErrorFrames			Counter64,
+	caUcsBladeIfFcStatsRxFrames			Counter64,
+	caUcsBladeIfFcStatsTxFrames			Counter64,
+	caUcsBladeIfFcStatsRxBadFrames			Counter64,
+	caUcsBladeIfFcStatsTotalRxFrames		Counter64,
+	caUcsBladeIfFcStatsTxBadFrames			Counter64,
+	caUcsBladeIfFcStatsTotalTxFrames		Counter64
+	}
+
+caUcsBladeIfFcStatsUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsBladeIfFcStatsEntry 1 }	
+	
+caUcsBladeIfFcStatsBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the blade from the caBladeTable."
+	::= { caUcsBladeIfFcStatsEntry 2 }
+
+caUcsBladeIfFcStatsIfIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of an interface on a blade; corresponds to caBladeIfIndex."
+	::= { caUcsBladeIfFcStatsEntry 3 }
+
+caUcsBladeIfFcStatsInvalidCRCCount OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of frames received with invalid CRC."
+	::= { caUcsBladeIfFcStatsEntry 4 }
+
+caUcsBladeIfFcStatsLinkFailureCount OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of times a link error has occurred."
+	::= { caUcsBladeIfFcStatsEntry 5 }
+
+caUcsBladeIfFcStatsLipCount OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of LIP events that have occurred on an arbitrated loop."
+	::= { caUcsBladeIfFcStatsEntry 6 }
+
+caUcsBladeIfFcStatsLossOfSignalCount OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of times loss of signal has occurred."
+	::= { caUcsBladeIfFcStatsEntry 7 }
+
+caUcsBladeIfFcStatsLossOfSyncCount OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of times loss of sync has occurred."
+	::= { caUcsBladeIfFcStatsEntry 8 }
+
+caUcsBladeIfFcStatsNOSCount OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of NOS events that have occurred on the switched Fabric."
+	::= { caUcsBladeIfFcStatsEntry 9 }
+
+caUcsBladeIfFcStatsControlRequests OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of FC-4 operations which are not intended to cause FC-4 data movement."
+	::= { caUcsBladeIfFcStatsEntry 10 }
+
+caUcsBladeIfFcStatsInputMegabytes OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of megabytes of FC-4 data input."
+	::= { caUcsBladeIfFcStatsEntry 11 }
+
+caUcsBladeIfFcStatsInputRequests OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of FC-4 operations causing FC-4 data input. Some single FC-4 re-quests may cause both input and output of data (e.g., Bidirectional SCSI commands in FCP). If these requests occur, they are counted in both InputRequests and OutputRequests. This admits the possibility that the sum of InputRequests and OutputRequests may exceed the total number of requests."
+	::= { caUcsBladeIfFcStatsEntry 12 }
+
+caUcsBladeIfFcStatsOutputMegabytes OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of megabytes of FC-4 data output."
+	::= { caUcsBladeIfFcStatsEntry 13 }
+
+caUcsBladeIfFcStatsOutputRequests OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of FC-4 operations causing FC-4 data output. Some single FC-4 re-quests may cause both input and output of data (e.g., Bidirectional SCSI commands in FCP). If these requests occur, they are counted in both InputRequests and OutputRequests. This admits the possibility that the sum of InputRequests and OutputRequests may exceed the total number of requests."
+	::= { caUcsBladeIfFcStatsEntry 14 }
+
+caUcsBladeIfFcStatsDumpedFrames OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of frames that were lost due to a lack of host buffers available."
+	::= { caUcsBladeIfFcStatsEntry 15 }
+
+caUcsBladeIfFcStatsErrorFrames OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of frames that have been received in error."
+	::= { caUcsBladeIfFcStatsEntry 16 }
+
+caUcsBladeIfFcStatsRxFrames OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of total Received Fibre Channel frames across all protocols and classes."
+	::= { caUcsBladeIfFcStatsEntry 17 }
+
+caUcsBladeIfFcStatsTxFrames OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of total Transmitted Fibre Channel frames across all protocols and classes."
+	::= { caUcsBladeIfFcStatsEntry 18 }
+
+caUcsBladeIfFcStatsRxBadFrames OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of invalid received Fibre Channel frames."
+	::= { caUcsBladeIfFcStatsEntry 19 }
+
+caUcsBladeIfFcStatsTotalRxFrames OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of total received Fibre Channel frames accross all protocols and classes."
+	::= { caUcsBladeIfFcStatsEntry 20 }
+
+caUcsBladeIfFcStatsTxBadFrames OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of invalid transmitted Fibre Channel frames."
+	::= { caUcsBladeIfFcStatsEntry 21 }
+
+caUcsBladeIfFcStatsTotalTxFrames OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of total transmitted Fibre Channel frames across all protocols and classes."
+	::= { caUcsBladeIfFcStatsEntry 22 }
+	
+
+-- *****************************************************************************
+-- Ucs Menlo Stats Table
+-- *****************************************************************************
+caUcsMenloStatsTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsMenloStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsMenloStats table."
+	::= { caUcsBladeInterfaces 4 }
+
+caUcsMenloStatsEntry OBJECT-TYPE
+	SYNTAX CaUcsMenloStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsMenloStatsUcsManagerId,
+		caUcsMenloStatsBladeIndex,
+		caUcsMenloStatsIndex }
+	::= { caUcsMenloStatsTable 1 }
+
+CaUcsMenloStatsRow ::=
+	SEQUENCE {
+	caUcsMenloStatsUcsManagerId			Integer32,
+	caUcsMenloStatsBladeIndex			Integer32,
+	caUcsMenloStatsIndex 				Integer32,
+	caUcsMenloStatsCorrectableErrors		Counter64,
+	caUcsMenloStatsUncorrectableErrors		Counter64,
+	caUcsMenloStatsDceRxPauseCFC			Counter64,
+	caUcsMenloStatsDceRxPausePFC			Counter64,
+	caUcsMenloStatsDceTxPauseCFC			Counter64,
+	caUcsMenloStatsDceTxPausePFC			Counter64,
+	caUcsMenloStatsEthCorrectableErrors		Counter64,
+	caUcsMenloStatsEthDropAcl			Counter64,
+	caUcsMenloStatsEthPopErrors  			Counter64,
+	caUcsMenloStatsEthPushErrors			Counter64,
+	caUcsMenloStatsEthUncorrectableErrors		Counter64,
+	caUcsMenloStatsEthDropOverrun			Counter64,
+	caUcsMenloStatsEthDropRunt			Counter64,
+	caUcsMenloStatsEthTruncateOverrun		Counter64,
+	caUcsMenloStatsFcCorrectableErrors		Counter64,
+	caUcsMenloStatsFcPopErrors			Counter64,
+	caUcsMenloStatsFcPushErrors			Counter64,
+	caUcsMenloStatsFcUncorrectableErrors		Counter64,
+	caUcsMenloStatsHostRxPauseCFC			Counter64,
+	caUcsMenloStatsHostRxPausePFC			Counter64,
+	caUcsMenloStatsHostTxPauseCFC			Counter64,
+	caUcsMenloStatsHostTxPausePFC			Counter64,
+	caUcsMenloStatsMcpuCorrectableErrors		Counter64,
+	caUcsMenloStatsMcpuPopErrors			Counter64,
+	caUcsMenloStatsMcpuPushErrors			Counter64,
+	caUcsMenloStatsMcpuUncorrectableErrors		Counter64,
+	caUcsMenloStatsMcpuDropAcl			Counter64,
+	caUcsMenloStatsMcpuDropOverrun			Counter64,
+	caUcsMenloStatsMcpuDropRunt			Counter64,
+	caUcsMenloStatsMcpuTruncateOverrun		Counter64,
+	caUcsMenloStatsNetEgDropCmd			Counter64,
+	caUcsMenloStatsNetEgDropLifCfgInvalid		Counter64,
+	caUcsMenloStatsNetEgDropLifMapNoHit		Counter64,
+	caUcsMenloStatsNetEgDropSrcBind			Counter64,
+	caUcsMenloStatsNetEgLearnReqDrop		Counter64,
+	caUcsMenloStatsNetInDropFcLifInvalid		Counter64,
+	caUcsMenloStatsNetInDropFcMulticast		Counter64,
+	caUcsMenloStatsNetInDropNullPif			Counter64,
+	caUcsMenloStatsNetInFwdLookupNoHit		Counter64
+	}
+
+
+caUcsMenloStatsUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsMenloStatsEntry 1 }
+
+caUcsMenloStatsBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the blade for the caBladeTable."
+	::= { caUcsMenloStatsEntry 2 }
+
+caUcsMenloStatsIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of a Menlo instance on a blade."
+	::= { caUcsMenloStatsEntry 3 }
+
+caUcsMenloStatsCorrectableErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets that have correctable errors."
+	::= { caUcsMenloStatsEntry 4 }
+
+caUcsMenloStatsUncorrectableErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets that have errors which could not be corrected."
+	::= { caUcsMenloStatsEntry 5 }
+
+caUcsMenloStatsDceRxPauseCFC OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of received 802.3x PAUSE packets for congestion flow control on the Data Center Ethernet."
+	::= { caUcsMenloStatsEntry 6 }
+
+caUcsMenloStatsDceRxPausePFC OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of received 802.3x PAUSE packets for priority flow control on the Data Center Ethernet."
+	::= { caUcsMenloStatsEntry 7 }
+
+caUcsMenloStatsDceTxPauseCFC OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of transmitted 802.3x PAUSE packets for congestion flow control on the Data Center Ethernet."
+	::= { caUcsMenloStatsEntry 8 }
+
+caUcsMenloStatsDceTxPausePFC OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of transmitted 802.3x PAUSE packets for priority flow control on the Data Center Ethernet."
+	::= { caUcsMenloStatsEntry 9 }
+
+caUcsMenloStatsEthCorrectableErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Ethernet packets that have correctable errors."
+	::= { caUcsMenloStatsEntry 10 }
+
+caUcsMenloStatsEthDropAcl OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Ethernet packets dropped due to an access control list check."
+	::= { caUcsMenloStatsEntry 11 }
+
+caUcsMenloStatsEthPopErrors   OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Ethernet packets resulting in an error when popping them from a queue."
+	::= { caUcsMenloStatsEntry 12 }
+
+caUcsMenloStatsEthPushErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Ethernet packets resulting in an error when pushing them onto a queue."
+	::= { caUcsMenloStatsEntry 13 }
+
+caUcsMenloStatsEthUncorrectableErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Ethernet packets that have errors which could not be corrected."
+	::= { caUcsMenloStatsEntry 14 }
+
+caUcsMenloStatsEthDropOverrun OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Ethernet packets dropped due to a buffer overrun."
+	::= { caUcsMenloStatsEntry 15 }
+
+caUcsMenloStatsEthDropRunt OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Ethernet packets dropped due to being shorter than 64 bytes but having a valid CRC."
+	::= { caUcsMenloStatsEntry 16 }
+
+caUcsMenloStatsEthTruncateOverrun OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Ethernet packets carrying truncated Fibre Channel packets that caused a buffer overrun."
+	::= { caUcsMenloStatsEntry 17 }
+
+caUcsMenloStatsFcCorrectableErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Fibre Channel packets that have correctable errors."
+	::= { caUcsMenloStatsEntry 18 }
+
+caUcsMenloStatsFcPopErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Fiber Channel packets that caused an error when being popped from a queue."
+	::= { caUcsMenloStatsEntry 19 }
+
+caUcsMenloStatsFcPushErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Fibre Channel packets that caused an error when being pushed onto a queue."
+	::= { caUcsMenloStatsEntry 20 }
+
+caUcsMenloStatsFcUncorrectableErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Fibre Channel packets that have uncorrectable errors."
+	::= { caUcsMenloStatsEntry 21 }
+
+caUcsMenloStatsHostRxPauseCFC OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of received 802.3x PAUSE packets for congestion flow control on the Host ports."
+	::= { caUcsMenloStatsEntry 22 }
+
+caUcsMenloStatsHostRxPausePFC OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of received 802.3x PAUSE packets for priority flow control on the Host ports."
+	::= { caUcsMenloStatsEntry 23 }
+
+caUcsMenloStatsHostTxPauseCFC OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of transmitted 802.3x PAUSE packets for congestion flow control on the Host ports."
+	::= { caUcsMenloStatsEntry 24 }
+
+caUcsMenloStatsHostTxPausePFC OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of transmitted 802.3x PAUSE packets for priority flow control on the Host ports."
+	::= { caUcsMenloStatsEntry 25 }
+
+caUcsMenloStatsMcpuCorrectableErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of correctable errors detected by the Menlo master central processing unit."
+	::= { caUcsMenloStatsEntry 26 }
+
+caUcsMenloStatsMcpuPopErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of errors by the Menlo master central processing unit while popping packets from a queue."
+	::= { caUcsMenloStatsEntry 27 }
+
+caUcsMenloStatsMcpuPushErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of errors by the Menlo master central processing unit while pushing packets on a queue."
+	::= { caUcsMenloStatsEntry 28 }
+
+caUcsMenloStatsMcpuUncorrectableErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of uncorrectable errors detected by the Menlo master central processing unit."
+	::= { caUcsMenloStatsEntry 29 }
+
+caUcsMenloStatsMcpuDropAcl OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets dropped due to a check against an access control list by the Menlo master central processing unit."
+	::= { caUcsMenloStatsEntry 30 }
+
+caUcsMenloStatsMcpuDropOverrun OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets dropped due to a buffer overrun by the Menlo master central processing unit."
+	::= { caUcsMenloStatsEntry 31 }
+
+caUcsMenloStatsMcpuDropRunt OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets dropped due to an undersized packet with a correct CRC by the Menlo master central processing unit."
+	::= { caUcsMenloStatsEntry 32  }
+
+caUcsMenloStatsMcpuTruncateOverrun OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of Ethernet packets carrying truncated Fibre Channel packets that caused a buffer overrun by the master central processing unit."
+	::= { caUcsMenloStatsEntry 33 }
+
+caUcsMenloStatsNetEgDropCmd OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloStatsEntry 34 }
+
+caUcsMenloStatsNetEgDropLifCfgInvalid OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloStatsEntry 35 }
+
+caUcsMenloStatsNetEgDropLifMapNoHit OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloStatsEntry 36 }
+
+caUcsMenloStatsNetEgDropSrcBind OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloStatsEntry 37 }
+
+caUcsMenloStatsNetEgLearnReqDrop OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloStatsEntry 38 }
+
+caUcsMenloStatsNetInDropFcLifInvalid OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloStatsEntry 39 }
+
+caUcsMenloStatsNetInDropFcMulticast OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloStatsEntry 40 }
+
+caUcsMenloStatsNetInDropNullPif OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloStatsEntry 41 }
+
+caUcsMenloStatsNetInFwdLookupNoHit OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloStatsEntry 42 }
+
+	
+-- *****************************************************************************
+-- Ucs MenloQ Stats Table
+-- *****************************************************************************
+caUcsMenloQStatsTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsMenloQStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsMenloQStats table."
+	::= { caUcsBladeInterfaces 5 }
+
+caUcsMenloQStatsEntry OBJECT-TYPE
+	SYNTAX CaUcsMenloQStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsMenloQStatsUcsManagerId,
+		caUcsMenloQStatsBladeIndex,
+		caUcsMenloQStatsIndex,
+		caUcsMenloQStatsComponentIndex }
+	::= { caUcsMenloQStatsTable 1 }
+
+CaUcsMenloQStatsRow ::=
+	SEQUENCE {
+	caUcsMenloQStatsUcsManagerId			Integer32,	
+	caUcsMenloQStatsBladeIndex			Integer32,
+	caUcsMenloQStatsIndex				Integer32,
+	caUcsMenloQStatsComponentIndex			Integer32,
+	caUcsMenloQStatsComponentId			INTEGER,
+	caUcsMenloQStatsCorrectableErrors		Counter64,
+	caUcsMenloQStatsPopErrors			Counter64,
+	caUcsMenloQStatsPushErrors			Counter64,
+	caUcsMenloQStatsUncorrectableErrors		Counter64,
+	caUcsMenloQStatsDropOverrunN0			Counter64,
+	caUcsMenloQStatsDropOverrunN1			Counter64,
+	caUcsMenloQStatsTruncateOverrunN0		Counter64,
+	caUcsMenloQStatsTruncateOverrunN1		Counter64
+	}
+
+caUcsMenloQStatsUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsMenloQStatsEntry 1 }	
+
+caUcsMenloQStatsBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the blade for the caBladeTable."
+	::= { caUcsMenloQStatsEntry 2 }
+
+caUcsMenloQStatsIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of a Menlo instance on a blade; same as caUcsMenloStatsIndex."
+	::= { caUcsMenloQStatsEntry 3 }
+
+caUcsMenloQStatsComponentIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of a Menlo component on a blade."
+	::= { caUcsMenloQStatsEntry 4 }
+
+caUcsMenloQStatsComponentId OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1),  --default
+		cpu(2),
+		eth(3),
+		fc(4),
+		n(5)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The type of Menlo compoennt to which the statistics of this instance apply."
+	::= { caUcsMenloQStatsEntry 5 }
+
+caUcsMenloQStatsCorrectableErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloQStatsEntry 6 }
+
+caUcsMenloQStatsPopErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloQStatsEntry 7 }
+
+caUcsMenloQStatsPushErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloQStatsEntry 8 }
+
+caUcsMenloQStatsUncorrectableErrors OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloQStatsEntry 9 }
+
+caUcsMenloQStatsDropOverrunN0 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloQStatsEntry 10 }
+
+caUcsMenloQStatsDropOverrunN1 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloQStatsEntry 11 }
+
+caUcsMenloQStatsTruncateOverrunN0 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloQStatsEntry 12 }
+
+caUcsMenloQStatsTruncateOverrunN1 OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"blank"
+	::= { caUcsMenloQStatsEntry 13 }
+	
+
+
+-- *****************************************************************************
+-- Ucs Mezzanine Table
+-- *****************************************************************************
+caUcsMezzanineTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsMezzanineRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsMezzanine table."
+	::= { caUcsBladeInterfaces 6 }
+
+caUcsMezzanineEntry OBJECT-TYPE
+	SYNTAX CaUcsMezzanineRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsMezzanineUcsManagerId,
+		caUcsMezzanineBladeIndex,
+		caUcsMezzanineIndex }
+	::= { caUcsMezzanineTable 1 }
+
+CaUcsMezzanineRow ::=
+	SEQUENCE {
+	caUcsMezzanineUcsManagerId			Integer32,	
+	caUcsMezzanineBladeIndex			Integer32,
+	caUcsMezzanineIndex				Integer32,
+	caUcsMezzanineModel				DisplayString,
+	caUcsMezzanineSerialNumber			DisplayString,
+	caUcsMezzanineVendor				DisplayString,
+	caUcsMezzanineRevision				DisplayString,
+	caUcsMezzanineCondition				INTEGER, 
+	caUcsMezzanineBootLoaderVersion			DisplayString,
+	caUcsMezzanineFirmwareVersion			DisplayString,
+	caUcsMezzanineStartupFirmwareVersion		DisplayString,
+	caUcsMezzanineBackupFirmwareVersion		DisplayString,
+	caUcsMezzanineProductName			DisplayString,
+	caUcsMezzaninePid				DisplayString
+	
+	}
+
+caUcsMezzanineUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsMezzanineEntry 1 }
+	
+caUcsMezzanineBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the blade for the caBladeTable."
+	::= { caUcsMezzanineEntry 2 }
+
+caUcsMezzanineIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of a mezzanine card relative to the blade."
+	::= { caUcsMezzanineEntry 3 }
+
+caUcsMezzanineModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the mezzanine card."
+	::= { caUcsMezzanineEntry 4 }
+
+caUcsMezzanineSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the mezzanine card."
+	::= { caUcsMezzanineEntry 5 }
+
+caUcsMezzanineVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the mezzanine card."
+	::= { caUcsMezzanineEntry 6 }
+
+caUcsMezzanineRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the mezzanine card."
+	::= { caUcsMezzanineEntry 7 }
+
+caUcsMezzanineCondition OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1),
+		ok(2),
+		degraded(3),
+		failed(4),
+		notSupported(5),
+		notPresent(6)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Overall status of the mezzanine card."
+	::= { caUcsMezzanineEntry 8 }
+
+caUcsMezzanineBootLoaderVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the boot loadeer firmware that is running currently."
+	::= { caUcsMezzanineEntry 9 }
+
+caUcsMezzanineFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the firmware that is currently running."
+	::= { caUcsMezzanineEntry 10 }
+
+caUcsMezzanineStartupFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Startup version of the firmware."
+	::= { caUcsMezzanineEntry 11 }
+
+caUcsMezzanineBackupFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Backup version of the firmware."
+	::= { caUcsMezzanineEntry 12 }
+	
+caUcsMezzanineProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"product name of the firmware."
+	::= { caUcsMezzanineEntry 13 }
+
+caUcsMezzaninePid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the firmware."
+	::= { caUcsMezzanineEntry 14 }
+
+	
+-- *****************************************************************************
+-- Ucs Blade Server Motherboard Table
+-- *****************************************************************************
+caUcsMotherboardTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsMotherboardRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsBladeServerMotherboard table."
+	::= { caUcsBladeServerMotherboard 1 }
+
+caUcsBladeServerMotherboardEntry OBJECT-TYPE
+	SYNTAX CaUcsMotherboardRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsMotherboardUcsManagerId,
+		caUcsMotherboardBladeIndex }
+	::= { caUcsMotherboardTable 1 }
+
+CaUcsMotherboardRow ::=
+	SEQUENCE {
+	caUcsMotherboardUcsManagerId			Integer32,	
+	caUcsMotherboardBladeIndex			Integer32,
+	caUcsMotherboardModel				DisplayString,
+	caUcsMotherboardSerialNumber			DisplayString,
+	caUcsMotherboardVendor				DisplayString,
+	caUcsMotherboardRevision			DisplayString,
+	caUcsMotherboardloSensorTemp			Float,
+	caUcsMotherboardRearSensorTemp			Float,
+	caUcsMotherboardConsumedPower			Float,
+	caUcsMotherboard12vCurrent			Float,
+	caUcsMotherboard12vVoltage			Float,
+	caUcsMotherboardDdr3Line0Voltage		Float,
+	caUcsMotherboardDdr3Line1Voltage		Float,
+	caUcsMotherboardCpu0Voltage			Float,
+	caUcsMotherboardCpu1Voltage			Float,
+	caUcsMotherboardProductName			DisplayString,
+	caUcsMotherboardPid				DisplayString
+	}
+
+caUcsMotherboardUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsBladeServerMotherboardEntry 1 }
+
+caUcsMotherboardBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the blade for the caBladeTable."
+	::= { caUcsBladeServerMotherboardEntry 2 }
+
+caUcsMotherboardModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the motherboard."
+	::= { caUcsBladeServerMotherboardEntry 3 }
+
+caUcsMotherboardSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the motherboard."
+	::= { caUcsBladeServerMotherboardEntry 4 }
+
+caUcsMotherboardVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the motherboard."
+	::= { caUcsBladeServerMotherboardEntry 5 }
+
+caUcsMotherboardRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the motherboard."
+	::= { caUcsBladeServerMotherboardEntry 6 }
+
+caUcsMotherboardloSensorTemp OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Degrees celsius."
+	::= { caUcsBladeServerMotherboardEntry 7 }
+
+caUcsMotherboardRearSensorTemp OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Degrees celsius."
+	::= { caUcsBladeServerMotherboardEntry 8 }
+
+caUcsMotherboardConsumedPower OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Wattage being currently consumed by the motherboard."
+	::= { caUcsBladeServerMotherboardEntry 9 }
+
+caUcsMotherboard12vCurrent OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Amperage on the 12 volt motherboard input."
+	::= { caUcsBladeServerMotherboardEntry 10 }
+
+caUcsMotherboard12vVoltage OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Voltage on the 12 volt motherboard input."
+	::= { caUcsBladeServerMotherboardEntry 11 }
+
+caUcsMotherboardDdr3Line0Voltage OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Voltage to the memory banks in line 0."
+	::= { caUcsBladeServerMotherboardEntry 12 }
+
+caUcsMotherboardDdr3Line1Voltage OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Voltage to the memory banks in line 1."
+	::= { caUcsBladeServerMotherboardEntry 13 }
+
+caUcsMotherboardCpu0Voltage OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Voltage to the CPU in CPU slot 0."
+	::= { caUcsBladeServerMotherboardEntry 14 }
+
+caUcsMotherboardCpu1Voltage OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Voltage to the CPU in CPU slot 1."
+	::= { caUcsBladeServerMotherboardEntry 15 }
+	
+caUcsMotherboardProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of the motherboard."
+	::= { caUcsBladeServerMotherboardEntry 16 }
+	
+caUcsMotherboardPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the motherboard."
+	::= { caUcsBladeServerMotherboardEntry 17 }
+
+
+	
+-- *****************************************************************************
+-- UCS Blade Server CPU Table
+-- *****************************************************************************
+caUcsCpuTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsCpuRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"UCS Cpu table."
+	::= { caUcsBladeServerCpu 1 }
+
+caUcsCpuEntry OBJECT-TYPE
+	SYNTAX CaUcsCpuRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsCpuUcsManagerId,
+		caUcsCpuBladeIndex,
+		caUcsCpuIndex }
+	::= { caUcsCpuTable 1 }
+
+CaUcsCpuRow ::=
+	SEQUENCE {
+		caUcsCpuUcsManagerId		Integer32,
+		caUcsCpuBladeIndex		Integer32,
+		caUcsCpuIndex			Integer32,
+		caUcsCpuModel			DisplayString,
+		caUcsCpuSerialNumber		DisplayString,
+		caUcsCpuVendor			DisplayString,
+		caUcsCpuRevision		DisplayString,
+		caUcsCpuTemp			Float,
+		caUcsCpuArchitecture		INTEGER,
+		caUcsCpuCores			Integer32,
+		caUcsCpuSocketDesignation	DisplayString,
+		caUcsCpuSpeed			Integer32,
+		caUcsCpuStepping		Unsigned32,
+		caUcsCpuThread			Integer32,
+		caUcsCpuProductName		DisplayString,
+		caUcsCpuPid			DisplayString
+		}
+
+caUcsCpuUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsCpuEntry 1  }
+	
+caUcsCpuBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Corresponds to caBladeIndes."
+	::= { caUcsCpuEntry 2 }
+
+caUcsCpuIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a CPU on the motherboard of this blade."
+	::= { caUcsCpuEntry 3 }
+
+caUcsCpuModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the CPU."
+	::= { caUcsCpuEntry 4 }
+
+caUcsCpuSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial Number of the CPU."
+	::= { caUcsCpuEntry 5 }
+
+caUcsCpuVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the CPU."
+	::= { caUcsCpuEntry 6 }
+
+caUcsCpuRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the CPU."
+	::= { caUcsCpuEntry 7 }
+
+caUcsCpuTemp OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Currently available temperature readings from the CPU temp sensor."
+	::= { caUcsCpuEntry 8 }
+
+caUcsCpuArchitecture OBJECT-TYPE
+	SYNTAX INTEGER {
+		any(1), -- default
+		intelP4C(2),
+		opteron(132),
+		turion64(134),
+		dualCoreOpteron(135),
+		pentium4(178),
+		xeon(179),
+		xeonMP(181)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Processor architecture of this CPU, for example 'Xeon'."
+	::= { caUcsCpuEntry 9 }
+
+caUcsCpuCores OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of cores in the CPU."
+	::= { caUcsCpuEntry 10 }
+
+caUcsCpuSocketDesignation OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Identifier of the socket this CPU is inserted into."
+	::= { caUcsCpuEntry 11 }
+
+caUcsCpuSpeed OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Effective clock speed of the CPU in MHz."
+	::= { caUcsCpuEntry 12 }
+
+caUcsCpuStepping OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"CPU silicon revision (AMD calls it a revision as well; Intel calls it stepping information)."
+	::= { caUcsCpuEntry 13 }
+
+caUcsCpuThread OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"CPU threads"
+	::= { caUcsCpuEntry 14 }
+	
+caUcsCpuProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of CPU"
+	::= { caUcsCpuEntry 15}
+	
+caUcsCpuPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of CPU"
+	::= { caUcsCpuEntry 16}
+	
+-- *****************************************************************************
+-- Ucs Blade Server Storage
+--
+-- Ucs Storage Controller Table
+-- *****************************************************************************
+caUcsStorageTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsStorageRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsBladeServerStorageController table."
+	::= { caUcsBladeServerStorage 1 }
+
+caUcsStorageEntry OBJECT-TYPE
+	SYNTAX CaUcsStorageRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsStorageUcsManagerId,
+		caUcsStorageBladeIndex,
+		caUcsStorageControllerIndex }
+	::= { caUcsStorageTable 1 }
+
+CaUcsStorageRow ::=
+	SEQUENCE {
+	caUcsStorageUcsManagerId			Integer32,	
+	caUcsStorageBladeIndex				Integer32,
+	caUcsStorageControllerIndex			Integer32,
+	caUcsStorageControllerModel			DisplayString,
+	caUcsStorageControllerSerialNumber		DisplayString,
+	caUcsStorageControllerVendor			DisplayString,
+	caUcsStorageControllerRevision			DisplayString,
+	caUcsStorageControllerType			INTEGER, 
+	caUcsStorageControllerBootLoaderVersion		DisplayString,
+	caUcsStorageControllerFirmwareVersion		DisplayString,
+	caUcsStorageControllerStartupFirmwareVersion	DisplayString,
+	caUcsStorageControllerProductName		DisplayString,
+	caUcsStorageControllerPid			DisplayString
+	
+	}
+
+caUcsStorageUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsStorageEntry 1 }
+	
+
+caUcsStorageBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Corresponds to caBladeIndex."
+	::= { caUcsStorageEntry 2 }
+
+caUcsStorageControllerIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of a storage controller on this blade."
+	::= { caUcsStorageEntry 3 }
+
+caUcsStorageControllerModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the storage controller."
+	::= { caUcsStorageEntry 4 }
+
+caUcsStorageControllerSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the storage controller."
+	::= { caUcsStorageEntry 5 }
+
+caUcsStorageControllerVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the storage controller."
+	::= { caUcsStorageEntry 6 }
+
+caUcsStorageControllerRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the storage controller."
+	::= { caUcsStorageEntry 7 }
+
+caUcsStorageControllerType OBJECT-TYPE
+	SYNTAX INTEGER {
+		sas(1), --default
+		sata(2)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Type of storage controller - only currently available value is 'SAS(1)'."
+	::= { caUcsStorageEntry 8 }
+
+caUcsStorageControllerBootLoaderVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the boot loader firmware that is running currently."
+	::= { caUcsStorageEntry 9 }
+
+caUcsStorageControllerFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the storage controller firmware that is currently running."
+	::= { caUcsStorageEntry 10 }
+
+caUcsStorageControllerStartupFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Startup version fo the storage controller firmware."
+	::= { caUcsStorageEntry 11 }
+	
+caUcsStorageControllerProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of  the storage controller."
+	::= { caUcsStorageEntry 12 }
+	
+caUcsStorageControllerPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the storage controller."
+	::= { caUcsStorageEntry 13 }
+
+	
+-- *****************************************************************************
+-- Ucs Storage Local Disk Table
+-- *****************************************************************************
+caUcsStorageLocalDiskTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsStorageLocalDiskRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsStorageLocalDisk table."
+	::= { caUcsBladeServerStorage 2 }
+
+caUcsStorageLocalDiskEntry OBJECT-TYPE
+	SYNTAX CaUcsStorageLocalDiskRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsStorageLocalDiskUcsManagerId,
+		caUcsStorageLocalDiskBladeIndex,
+		caUcsStorageLocalDiskIndex }
+	::= { caUcsStorageLocalDiskTable 1 }
+
+CaUcsStorageLocalDiskRow ::=
+	SEQUENCE {
+	caUcsStorageLocalDiskUcsManagerId		Integer32,	
+	caUcsStorageLocalDiskBladeIndex			Integer32,
+	caUcsStorageLocalDiskIndex			Integer32,
+	caUcsStorageLocalDiskModel			DisplayString,
+	caUcsStorageLocalDiskSerialNumber		DisplayString,
+	caUcsStorageLocalDiskVendor			DisplayString,
+	caUcsStorageLocalDiskRevision			DisplayString,
+	caUcsStorageLocalDiskNumBlocks			Uint64,
+	caUcsStorageLocalDiskSize			Uint64,
+	caUcsStorageLocalDiskBlockSize			Unsigned32,
+	caUcsStorageLocalDiskFirmwareVersion		DisplayString,
+	caUcsStorageLocalDiskControllerIndex		Integer32,
+	caUcsStorageLocalDiskProductName		DisplayString,
+	caUcsStorageLocalDiskPid			DisplayString
+	}
+
+caUcsStorageLocalDiskUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsStorageLocalDiskEntry 1 }	
+
+
+caUcsStorageLocalDiskBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Corresponds to caBladeIndex."
+	::= { caUcsStorageLocalDiskEntry 2 }
+
+caUcsStorageLocalDiskIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of a local disk drive on this blade."
+	::= { caUcsStorageLocalDiskEntry 3 }
+
+caUcsStorageLocalDiskModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the disk drive."
+	::= { caUcsStorageLocalDiskEntry 4 }
+
+caUcsStorageLocalDiskSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the disk drive."
+	::= { caUcsStorageLocalDiskEntry 5 }
+
+caUcsStorageLocalDiskVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the disk drive."
+	::= { caUcsStorageLocalDiskEntry 6 }
+
+caUcsStorageLocalDiskRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the disk drive."
+	::= { caUcsStorageLocalDiskEntry 7 }
+
+caUcsStorageLocalDiskNumBlocks OBJECT-TYPE
+	SYNTAX Uint64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total number of blocks on this drive."
+	::= { caUcsStorageLocalDiskEntry 8 }
+
+caUcsStorageLocalDiskSize OBJECT-TYPE
+	SYNTAX Uint64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Size in MBs of a block on this drive."
+	::= { caUcsStorageLocalDiskEntry 9 }
+
+caUcsStorageLocalDiskBlockSize OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Size in bytes of a block on this drive."
+	::= { caUcsStorageLocalDiskEntry 10 }
+
+caUcsStorageLocalDiskFirmwareVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the firmware that is currently running."
+	::= { caUcsStorageLocalDiskEntry 11 }
+
+caUcsStorageLocalDiskControllerIndex OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Corresponds to caStorageControllerIndex."
+	::= { caUcsStorageLocalDiskEntry 12 }
+	
+caUcsStorageLocalDiskProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of the disk drive."
+	::= { caUcsStorageLocalDiskEntry 13 }
+	
+caUcsStorageLocalDiskPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the disk drive."
+	::= { caUcsStorageLocalDiskEntry 14 }
+	
+
+
+-- *****************************************************************************
+-- Ucs Storage Local Lun Table
+-- *****************************************************************************
+caUcsStorageLocalLunTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsStorageLocalLunRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsStorageLocalLun table."
+	::= { caUcsBladeServerStorage 3 }
+
+caUcsStorageLocalLunEntry OBJECT-TYPE
+	SYNTAX CaUcsStorageLocalLunRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsStorageLocalLunUcsManagerId,
+		caUcsStorageLocalLunBladeIndex,
+		caUcsStorageLocalLunIndex }
+	::= { caUcsStorageLocalLunTable 1 }
+
+CaUcsStorageLocalLunRow ::=
+	SEQUENCE {
+	caUcsStorageLocalLunUcsManagerId		Integer32,
+	caUcsStorageLocalLunBladeIndex			Integer32,
+	caUcsStorageLocalLunIndex			Integer32,
+	caUcsStorageLocalLunModel			DisplayString,
+	caUcsStorageLocalLunSerialNumber		DisplayString,
+	caUcsStorageLocalLunVendor			DisplayString,
+	caUcsStorageLocalLunRevision			DisplayString,
+	caUcsStorageLocalLunId				Unsigned32,
+	caUcsStorageLocalLunNumBlocks			Uint64,
+	caUcsStorageLocalLunSize			Uint64,
+	caUcsStorageLocalLunBlockSize			Unsigned32,
+	caUcsStorageLocalLunType			INTEGER, 
+	caUcsStorageLocalLunControllerIndex		Integer32,
+	caUcsStorageLocalLunProductName			DisplayString,
+	caUcsStorageLocalLunPid				DisplayString
+	}
+
+caUcsStorageLocalLunUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsStorageLocalLunEntry 1 }
+
+caUcsStorageLocalLunBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Corresponds to caBladeIndex."
+	::= { caUcsStorageLocalLunEntry 2 }
+
+caUcsStorageLocalLunIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a logical unit number (LUN) designation configured on the blade."
+	::= { caUcsStorageLocalLunEntry 3 }
+
+caUcsStorageLocalLunModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of the storage controller implementing this LUN."
+	::= { caUcsStorageLocalLunEntry 4 }
+
+caUcsStorageLocalLunSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the storage controller implementing this LUN."
+	::= { caUcsStorageLocalLunEntry 5 }
+
+caUcsStorageLocalLunVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the storage controller implementing this LUN."
+	::= { caUcsStorageLocalLunEntry 6 }
+
+caUcsStorageLocalLunRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the storage controller implementing this LUN."
+	::= { caUcsStorageLocalLunEntry 7 }
+
+caUcsStorageLocalLunId OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Logical identifier and numberical designation of this LUN."
+	::= { caUcsStorageLocalLunEntry 8 }
+
+caUcsStorageLocalLunNumBlocks OBJECT-TYPE
+	SYNTAX Uint64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total number of blocks in this partition addressed by this LUN.."
+	::= { caUcsStorageLocalLunEntry 9 }
+
+caUcsStorageLocalLunSize OBJECT-TYPE
+	SYNTAX Uint64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of MBs in the partition addressed by this LUN."
+	::= { caUcsStorageLocalLunEntry 10 }
+
+caUcsStorageLocalLunBlockSize OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Size in bytes of a block in the partition addressed by this LUN."
+	::= { caUcsStorageLocalLunEntry 11 }
+
+caUcsStorageLocalLunType OBJECT-TYPE
+	SYNTAX INTEGER {
+		unspecified(1), --default
+		simple(2),
+		mirror(3),
+		stripe(4),
+		raid(5)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Underlying format of the disk resource supplying this LUN."
+	::= { caUcsStorageLocalLunEntry 12 }
+
+caUcsStorageLocalLunControllerIndex OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Corresponds to caStorageControllerIndex."
+	::= { caUcsStorageLocalLunEntry 13 }
+
+caUcsStorageLocalLunProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of the storage controller implementing this LUN."
+	::= { caUcsStorageLocalLunEntry 14 }
+	
+caUcsStorageLocalLunPid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the storage controller implementing this LUN."
+	::= { caUcsStorageLocalLunEntry 15 }
+
+	
+-- *****************************************************************************
+-- UCS Memory Array Table
+-- *****************************************************************************
+caUcsMemoryArrayTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsMemoryArrayRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"UCS Memory Array table."
+	::= { caUcsBladeServerMemory 1 }
+
+caUcsMemoryArrayEntry OBJECT-TYPE
+	SYNTAX CaUcsMemoryArrayRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsMemoryArrayUcsManagerId,
+		caUcsMemoryArrayBladeIndex,
+		caUcsMemoryArrayIndex }
+	::= { caUcsMemoryArrayTable 1 }
+
+CaUcsMemoryArrayRow ::=
+	SEQUENCE {
+		caUcsMemoryArrayUcsManagerId		Integer32,	
+		caUcsMemoryArrayBladeIndex 		Integer32,
+		caUcsMemoryArrayIndex 			Integer32,
+		caUcsMemoryArrayModel			DisplayString,
+		caUcsMemoryArraySerialNumber		DisplayString,
+		caUcsMemoryArrayVendor			DisplayString,
+		caUcsMemoryArrayRevision		DisplayString,
+		caUcsMemoryArrayMaxCapacity		Unsigned32,
+		caUcsMemoryArrayMaxNumOfDimms		Integer32,
+		caUcsMemoryArrayCpuId			Unsigned32,
+		caUcsMemoryArrayNumOfDimms		Integer32,
+		caUcsMemoryArrayCurrentCapacity		Unsigned32,
+		caUcsMemoryArrayErrorCorrection		INTEGER,
+		caUcsMemoryArrayProductName		DisplayString,
+		caUcsMemoryArrayPid			DisplayString
+		}
+
+
+caUcsMemoryArrayUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsMemoryArrayEntry 1 }
+
+caUcsMemoryArrayBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Corresponds to caBladeIndes."
+	::= { caUcsMemoryArrayEntry 2 }
+
+caUcsMemoryArrayIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a memory array."
+	::= { caUcsMemoryArrayEntry 3 }
+
+caUcsMemoryArrayModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Model of a memory array."
+	::= { caUcsMemoryArrayEntry 4 }
+
+caUcsMemoryArraySerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Serial number of the memory array."
+	::= { caUcsMemoryArrayEntry 5 }
+
+caUcsMemoryArrayVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the memory array."
+	::= { caUcsMemoryArrayEntry 6 }
+
+caUcsMemoryArrayRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the memory array."
+	::= { caUcsMemoryArrayEntry 7 }
+
+caUcsMemoryArrayMaxCapacity OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total MBs if all possible memory usable on this memory array."
+	::= { caUcsMemoryArrayEntry 8 }
+
+caUcsMemoryArrayMaxNumOfDimms OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Maximum number of memory DIMMs on this memory array."
+	::= { caUcsMemoryArrayEntry 9 }
+
+caUcsMemoryArrayCpuId OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"CPU instance (on this blade) associated with this memory array."
+	::= { caUcsMemoryArrayEntry 10 }
+
+caUcsMemoryArrayNumOfDimms OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Current number of installed DIMMs in the memory array."
+	::= { caUcsMemoryArrayEntry 11 }
+
+caUcsMemoryArrayCurrentCapacity OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Total MBs of memory currently installed in the memory array."
+	::= { caUcsMemoryArrayEntry 12 }
+
+caUcsMemoryArrayErrorCorrection OBJECT-TYPE
+	SYNTAX INTEGER {
+		undiscovered(1), -- default
+		other(2),
+		unknown(3),
+		none(4),
+		parity(5),
+		singleBitECC(6),
+		multiBitECC(7),
+		crc(8)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The type of error correction required by the memory array."
+	::= { caUcsMemoryArrayEntry 13 }
+	
+caUcsMemoryArrayProductName  OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of the model of the memory array."
+	::= { caUcsMemoryArrayEntry 14 }
+	
+caUcsMemoryArrayPid  OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of the model of the memory array."
+	::= { caUcsMemoryArrayEntry 15 }
+
+
+	
+-- *****************************************************************************
+-- UCS Memory Module Table
+-- *****************************************************************************
+caUcsMemoryModuleTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsMemoryModuleRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"UCS Memory Array table."
+	::= { caUcsBladeServerMemory 2 }
+
+caUcsMemoryModuleEntry OBJECT-TYPE
+	SYNTAX CaUcsMemoryModuleRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsMemoryModuleUcsManagerId,
+		caUcsMemoryModuleBladeIndex,
+                caUcsMemoryModuleIndex }
+	::= { caUcsMemoryModuleTable 1 }
+
+CaUcsMemoryModuleRow ::=
+	SEQUENCE {
+		caUcsMemoryModuleUcsManagerId		Integer32,	
+		caUcsMemoryModuleBladeIndex 		Integer32,
+		caUcsMemoryModuleIndex 			Integer32,
+		caUcsMemoryModuleModel			DisplayString,
+		caUcsMemoryModuleSerialNumber		DisplayString,
+		caUcsMemoryModuleVendor			DisplayString,
+		caUcsMemoryModuleRevision		DisplayString,
+		caUcsMemoryModuleType			INTEGER,
+		caUcsMemoryModuleLatency		Float,
+		caUcsMemoryModuleFormFactor		INTEGER,
+		caUcsMemoryModuleSpeed			INTEGER,
+		caUcsMemoryModuleLocation		DisplayString,
+		caUcsMemoryModuleWidth			Integer32,
+		caUcsMemoryModuleBank			Integer32,
+		caUcsMemoryModuleClock			Integer32,
+		caUcsMemoryModuleTemp			Float,
+		caUcsMemoryModuleMemoryArrayIndex	Integer32,
+		caUcsMemoryModuleCapacity		Unsigned32,
+		caUcsMemoryModulePresence		DisplayString,
+		caUcsMemoryModuleProductName		DisplayString,
+		caUcsMemoryModulePid			DisplayString
+		}
+
+caUcsMemoryModuleUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsMemoryModuleEntry 1 }
+
+caUcsMemoryModuleBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Corresponds to caBladeIndex."
+	::= { caUcsMemoryModuleEntry 2 }
+
+caUcsMemoryModuleIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Instance of a memory module."
+	::= { caUcsMemoryModuleEntry 3 }
+
+caUcsMemoryModuleModel OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The model of the memory module."
+	::= { caUcsMemoryModuleEntry 4 }
+
+caUcsMemoryModuleSerialNumber OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The serial number of the memory module."
+	::= { caUcsMemoryModuleEntry 5 }
+
+caUcsMemoryModuleVendor OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Vendor of the memory module."
+	::= { caUcsMemoryModuleEntry 6 }
+
+caUcsMemoryModuleRevision OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Revision of the model of the memory module."
+	::= { caUcsMemoryModuleEntry 7 }
+
+caUcsMemoryModuleType OBJECT-TYPE
+	SYNTAX INTEGER {
+		undiscovered(1), -- default
+		other(2),
+		unknown(3),
+		dram(4),
+		edram(5),
+		vram(6),
+		sram(7),
+		ram(8),
+		rom(9),
+		flash(10),
+		eeprom(11),
+		feprom(12),
+		eprom(13),
+		cdram(14),
+		threeDram(15),
+		sdram(16),
+		sgram(17),
+		rdram(18),
+		ddr(19),
+		ddr2(20),
+		ddr2FbDimm(21),
+		ddr3(24),
+		fbd2(25)
+		
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The form and specification adherence of the memory interface."
+	::= { caUcsMemoryModuleEntry 8 }
+
+caUcsMemoryModuleLatency OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of clock cycles (synchronous DRAM) for the data to be available at a particular memory address."
+	::= { caUcsMemoryModuleEntry 9 }
+
+caUcsMemoryModuleFormFactor OBJECT-TYPE
+	SYNTAX INTEGER {
+		undiscovered(4), -- default
+ 		other(1),
+		unknown(2),
+		simm(3),
+		dimm(9),
+		tsop(10),
+		rimm(12),
+		sodimm(13),
+		srimm(14),
+		fbDimm(15)
+	}
+
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The type of memory (DIMM, SODIMM, etc.)"
+	::= { caUcsMemoryModuleEntry 10 }
+
+caUcsMemoryModuleSpeed OBJECT-TYPE
+	SYNTAX INTEGER {
+		unspecified(0) -- default
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The speed of the module."
+	::= { caUcsMemoryModuleEntry 11 }
+
+caUcsMemoryModuleLocation OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Which DIMM slot this memory is inserted into."
+	::= { caUcsMemoryModuleEntry 12 }
+
+caUcsMemoryModuleWidth OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The number of bits in a bank of memory."
+	::= { caUcsMemoryModuleEntry 13 }
+
+caUcsMemoryModuleBank OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The number of banks in this memory module."
+	::= { caUcsMemoryModuleEntry 14 }
+
+caUcsMemoryModuleClock OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"MHz"
+	::= { caUcsMemoryModuleEntry 15 }
+
+caUcsMemoryModuleTemp OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"degrees celsius"
+	::= { caUcsMemoryModuleEntry 16 }
+
+caUcsMemoryModuleMemoryArrayIndex OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Corresponds to caMemoryArrayIndex; indicates to which memory array this memory unit belongs."
+	::= { caUcsMemoryModuleEntry 17 }
+
+caUcsMemoryModuleCapacity OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+	    "size of the memory module in MBs"
+	::= { caUcsMemoryModuleEntry 18 }
+
+caUcsMemoryModulePresence OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Presence of DIMM "
+	::= { caUcsMemoryModuleEntry 19 }
+	
+caUcsMemoryModuleProductName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Product name of DIMM "
+	::= { caUcsMemoryModuleEntry 20 }
+	
+caUcsMemoryModulePid OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Pid of DIMM "
+	::= { caUcsMemoryModuleEntry 21 }
+
+	
+-- *****************************************************************************
+-- caUcsSwitch
+-- *****************************************************************************
+caUcsSwitchTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsSwitchRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"UcsSwitch table."
+	::= { caUcsSwitch 1 }
+	
+	
+caUcsSwitchTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Last table refresh time"
+	::= { caUcsSwitch 2 }
+	
+caUcsSwitchEntry OBJECT-TYPE
+	SYNTAX CaUcsSwitchRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsSwitchUcsManagerId,
+		caUcsSwitchIndex }
+	::= { caUcsSwitchTable 1 }
+
+CaUcsSwitchRow ::=
+	SEQUENCE {
+		caUcsSwitchUcsManagerId			Integer32,	
+		caUcsSwitchIndex			Integer32,
+		caUcsSwitchInbandIfIpType		InetAddressType,
+		caUcsSwitchInbandIfIp			InetAddress,
+		caUcsSwitchInbandIfMask			InetAddress,
+		caUcsSwitchInbandIfGateway		InetAddress,
+		caUcsSwitchInbandIfVnet			Unsigned32,
+		caUcsSwitchOutOfBandIfIpType	InetAddressType,
+		caUcsSwitchOutOfBandIfIp		InetAddress,
+		caUcsSwitchOutOfBandIfMask		InetAddress,
+		caUcsSwitchOutOfBandIfGateway		InetAddress,
+		caUcsSwitchAdminInbandIfState		INTEGER,
+		caUcsSwitchEnvFanControllerInlet1	Float,
+		caUcsSwitchEnvFanControllerInlet2	Float,
+		caUcsSwitchEnvFanControllerInlet3	Float,
+		caUcsSwitchEnvFanControllerInlet4	Float,
+		caUcsSwitchEnvMainBoardOutlet1		Float,
+		caUcsSwitchEnvMainBoardOutlet2		Float,
+		caUcsSwitchEnvMezzBoardOutlet1		Float,
+		caUcsSwitchEnvMezzBoardOutlet2		Float,
+		caUcsSwitchCpuLoad			Float,
+		caUcsSwitchAvailableMemory		Unsigned32,
+		caUcsSwitchMemoryCacheSize		Unsigned32,
+		caUcsSwitchBootLoaderVersion		DisplayString,
+		caUcsSwitchKernelVersion		DisplayString,
+		caUcsSwitchSystemVersion		DisplayString,
+		caUcsSwitchStartupKernelVersion		DisplayString,
+		caUcsSwitchStartupSystemVersion		DisplayString,
+		caUcsSwitchOperability			INTEGER
+		}
+
+caUcsSwitchUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsSwitchEntry 1 }
+
+caUcsSwitchIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Same as caSwitchIndex."
+	::= { caUcsSwitchEntry 2 }
+
+caUcsSwitchInbandIfIpType OBJECT-TYPE
+	SYNTAX InetAddressType
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"In-band management IP Address Type. This is an enumerated INTEGER of type InetAddressType and applies
+		 to the In-band IP, Mask, and Gateway addresses."
+	::= { caUcsSwitchEntry 3 }
+
+caUcsSwitchInbandIfIp OBJECT-TYPE
+	SYNTAX InetAddress
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"In-band management IP Address."
+	::= { caUcsSwitchEntry 4 }
+
+caUcsSwitchInbandIfMask OBJECT-TYPE
+	SYNTAX InetAddress
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"In-band management IP Address mask."
+	::= { caUcsSwitchEntry 5 }
+
+caUcsSwitchInbandIfGateway OBJECT-TYPE
+	SYNTAX InetAddress
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"In-band management gateway address for IP traffic."
+	::= { caUcsSwitchEntry 6 }
+
+caUcsSwitchInbandIfVnet	 OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"In-band management VLAN id."
+	::= { caUcsSwitchEntry 7 }
+
+caUcsSwitchOutOfBandIfIpType OBJECT-TYPE
+	SYNTAX InetAddressType
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Out-of-band management IP Address Type. This is an enumerated INTEGER of type InetAddressType and applies
+		 to the Out-of-band IP, Mask, and Gateway addresses."
+	::= { caUcsSwitchEntry 8 }
+
+caUcsSwitchOutOfBandIfIp OBJECT-TYPE
+	SYNTAX InetAddress
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Out-of-band management IP address."
+	::= { caUcsSwitchEntry 9 }
+
+caUcsSwitchOutOfBandIfMask OBJECT-TYPE
+	SYNTAX InetAddress
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Out-of-band management IP address mask."
+	::= { caUcsSwitchEntry 10 }
+
+caUcsSwitchOutOfBandIfGateway OBJECT-TYPE
+	SYNTAX InetAddress
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Out-of-band management gateway address for IP traffic."
+	::= { caUcsSwitchEntry 11 }
+
+caUcsSwitchAdminInbandIfState OBJECT-TYPE
+	SYNTAX INTEGER --enum
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Determining whether administrative communication to the switch can occur in-band."
+	::= { caUcsSwitchEntry 12 }
+
+caUcsSwitchEnvFanControllerInlet1 OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Temperature in degrees celsius."
+	::= { caUcsSwitchEntry 13 }
+
+caUcsSwitchEnvFanControllerInlet2 OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Temperature in degrees celsius."
+	::= { caUcsSwitchEntry 14 }
+
+caUcsSwitchEnvFanControllerInlet3 OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Temperature in degrees celsius."
+	::= { caUcsSwitchEntry 15 }
+
+caUcsSwitchEnvFanControllerInlet4 OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Temperature in degrees celsius."
+	::= { caUcsSwitchEntry 16 }
+
+caUcsSwitchEnvMainBoardOutlet1 OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Temperature in degrees celsius."
+	::= { caUcsSwitchEntry 17 }
+
+caUcsSwitchEnvMainBoardOutlet2 OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Temperature in degrees celsius."
+	::= { caUcsSwitchEntry 18 }
+
+caUcsSwitchEnvMezzBoardOutlet1 OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Temperature in degrees celsius."
+	::= { caUcsSwitchEntry 19 }
+
+caUcsSwitchEnvMezzBoardOutlet2 OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Temperature in degrees celsius."
+	::= { caUcsSwitchEntry 20 }
+
+caUcsSwitchCpuLoad OBJECT-TYPE
+	SYNTAX Float
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"CPU utilization over the last minute."
+	::= { caUcsSwitchEntry 21 }
+
+caUcsSwitchAvailableMemory OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Available memory on the switch in MBs."
+	::= { caUcsSwitchEntry 22 }
+
+caUcsSwitchMemoryCacheSize OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Size of the memory cache on the switch in MBs."
+	::= { caUcsSwitchEntry 23 }
+
+caUcsSwitchBootLoaderVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the boot loader firmware that is running currently."
+	::= { caUcsSwitchEntry 24 }
+
+caUcsSwitchKernelVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the kernel firmware that is currently running."
+	::= { caUcsSwitchEntry 25 }
+
+caUcsSwitchSystemVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the system firmware taht is currently running."
+	::= { caUcsSwitchEntry 26 }
+
+caUcsSwitchStartupKernelVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Startup version of the kernel firmware."
+	::= { caUcsSwitchEntry 27 }
+
+caUcsSwitchStartupSystemVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Startup version of the system firmware."
+	::= { caUcsSwitchEntry 28 }
+
+
+caUcsSwitchOperability OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), --default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+ 		hermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operability of the switch."
+	::= { caUcsSwitchEntry 29 }
+
+	
+-- *****************************************************************************
+-- Ucs Switch Power
+--
+-- Ucs Switch Psu Table
+-- *****************************************************************************
+caUcsSwitchPsuTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsSwitchPsuRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsSwitchPsu table."
+	::= { caUcsSwitchPower 1 }
+
+caUcsSwitchPsuEntry OBJECT-TYPE
+	SYNTAX CaUcsSwitchPsuRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsSwitchPsuUcsManagerId,
+		caUcsSwitchPsuSwitchId,
+		caUcsSwitchPsuId }
+	::= { caUcsSwitchPsuTable 1 }
+
+CaUcsSwitchPsuRow ::=
+	SEQUENCE {
+		caUcsSwitchPsuUcsManagerId		Integer32,
+		caUcsSwitchPsuSwitchId			Integer32,
+		caUcsSwitchPsuId			Integer32,
+		caUcsSwitchPsuOperState			INTEGER,
+		caUcsSwitchPsuOperability		INTEGER,
+		caUcsSwitchPsuPerformance		DisplayString,
+		caUcsSwitchPsuPower			DisplayString	
+		}
+
+caUcsSwitchPsuUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsSwitchPsuEntry 1 }
+
+caUcsSwitchPsuSwitchId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Same as caSwitchIndex."
+	::= { caUcsSwitchPsuEntry  2 }
+
+caUcsSwitchPsuId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Id unique within the context of the switch; same as caSwitchPsuIndex."
+	::= { caUcsSwitchPsuEntry 3 }
+
+caUcsSwitchPsuOperState OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operational state of the switch power supply unit."
+	::= { caUcsSwitchPsuEntry 4 }
+
+
+caUcsSwitchPsuOperability OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operability of the switch power supply unit."
+	::= { caUcsSwitchPsuEntry 5 }
+	
+	
+caUcsSwitchPsuPerformance OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch Psu performance"
+	::= {caUcsSwitchPsuEntry 6 }
+	
+caUcsSwitchPsuPower OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch Psu power status"
+	::= {caUcsSwitchPsuEntry 7}	
+	
+-- *****************************************************************************
+-- Ucs Switch Fan Table
+-- *****************************************************************************
+caUcsSwitchFanTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsSwitchFanRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsSwitchFan table."
+	::= { caUcsSwitchFan 1 }
+
+caUcsSwitchFanEntry OBJECT-TYPE
+	SYNTAX CaUcsSwitchFanRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsSwitchFanUcsManagerId,
+		caUcsSwitchFanSwitchId,
+		caUcsSwitchFanId }
+	::= { caUcsSwitchFanTable 1 }
+
+CaUcsSwitchFanRow ::=
+	SEQUENCE {
+		caUcsSwitchFanUcsManagerId		Integer32,
+		caUcsSwitchFanSwitchId			Integer32,
+		caUcsSwitchFanId			Integer32,
+		caUcsSwitchFanOperState			INTEGER,
+		caUcsSwitchFanOperability		INTEGER,
+		caUcsSwitchFanPerformance		DisplayString,
+		caUcsSwitchFanPower			DisplayString
+		
+		}
+
+caUcsSwitchFanUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsSwitchFanEntry 1 }
+
+caUcsSwitchFanSwitchId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Same as caSwitchIndex."
+	::= { caUcsSwitchFanEntry  2 }
+
+caUcsSwitchFanId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Id unique within the context of the switch; same as caSwitchFanIndex."
+	::= { caUcsSwitchFanEntry 3 }
+
+caUcsSwitchFanOperState OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operational state of the switch fan."
+	::= { caUcsSwitchFanEntry 4 }
+
+caUcsSwitchFanOperability OBJECT-TYPE
+	SYNTAX INTEGER {
+		unknown(1), -- default
+		operable(2),
+		inoperable(3),
+		degraded(4),
+		poweredOff(5),
+		powerProblem(6),
+		removed(7),
+		voltageProblem(8),
+		thermalProblem(9),
+		performanceProblem(10),
+		accessibilityProblem(11),
+		identityUnestablishable(12),
+		biosPostTimeout(13),
+		fabricConnProblem(51),
+		fabricUnsupportedConn(52),
+		config(81),
+		equipmentProblem(82),
+		decommissioning(83),
+		notSupported(100),
+		discovery(101),
+		discoveryFailed(102),
+		identify(103),
+		postFailure(104),
+		upgradeProblem(105),
+		peerCommProblem(106),
+		autoUpgrade(107)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Operability of the switch fan."
+	::= { caUcsSwitchFanEntry 5 }
+	
+	
+caUcsSwitchFanPerformance OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch fan performance"
+	::= {caUcsSwitchFanEntry 6 }
+	
+caUcsSwitchFanPower OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Switch fan power status"
+	::= {caUcsSwitchFanEntry 7}
+	
+-- *****************************************************************************
+-- Ucs Switch Interfaces 
+--
+-- Ucs Switch Conn Table
+-- *****************************************************************************
+caUcsSwitchConnTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsSwitchConnRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsSwitchConn table."
+	::= { caUcsSwitchInterfaces 1 }
+
+caUcsSwitchConnEntry OBJECT-TYPE
+	SYNTAX CaUcsSwitchConnRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsSwitchConnUcsManagerId,
+		caUcsSwitchConnSwitchIndex,
+		caUcsSwitchConnIfIndex }
+	::= { caUcsSwitchConnTable 1 }
+
+CaUcsSwitchConnRow ::=
+	SEQUENCE {
+		caUcsSwitchConnUcsManagerId			Integer32,
+		caUcsSwitchConnSwitchIndex			Integer32,
+		caUcsSwitchConnIfIndex				Integer32,
+		caUcsSwitchConnChassisId			Integer32,
+		caUcsSwitchConnFabricExtenderSlotId		Integer32,
+		caUcsSwitchConnFabricExtenderPortIndex		Integer32
+		}
+
+caUcsSwitchConnUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsSwitchConnEntry 1 }
+
+caUcsSwitchConnSwitchIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of an interface on a switch; same value as caSwitchIndex."
+	::= { caUcsSwitchConnEntry  2 }
+
+caUcsSwitchConnIfIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of an interface on a switch; same value as caSwitchIfIndex."
+	::= { caUcsSwitchConnEntry 3 }
+
+caUcsSwitchConnChassisId OBJECT-TYPE
+	SYNTAX Integer32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of caChassisId that contains the fabric extender taht is connected to this switch port."
+	::= { caUcsSwitchConnEntry 4 }
+
+caUcsSwitchConnFabricExtenderSlotId OBJECT-TYPE
+	SYNTAX Integer32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of caUcsFabricExtenderSlotId connected to this particular port or 0 if the port is not a backplane port."
+	::= { caUcsSwitchConnEntry 5 }
+
+caUcsSwitchConnFabricExtenderPortIndex OBJECT-TYPE
+	SYNTAX Integer32 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The value of caUcsFabricExtenderPortIndex connected to this particular port or 0 if the port is not a backplane port."
+	::= { caUcsSwitchConnEntry 6 }
+
+
+	
+-- *****************************************************************************
+-- Ucs Switch Interface Eth Table
+-- *****************************************************************************
+caUcsSwitchIfEthStatsTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsSwitchIfEthStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsSwitchIfEthStats table."
+	::= { caUcsSwitchInterfaces 2 }
+
+caUcsSwitchIfEthStatsEntry OBJECT-TYPE
+	SYNTAX CaUcsSwitchIfEthStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsSwitchIfEthStatsUcsManagerId,
+		caUcsSwitchIfEthStatsSwitchIndex,
+		caUcsSwitchIfEthStatsIndex }
+	::= { caUcsSwitchIfEthStatsTable 1 }
+
+CaUcsSwitchIfEthStatsRow ::=
+	SEQUENCE {
+	caUcsSwitchIfEthStatsUcsManagerId		Integer32,
+	caUcsSwitchIfEthStatsSwitchIndex		Integer32,
+	caUcsSwitchIfEthStatsIndex			Integer32,
+	caUcsSwitchIfEthStatsAlign			Counter64,
+	caUcsSwitchIfEthStatsDefferedTx			Counter64,
+	caUcsSwitchIfEthStatsFcs			Counter64,
+	caUcsSwitchIfEthStatsIntMacRx			Counter64,
+	caUcsSwitchIfEthStatsIntMacTx			Counter64,
+	caUcsSwitchIfEthStatsOutDiscard			Counter64,
+	caUcsSwitchIfEthStatsRcv			Counter64,
+	caUcsSwitchIfEthStatsUnderSize			Counter64,
+	caUcsSwitchIfEthStatsXmit			Counter64,
+	caUcsSwitchIfEthStatsSqeTest			Counter64,
+	caUcsSwitchIfEthStatsCarrierSense		Counter64,
+	caUcsSwitchIfEthStatsExcessCollision		Counter64,
+	caUcsSwitchIfEthStatsGiants			Counter64,
+	caUcsSwitchIfEthStatsLateCollision		Counter64,
+	caUcsSwitchIfEthStatsMultiCollision		Counter64,
+	caUcsSwitchIfEthStatsSingleCollision		Counter64,
+	caUcsSwitchIfEthStatsSymbol			Counter64,
+	caUcsSwitchIfEthStatsRecvPause			Counter64,
+	caUcsSwitchIfEthStatsResets			Counter64,
+	caUcsSwitchIfEthStatsXmitPause			Counter64,
+	caUcsSwitchIfEthStatsRxJumboPackets		Counter64,
+	caUcsSwitchIfEthStatsRxTotalPackets		Counter64,
+	caUcsSwitchIfEthStatsTxJumboPackets		Counter64,
+	caUcsSwitchIfEthStatsTxTotalPackets		Counter64
+	}
+
+caUcsSwitchIfEthStatsUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsSwitchIfEthStatsEntry 1 }
+	
+caUcsSwitchIfEthStatsSwitchIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the switch from the caSwitchTable."
+	::= { caUcsSwitchIfEthStatsEntry 2 }
+
+caUcsSwitchIfEthStatsIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of an interface on a switch; corresponds to caSwitchIfIndex."
+	::= { caUcsSwitchIfEthStatsEntry 3 }
+
+caUcsSwitchIfEthStatsAlign OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of a number of alignment errors."
+	::= { caUcsSwitchIfEthStatsEntry 4 }
+
+caUcsSwitchIfEthStatsDefferedTx OBJECT-TYPE	
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of a number of transmissions that were deferred."
+	::= { caUcsSwitchIfEthStatsEntry 5 }
+
+caUcsSwitchIfEthStatsFcs OBJECT-TYPE		
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of frame check sequence errors."
+	::= { caUcsSwitchIfEthStatsEntry 6 }
+
+caUcsSwitchIfEthStatsIntMacRx OBJECT-TYPE		
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets in error when received by the MAC layer."
+	::= { caUcsSwitchIfEthStatsEntry 7 }
+
+caUcsSwitchIfEthStatsIntMacTx OBJECT-TYPE		
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets in error when the MAC layer attempts to transmit."
+	::= { caUcsSwitchIfEthStatsEntry 8 }
+
+caUcsSwitchIfEthStatsOutDiscard OBJECT-TYPE		
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets discarded due to network congestion."
+	::= { caUcsSwitchIfEthStatsEntry 9 }
+
+caUcsSwitchIfEthStatsRcv OBJECT-TYPE		
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the total number of received packets in error."
+	::= { caUcsSwitchIfEthStatsEntry 10 }
+
+caUcsSwitchIfEthStatsUnderSize OBJECT-TYPE
+	SYNTAX Counter64 
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the total number of packets received under 64 bytes in length."
+	::= { caUcsSwitchIfEthStatsEntry 11 }
+
+caUcsSwitchIfEthStatsXmit OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the total number of transmission errors."
+	::= { caUcsSwitchIfEthStatsEntry 12 }
+
+caUcsSwitchIfEthStatsSqeTest OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of failed SQE tests."
+	::= { caUcsSwitchIfEthStatsEntry 13 }
+
+caUcsSwitchIfEthStatsCarrierSense OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of carrier sense errors."
+	::= { caUcsSwitchIfEthStatsEntry 14 }
+
+caUcsSwitchIfEthStatsExcessCollision OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets dropped due to excess collisions."
+	::= { caUcsSwitchIfEthStatsEntry 15 }
+
+caUcsSwitchIfEthStatsGiants OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets dropped because they are larger than the largest allowed packet on the medium."
+	::= { caUcsSwitchIfEthStatsEntry 16 }
+
+caUcsSwitchIfEthStatsLateCollision OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets lost due to a late collision."
+	::= { caUcsSwitchIfEthStatsEntry 17 }
+
+caUcsSwitchIfEthStatsMultiCollision OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets lost due to multiple collisions."
+	::= { caUcsSwitchIfEthStatsEntry 18 }
+
+caUcsSwitchIfEthStatsSingleCollision OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets lost due to a single collision."
+	::= { caUcsSwitchIfEthStatsEntry 19 }
+
+caUcsSwitchIfEthStatsSymbol OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of packets lost due to errors in encoding or decoding symbols."
+	::= { caUcsSwitchIfEthStatsEntry 20 }
+
+caUcsSwitchIfEthStatsRecvPause OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number or received 802.3x PAUSE packets."
+	::= { caUcsSwitchIfEthStatsEntry 21 }
+
+caUcsSwitchIfEthStatsResets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of 802.3x RESET packets."
+	::= { caUcsSwitchIfEthStatsEntry 22 }
+
+caUcsSwitchIfEthStatsXmitPause OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of transmitted 802.3x PAUSE packets."
+	::= { caUcsSwitchIfEthStatsEntry 23 }
+
+caUcsSwitchIfEthStatsRxJumboPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of received jumbo packets."
+	::= { caUcsSwitchIfEthStatsEntry 24 }
+
+caUcsSwitchIfEthStatsRxTotalPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the total number of packets received."
+	::= { caUcsSwitchIfEthStatsEntry 25 }
+
+caUcsSwitchIfEthStatsTxJumboPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of transmitted jumbo packets."
+	::= { caUcsSwitchIfEthStatsEntry 26 }
+
+caUcsSwitchIfEthStatsTxTotalPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the total number of transmitted packets."
+	::= { caUcsSwitchIfEthStatsEntry 27 }
+
+
+	
+-- *****************************************************************************
+-- Ucs Switch Interface Fc Table
+-- *****************************************************************************
+caUcsSwitchIfFcStatsTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsSwitchIfFcStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsSwitchIfFcStats table."
+	::= { caUcsSwitchInterfaces 3 }
+
+caUcsSwitchIfFcStatsEntry OBJECT-TYPE
+	SYNTAX CaUcsSwitchIfFcStatsRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsSwitchIfFcStatsUcsManagerId,
+		caUcsSwitchIfFcStatsSwitchIndex,
+		caUcsSwitchIfFcStatsIndex }
+	::= { caUcsSwitchIfFcStatsTable 1 }
+
+CaUcsSwitchIfFcStatsRow ::=
+	SEQUENCE {
+	caUcsSwitchIfFcStatsUcsManagerId		Integer32,	
+	caUcsSwitchIfFcStatsSwitchIndex			Integer32,
+	caUcsSwitchIfFcStatsIndex			Integer32,
+	caUcsSwitchIfFcStatsCrcRx			Counter64,
+	caUcsSwitchIfFcStatsLinkFailures		Counter64,
+	caUcsSwitchIfFcStatsRx				Counter64,
+	caUcsSwitchIfFcStatsSignalLosses		Counter64,
+	caUcsSwitchIfFcStatsSyncLosses			Counter64,
+	caUcsSwitchIfFcStatsTooLongRx			Counter64,
+	caUcsSwitchIfFcStatsTooShortRx			Counter64,
+	caUcsSwitchIfFcStatsTx				Counter64
+	}
+
+caUcsSwitchIfFcStatsUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsSwitchIfFcStatsEntry 1 }
+
+caUcsSwitchIfFcStatsSwitchIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of the switch from the caSwitchTable; same value as caSwitchIndex."
+	::= { caUcsSwitchIfFcStatsEntry 2 }
+
+caUcsSwitchIfFcStatsIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of an interface on a switch; same value as caSwitchIfIndex."
+	::= { caUcsSwitchIfFcStatsEntry 3 }
+
+caUcsSwitchIfFcStatsCrcRx OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of received fibre channel packets which failed their cyclical redundancy checks."
+	::= { caUcsSwitchIfFcStatsEntry 4 }
+
+caUcsSwitchIfFcStatsLinkFailures OBJECT-TYPE	
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of fibre chennel errors that cause a link to fail."
+	::= { caUcsSwitchIfFcStatsEntry 5 }
+
+caUcsSwitchIfFcStatsRx OBJECT-TYPE		
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of errors that occurred while receiving fibre channel traffic."
+	::= { caUcsSwitchIfFcStatsEntry 6 }
+
+caUcsSwitchIfFcStatsSignalLosses OBJECT-TYPE		
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of signal losses that occurred on a fibre channel interface."
+	::= { caUcsSwitchIfFcStatsEntry 7 }
+
+caUcsSwitchIfFcStatsSyncLosses OBJECT-TYPE		
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of synchronization errors that occurred on a fibre channel interface."
+	::= { caUcsSwitchIfFcStatsEntry 8 }
+
+caUcsSwitchIfFcStatsTooLongRx OBJECT-TYPE		
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of frames received that were longer than their indicated length."
+	::= { caUcsSwitchIfFcStatsEntry 9 }
+
+caUcsSwitchIfFcStatsTooShortRx OBJECT-TYPE		
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of frames received that were shorter than their indicated length."
+	::= { caUcsSwitchIfFcStatsEntry 10 }
+
+caUcsSwitchIfFcStatsTx OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Count of the number of errors that occurred during transmission of fibre channel traffic."
+	::= { caUcsSwitchIfFcStatsEntry 11 }
+
+
+	
+-- *****************************************************************************
+-- caUcsManager Table
+-- *****************************************************************************
+caUcsManagerTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsManagerRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsManager table."
+	::= { caUcsManager 1 }
+
+caUcsManagerTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Last table refresh time"
+	::= { caUcsManager 2 }
+
+caUcsManagerEntry OBJECT-TYPE
+	SYNTAX CaUcsManagerRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsManagerId }
+	::= { caUcsManagerTable 1 }
+
+CaUcsManagerRow ::=
+	SEQUENCE {
+	caUcsManagerId					Integer32,
+	caUcsManagerIpAddressType			InetAddressType,
+	caUcsManagerIpAddress				InetAddress,
+	caUcsManagerMode				INTEGER,
+	caUcsManagerName				DisplayString,
+	caUcsManagerVersion				DisplayString,
+	caUcsManagerStartupVersion			DisplayString,
+	caUcsManagerSysUpTime				DisplayString,
+	caUcsManagerConnectionStatus			INTEGER
+	}
+
+	
+caUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsManagerEntry 1 }
+
+caUcsManagerIpAddressType OBJECT-TYPE
+	SYNTAX InetAddressType
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"IP address type of the UCS Manager.  This is an enumerated INTEGER of type InetAddressType."
+	::= { caUcsManagerEntry 2 }
+
+caUcsManagerIpAddress OBJECT-TYPE
+	SYNTAX InetAddress
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"IP address of the UCS Manager."
+	::= { caUcsManagerEntry 3 }
+
+caUcsManagerMode OBJECT-TYPE
+	SYNTAX INTEGER {
+		unspecified(1), -- default
+		standAlone(2),
+		cluster(3)
+	}
+
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Running mode of the UCS Manager."
+	::= { caUcsManagerEntry 4 }
+
+caUcsManagerName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Name of the UCS Manager."
+	::= { caUcsManagerEntry 5 }
+
+caUcsManagerVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Version of the UCS Manager that is currently running."
+	::= { caUcsManagerEntry 6 }
+
+caUcsManagerStartupVersion OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Startup version of the UCS Manager."
+	::= { caUcsManagerEntry 7 }
+
+caUcsManagerSysUpTime OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Number of seconds the UCS Manager has been running."
+	::= { caUcsManagerEntry 8 }
+	
+
+caUcsManagerConnectionStatus OBJECT-TYPE
+	SYNTAX INTEGER {
+			up(1),
+			down(2)
+		}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS manager connection status"
+	::= { caUcsManagerEntry 9 }
+
+
+	
+
+-- *****************************************************************************
+-- caUcsServiceProfile Table
+-- *****************************************************************************
+caUcsServiceProfileTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF CaUcsServiceProfileRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"caUcsServiceProfile table."
+	::= { caUcsServiceProfile 1 }
+
+caUcsServiceProfileTableLastChange OBJECT-TYPE
+	SYNTAX TimeTicks
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Last table refresh time"
+	::= { caUcsServiceProfile 2 }
+	
+caUcsServiceProfileEntry OBJECT-TYPE
+	SYNTAX CaUcsServiceProfileRow
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The table entry."
+	INDEX { caUcsServiceProfileUcsManagerId, 
+			caUcsServiceProfileIntId }
+	::= { caUcsServiceProfileTable 1 }
+
+CaUcsServiceProfileRow ::=
+	SEQUENCE {
+	caUcsServiceProfileUcsManagerId				Integer32,
+	caUcsServiceProfileIntId				Integer32,
+	caUcsServiceProfileName					DisplayString,
+	caUcsServiceProfileDescription				DisplayString,
+	caUcsServiceProfileBladeIndex				Integer32,
+	caUcsServiceProfileBladeDn				DisplayString,
+	caUcsServiceProfileBladeFullyQualifiedDn		DisplayString,
+	caUcsServiceProfileAssignedState			Integer32,
+	caUcsServiceProfileAssociationState			Integer32,
+	caUcsServiceProfileConfigState				Integer32,
+	caUcsServiceProfileOperState				Integer32,
+	caUcsServiceProfileDn					DisplayString,
+	caUcsServiceProfileFullyQualifiedDn			DisplayString,
+	caUcsServiceProfileBladeOid				OBJECT IDENTIFIER
+	}
+
+	
+caUcsServiceProfileUcsManagerId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"UCS Manager id"
+	::= { caUcsServiceProfileEntry 1 }
+
+
+caUcsServiceProfileIntId OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Internal Id of a service profile"
+	::= { caUcsServiceProfileEntry 2 }
+	
+caUcsServiceProfileName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Name of the Service Profile."
+	::= { caUcsServiceProfileEntry 3 }
+	
+	
+caUcsServiceProfileDescription OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Name of the Service Profile."
+	::= { caUcsServiceProfileEntry 4 }
+	
+	
+caUcsServiceProfileBladeIndex OBJECT-TYPE
+	SYNTAX Integer32 (1..2147483647)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Index of a blade in a chassis for referencing caBladeTable and caUcsBladeTable.  Note that this info won't be available if no blades are assigned to the service profile."
+	::= { caUcsServiceProfileEntry 5 }
+
+	
+caUcsServiceProfileBladeDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of the blade that is associated with the service profile. Note that this info won't be available if no blades are assigned to the service profile."
+	::= { caUcsServiceProfileEntry 6 }
+
+
+
+caUcsServiceProfileBladeFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Concatenation of UCS Manager name with the Dn of the blade. Note that this info won't be available if no blades are assigned to the service profile."
+	::= { caUcsServiceProfileEntry 7 }
+	
+
+caUcsServiceProfileAssignedState OBJECT-TYPE
+	SYNTAX INTEGER {
+		unassigned(1), -- default
+		assigned(2),
+		failed(3)
+	}
+
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Service profile assigned state"
+	::= { caUcsServiceProfileEntry 8 }
+
+caUcsServiceProfileAssociationState OBJECT-TYPE
+	SYNTAX INTEGER {
+		unassociated(1), -- default
+		associating(2),
+		associated(3),
+		disassociating(4),
+		failed(5)
+	}
+
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Service profile association state"
+	::= { caUcsServiceProfileEntry 9 }
+
+
+caUcsServiceProfileConfigState OBJECT-TYPE
+	SYNTAX INTEGER {
+		notApplied(1), -- default
+		applying(2),
+		failedToApply(3),
+		applied(4)
+	}
+
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Service profile configuration state"
+	::= { caUcsServiceProfileEntry 10 }
+	
+
+caUcsServiceProfileOperState OBJECT-TYPE
+	SYNTAX INTEGER {
+		indeterminate(1), -- default
+		unassociated(2),
+		ok(10),
+		discovery(11),
+		config(12),
+		unconfig(13),
+		powerOff(14),
+		restart(15),
+		maintenance(20),
+		test(21),
+		computeMismatch(29),
+		computeFailed(30),
+		degraded(31),
+		discoveryFailed(32),
+		configFailed(33),
+		unconfigFailed(34),
+		testFailed(35),
+		maintenanceFailed(36),
+		removed(40),
+		disabled(41),
+		inaccessible(50),
+		thermalProblem(60),
+		powerProblem(61),
+		voltageProblem(62),
+		inoperable(63),
+		decomissioning(101),
+		biosRestore(201),
+		cmosReset(202),
+		diagnostics(203),
+		diagnosticsFailed(204),
+		pendingReboot(210),
+		pendingReassociation(211)
+	}
+
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Service profile operating state"
+	::= { caUcsServiceProfileEntry 11 }
+
+	
+caUcsServiceProfileDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Dn of the service profile."
+	::= { caUcsServiceProfileEntry 12 }
+
+
+
+caUcsServiceProfileFullyQualifiedDn OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"Concatenation of UCS Manager name with the Dn of the service profile."
+	::= { caUcsServiceProfileEntry 13 }
+		
+
+caUcsServiceProfileBladeOid OBJECT-TYPE
+	SYNTAX  OBJECT IDENTIFIER
+	MAX-ACCESS  read-only
+	STATUS  current
+	DESCRIPTION
+      		"Reference blade index <UCS Manager Id>,<blade index> with full OID path"
+	::= { caUcsServiceProfileEntry 14 }
+
+
+-- *****************************************
+--Traps
+-- ******************************************
+caUcsChassisFabricExtenderRemovedEvent OBJECT IDENTIFIER ::= { traps 165526 }
+caUcsChassisFabricExtenderRemovedTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caUcsChassisFabricExtenderPortUcsManagerId,
+		caUcsChassisFabricExtenderPortChassisId,
+		caUcsChassisFabricExtenderPortSlotId
+	}
+	STATUS current
+	DESCRIPTION
+		"A fabric extender module has been removed from a chassis."
+	::= { sysmgmt 165526 }
+
+caUcsChassisFabricExtenderPortFailureEvent OBJECT IDENTIFIER ::= { traps 165527 }
+caUcsChassisFabricExtenderPortFailureTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caUcsChassisFabricExtenderPortUcsManagerId,
+		caUcsChassisFabricExtenderPortChassisId,
+		caUcsChassisFabricExtenderPortSlotId,
+		caUcsChassisFabricExtenderPortIndex
+	}
+	STATUS current
+	DESCRIPTION
+		"A port on a fabric extender has failed due to hardware failure."
+	::= { sysmgmt 165527 }
+
+caUcsChassisFabricExtenderPortLinkDownEvent OBJECT IDENTIFIER ::= { traps 165528 }
+caUcsChassisFabricExtenderPortLinkDownTrap NOTIFICATION-TYPE
+	OBJECTS {
+		caUcsChassisFabricExtenderPortUcsManagerId,
+		caUcsChassisFabricExtenderPortChassisId,
+		caUcsChassisFabricExtenderPortSlotId,
+		caUcsChassisFabricExtenderPortIndex
+	}
+	STATUS current
+	DESCRIPTION
+		"A port on a fabric extender has lost its link."
+	::= { sysmgmt 165528 }
+		
+
+END
